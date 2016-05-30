@@ -1,6 +1,6 @@
 module Syntax where
 
-import Data.ByteString.Char8 (ByteString)
+import           Data.ByteString.Char8 (ByteString)
 
 type Image = String
 type Tag = String
@@ -37,6 +37,7 @@ data Instruction
   | Arg String
   | Comment String
   | OnBuild Instruction
+  | EOL
   deriving (Eq, Ord, Show)
 
 type Filename = String

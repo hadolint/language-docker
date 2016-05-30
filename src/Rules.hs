@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Rules where
 
 import Syntax

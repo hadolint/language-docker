@@ -1,16 +1,17 @@
 module Lexer where
 
-import Text.Parsec.String (Parser)
-import Text.Parsec.Language (emptyDef)
-import qualified Text.Parsec.Token as Token
+import           Text.Parsec.Language (emptyDef)
+import           Text.Parsec.String   (Parser)
+import qualified Text.Parsec.Token    as Token
 
 lexer :: Token.TokenParser ()
-lexer = Token.makeTokenParser style
+lexer = Token.makeTokenParser style -- style
   where
     names = ["FROM","ADD","RUN","WORKDIR","EXPOSE","VOLUME","ENTRYPOINT","MAINTAINER","ENV","LABEL","USER","STOPSIGNAL","CMD", "ONBUILD", "ARG"]
     style = emptyDef {
-               Token.commentLine = "#"
-             , Token.reservedNames = names
+        -- Token.commentLine = "#",
+             -- ,
+             Token.reservedNames = names
              }
 
 reserved :: String -> Parser ()

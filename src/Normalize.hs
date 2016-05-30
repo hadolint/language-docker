@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts #-}
 module Normalize (
  normalizeEscapedLines
 ) where
@@ -16,7 +17,7 @@ trimLines :: String -> String
 trimLines s = unlines $ map strip $ lines s
   where
     strip = lstrip . rstrip
-    lstrip = dropWhile (`elem` " \t")
+    lstrip = dropWhile (`elem` (" \t" :: String))
     rstrip = reverse . lstrip . reverse
 
 replaceEscapeSigns :: String -> String

@@ -1,21 +1,21 @@
 module Parser where
 
-import Text.Parsec hiding (label)
-import Text.Parsec.String (Parser)
-import Text.Parsec.Combinator (sepBy)
-import Text.Parsec.Pos (sourceLine)
+import           Text.Parsec            hiding (label)
+import           Text.Parsec.Combinator (sepBy)
+import           Text.Parsec.Pos        (sourceLine)
+import           Text.Parsec.String     (Parser)
 
-import Data.ByteString.Char8 (pack)
-import Control.Monad (void)
-import Data.List.Split (splitOn)
+import           Control.Monad          (void)
+import           Data.ByteString.Char8  (pack)
+import           Data.List.Split        (splitOn)
 
-import qualified Text.Parsec.Expr as Ex
-import qualified Text.Parsec.Token as Token
+import qualified Text.Parsec.Expr       as Ex
+import qualified Text.Parsec.Token      as Token
 
-import Debug.Trace
-import Lexer
-import Syntax
-import Normalize
+import           Debug.Trace
+import           Lexer
+import           Normalize
+import           Syntax
 
 comment :: Parser Instruction
 comment = do
@@ -182,7 +182,7 @@ argumentsExec = brackets $ commaSep stringLiteral
 argumentsShell :: Parser Arguments
 argumentsShell = do
     args <- untilEol
-    return $ words args 
+    return $ words args
 
 arguments :: Parser Arguments
 arguments = try argumentsExec <|> try argumentsShell
@@ -198,6 +198,11 @@ onbuild = do
   reserved "ONBUILD"
   i <- parseInstruction
   return $ OnBuild i
+
+eolInstruction :: Parser Instruction
+eolInstruction = do
+  eol
+  return EOL
 
 parseInstruction :: Parser Instruction
 parseInstruction
@@ -218,6 +223,7 @@ parseInstruction
     <|> try maintainer
     <|> try add
     <|> try comment
+    <|> try eolInstruction
 
 contents :: Parser a -> Parser a
 contents p = do
@@ -232,11 +238,12 @@ eol = void $ char '\n' <|> (char '\r' >> option '\n' (char '\n'))
 dockerfile :: Parser Dockerfile
 dockerfile = many $ do
     -- deal with empty lines that only contain spaces or tabs
-    skipMany space
-    skipMany $ char '\t'
+    -- skipMany space
+    -- skipMany $ char '\t'
     pos <- getPosition
     i <- parseInstruction
-    many eol
+    optional eol
+    -- skipMany eol
     return $ InstructionPos i (sourceName pos) (sourceLine pos)
 
 parseString :: String -> Either ParseError Dockerfile
