@@ -1,8 +1,8 @@
-module Bash where
+module Language.Dockerfile.Bash where
 
-import ShellCheck.Interface
-import ShellCheck.Checker
-import Data.Functor.Identity (runIdentity)
+import           Data.Functor.Identity (runIdentity)
+import           ShellCheck.Checker
+import           ShellCheck.Interface
 
 shellcheck :: String -> [Comment]
 shellcheck bashScript = map comment $ crComments $ runIdentity $ checkScript si spec

@@ -1,8 +1,8 @@
-module Formatter (formatCheck) where
+module Language.Dockerfile.Formatter (formatCheck) where
 
-import Control.Monad
-import Rules
-import Syntax
+import           Control.Monad
+import           Language.Dockerfile.Rules
+import           Language.Dockerfile.Syntax
 
 formatCheck :: Check -> String
 formatCheck (Check metadata source linenumber _) = formatPos source linenumber ++ code metadata ++ " " ++ message metadata

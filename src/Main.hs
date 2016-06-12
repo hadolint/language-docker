@@ -1,15 +1,16 @@
 module Main where
 
-import           Data.List          (sort)
-import           Formatter
-import           Parser
-import           PrettyPrint        (prettyPrint)
-import           Rules
-import           Syntax
-import           System.Environment (getArgs)
-import           System.Exit        hiding (die)
-import           System.IO          (hPrint, hPutStrLn, stderr)
-import           Text.Parsec        (ParseError)
+import           Data.List                       (sort)
+import           System.Environment              (getArgs)
+import           System.Exit                     hiding (die)
+import           System.IO                       (hPrint, hPutStrLn, stderr)
+import           Text.Parsec                     (ParseError)
+
+import           Language.Dockerfile.Formatter
+import           Language.Dockerfile.Parser
+import           Language.Dockerfile.PrettyPrint (prettyPrint)
+import           Language.Dockerfile.Rules
+import           Language.Dockerfile.Syntax
 
 printChecks :: [Check] -> IO ()
 printChecks checks = do

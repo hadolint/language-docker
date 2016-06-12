@@ -1,16 +1,17 @@
 {-# LANGUAGE FlexibleContexts #-}
-module Rules where
+module Language.Dockerfile.Rules where
 
-import Syntax
-import Data.Maybe (isJust, fromMaybe, mapMaybe)
-import Data.List (intercalate, isInfixOf, isSuffixOf, isPrefixOf)
-import Data.List.Split (splitOneOf, splitOn)
-import Bash
+import           Data.List                  (intercalate, isInfixOf, isPrefixOf,
+                                             isSuffixOf)
+import           Data.List.Split            (splitOn, splitOneOf)
+import           Data.Maybe                 (fromMaybe, isJust, mapMaybe)
+import           Language.Dockerfile.Bash
+import           Language.Dockerfile.Syntax
 
-import ShellCheck.Interface
-data Metadata = Metadata { code :: String,
+import           ShellCheck.Interface
+data Metadata = Metadata { code     :: String,
                            severity :: Severity,
-                           message :: String
+                           message  :: String
                          } deriving (Eq)
 
 -- a check is the application of a rule on a specific part of code
@@ -18,10 +19,10 @@ data Metadata = Metadata { code :: String,
 -- position only records the linenumber at the moment to keep it easy
 -- and simple to develop new rules
 -- line numbers in the negative range are meant for the global context
-data Check = Check { metadata :: Metadata,
-                     filename :: Filename,
+data Check = Check { metadata   :: Metadata,
+                     filename   :: Filename,
                      linenumber :: Linenumber,
-                     success :: Bool
+                     success    :: Bool
                    } deriving Eq
 
 instance Ord Check where

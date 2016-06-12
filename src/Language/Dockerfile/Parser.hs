@@ -1,21 +1,21 @@
-module Parser where
+module Language.Dockerfile.Parser where
 
-import           Text.Parsec            hiding (label)
-import           Text.Parsec.Combinator (sepBy)
-import           Text.Parsec.Pos        (sourceLine)
-import           Text.Parsec.String     (Parser)
+import           Text.Parsec                   hiding (label)
+import           Text.Parsec.Combinator        (sepBy)
+import           Text.Parsec.Pos               (sourceLine)
+import           Text.Parsec.String            (Parser)
 
-import           Control.Monad          (void)
-import           Data.ByteString.Char8  (pack)
-import           Data.List.Split        (splitOn)
+import           Control.Monad                 (void)
+import           Data.ByteString.Char8         (pack)
+import           Data.List.Split               (splitOn)
 
-import qualified Text.Parsec.Expr       as Ex
-import qualified Text.Parsec.Token      as Token
+import qualified Text.Parsec.Expr              as Ex
+import qualified Text.Parsec.Token             as Token
 
 import           Debug.Trace
-import           Lexer
-import           Normalize
-import           Syntax
+import           Language.Dockerfile.Lexer
+import           Language.Dockerfile.Normalize
+import           Language.Dockerfile.Syntax
 
 comment :: Parser Instruction
 comment = do

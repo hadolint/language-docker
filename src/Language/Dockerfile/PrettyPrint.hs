@@ -1,14 +1,14 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE RebindableSyntax          #-}
-module PrettyPrint
+module Language.Dockerfile.PrettyPrint
   where
 
-import qualified Data.ByteString.Char8 as ByteString (unpack)
+import qualified Data.ByteString.Char8      as ByteString (unpack)
 import           Data.String
-import           Parser                (parseFile)
-import           Prelude               hiding (return, (>>), (>>=))
-import qualified Prelude               ((>>), (>>=))
-import           Syntax
+import           Language.Dockerfile.Parser (parseFile)
+import           Language.Dockerfile.Syntax
+import           Prelude                    hiding (return, (>>), (>>=))
+import qualified Prelude                    ((>>), (>>=))
 import           Text.PrettyPrint
 
 test :: IO ()

@@ -1,4 +1,4 @@
-module Syntax where
+module Language.Dockerfile.Syntax where
 
 import           Data.ByteString.Char8 (ByteString)
 

@@ -1,13 +1,14 @@
-import Parser
-import Rules
-import Syntax
-import Normalize
-import Data.List (find)
-import Data.Maybe (isJust, fromMaybe)
+import           Data.List                      (find)
+import           Data.Maybe                     (fromMaybe, isJust)
 
-import Test.HUnit
-import Test.Framework
-import Test.Framework.Providers.HUnit
+import           Language.Dockerfile.Normalize
+import           Language.Dockerfile.Parser
+import           Language.Dockerfile.Rules
+import           Language.Dockerfile.Syntax
+
+import           Test.Framework
+import           Test.Framework.Providers.HUnit
+import           Test.HUnit
 
 assertAst s ast = case parseString (s ++ "\n") of
     Left err          -> assertFailure $ show err
@@ -62,14 +63,14 @@ astTests =
     , "env multi raw pair" ~: assertAst "ENV foo=bar baz=foo" [Env [("foo", "bar"), ("baz", "foo")]]
     , "env multi quoted pair" ~: assertAst "ENV foo=\"bar\" baz=\"foo\"" [Env [("foo", "bar"), ("baz", "foo")]]
     , "one line cmd" ~: assertAst "CMD true" [Cmd ["true"]]
-    , "multiline cmd" ~: assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"]]
+    , "multiline cmd" ~: assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"], EOL]
     , "maintainer " ~: assertAst "MAINTAINER hudu@mail.com" [Maintainer "hudu@mail.com"]
     , "maintainer from" ~: assertAst maintainerFromProg maintainerFromAst
     , "quoted exec" ~: assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
     , "env works with cmd" ~: assertAst envWorksCmdProg envWorksCmdAst
-    , "multicomments first" ~: assertAst multiCommentsProg1 [Run ["apt-get", "update"]]
-    , "multicomments after" ~: assertAst multiCommentsProg2 [Run ["apt-get", "update"], Comment " line 1", Comment " line 2"]
-    , "escape with space" ~: assertAst escapedWithSpaceProgram [Run ["yum", "install", "-y", "imagemagick", "mysql"]]
+    , "multicomments first" ~: assertAst multiCommentsProg1 [Comment " line 1", Comment " line 2", Run ["apt-get", "update"], EOL]
+    , "multicomments after" ~: assertAst multiCommentsProg2 [Run ["apt-get", "update"], Comment " line 1", Comment " line 2", EOL]
+    , "escape with space" ~: assertAst escapedWithSpaceProgram [Run ["yum", "install", "-y", "imagemagick", "mysql"], EOL, EOL]
     , "scratch and maintainer" ~: assertAst "FROM scratch\nMAINTAINER hudu@mail.com" [From (UntaggedImage "scratch"), Maintainer "hudu@mail.com"]
     ] where
         maintainerFromProg = "FROM busybox\nMAINTAINER hudu@mail.com"

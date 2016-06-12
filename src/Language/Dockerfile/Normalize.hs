@@ -1,11 +1,11 @@
 {-# LANGUAGE FlexibleContexts #-}
-module Normalize (
+module Language.Dockerfile.Normalize (
  normalizeEscapedLines
 ) where
 
-import Data.List (intercalate)
-import Data.List.Split (splitOn)
-import Debug.Trace
+import           Data.List       (intercalate)
+import           Data.List.Split (splitOn)
+import           Debug.Trace
 
 escapePlaceHolder = "\\\\"
 escapeSeq = "\\\n"

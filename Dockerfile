@@ -1,5 +1,6 @@
+# A comment
 FROM haskell:7.10
-MAINTAINER Lukas Martinelli <me@lukasmartinelli.ch>
+MAINTAINER Lukas Martinelli <me@lukasmartinelli.ch> # An inline comment
 RUN cabal update
 
 RUN apt-get update \
