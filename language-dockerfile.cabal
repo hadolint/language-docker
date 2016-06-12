@@ -1,0 +1,60 @@
+name:                language-dockerfile
+version:             1.0.0.0
+synopsis:            Dockerfile linter, parser and pretty-printer, forked from hadolint
+homepage:            https://github.com/beijaflor-io/language-dockerfile
+license:             OtherLicense
+license-file:        LICENSE
+author:              Lukas Martinelli, Pedro Tacla Yamada
+maintainer:          tacla.yamada@gmail.com
+copyright:           Lukas Martinelli, Copyright (c) 2016 Pedro Tacla Yamada
+category:            Development
+build-type:          Simple
+extra-source-files:  README.md
+cabal-version:       >=1.10
+
+library
+  hs-source-dirs: src
+  build-depends:       base >=4.8, parsec >=3.1, bytestring >=0.10, split >= 0.2, ShellCheck, pretty
+  exposed-modules: Language.Dockerfile
+                 , Language.Dockerfile.Parser
+                 , Language.Dockerfile.PrettyPrint
+                 , Language.Dockerfile.Normalize
+                 , Language.Dockerfile.Rules
+                 , Language.Dockerfile.Syntax
+                 , Language.Dockerfile.Lexer
+                 , Language.Dockerfile.Bash
+                 , Language.Dockerfile.FormatCheck
+  default-language:    Haskell2010
+
+executable hadolint
+  hs-source-dirs:      src
+  main-is:             Main.hs
+  build-depends:       base >=4.8, parsec >=3.1, bytestring >=0.10, split >= 0.2, ShellCheck, pretty
+  default-language:    Haskell2010
+  other-modules: Language.Dockerfile
+                 , Language.Dockerfile.Parser
+                 , Language.Dockerfile.PrettyPrint
+                 , Language.Dockerfile.Normalize
+                 , Language.Dockerfile.Rules
+                 , Language.Dockerfile.Syntax
+                 , Language.Dockerfile.Bash
+                 , Language.Dockerfile.Lexer
+                 , Language.Dockerfile.FormatCheck
+
+test-suite hadolint-unit-tests
+  hs-source-dirs:      src
+  type:                exitcode-stdio-1.0
+  main-is:             Test.hs
+  build-depends:       base >= 4.8, parsec >=3.1, bytestring >=0.10, split >= 0.2, ShellCheck, pretty,
+                       test-framework, test-framework-hunit, HUnit >= 1.2
+  default-language:    Haskell2010
+
+  other-modules: Language.Dockerfile
+                 , Language.Dockerfile.Parser
+                 , Language.Dockerfile.PrettyPrint
+                 , Language.Dockerfile.Normalize
+                 , Language.Dockerfile.Rules
+                 , Language.Dockerfile.Syntax
+                 , Language.Dockerfile.Bash
+                 , Language.Dockerfile.Lexer
+                 , Language.Dockerfile.FormatCheck

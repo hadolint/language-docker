@@ -6,7 +6,7 @@ import           System.Exit                     hiding (die)
 import           System.IO                       (hPrint, hPutStrLn, stderr)
 import           Text.Parsec                     (ParseError)
 
-import           Language.Dockerfile.Formatter
+import           Language.Dockerfile.FormatCheck
 import           Language.Dockerfile.Parser
 import           Language.Dockerfile.PrettyPrint (prettyPrint)
 import           Language.Dockerfile.Rules
@@ -20,6 +20,7 @@ printChecks checks = do
 main :: IO ()
 main = getArgs >>= parse
 
+parse :: [String] -> IO ()
 parse ["-i"] = do
     content <- getContents
     length content `seq` return ()
@@ -41,16 +42,25 @@ parse _ = usage >> die
 
 checkAst :: Either ParseError Dockerfile -> IO ()
 checkAst ast = case ast of
-    Left err         -> print err >> die
-    Right dockerfile -> printChecks $ analyzeAll dockerfile
+    Left err -> print err >> die
+    Right df -> printChecks (analyzeAll df)
 
+analyzeAll :: Dockerfile -> [Check]
 analyzeAll = analyze rules
 
 -- Helper to analyze AST quickly in GHCI
-analyzeEither (Left err) = []
-analyzeEither (Right dockerfile)  = analyzeAll dockerfile
+analyzeEither :: Either t Dockerfile -> [Check]
+analyzeEither (Left _) = []
+analyzeEither (Right df)  = analyzeAll df
 
-usage   = putStrLn "Usage: hadolint [-vhif] <file>"
+usage :: IO ()
+usage = putStrLn "Usage: hadolint [-vhif] <file>"
+
+version :: IO ()
 version = putStrLn "Haskell Dockerfile Linter v1.0"
-exit    = exitSuccess
-die     = exitWith (ExitFailure 1)
+
+exit :: IO a
+exit = exitSuccess
+
+die :: IO a
+die = exitWith (ExitFailure 1)

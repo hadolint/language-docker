@@ -1,39 +1,34 @@
 module Language.Dockerfile.Parser where
 
 import           Text.Parsec                   hiding (label)
-import           Text.Parsec.Combinator        (sepBy)
-import           Text.Parsec.Pos               (sourceLine)
 import           Text.Parsec.String            (Parser)
 
 import           Control.Monad                 (void)
 import           Data.ByteString.Char8         (pack)
-import           Data.List.Split               (splitOn)
 
-import qualified Text.Parsec.Expr              as Ex
 import qualified Text.Parsec.Token             as Token
 
-import           Debug.Trace
 import           Language.Dockerfile.Lexer
 import           Language.Dockerfile.Normalize
 import           Language.Dockerfile.Syntax
 
 comment :: Parser Instruction
 comment = do
-  char '#'
+  void $ char '#'
   text <- untilEol
   return $ Comment text
 
 taggedImage :: Parser BaseImage
 taggedImage = do
   name <- untilOccurrence ":\n"
-  oneOf ":"
+  void $ oneOf ":"
   tag <- untilEol
   return $ TaggedImage name tag
 
 digestedImage :: Parser BaseImage
 digestedImage = do
   name <- untilOccurrence "@\n"
-  oneOf "@"
+  void $ oneOf "@"
   digest <- untilEol
   return $ DigestedImage name (pack digest)
 
@@ -77,9 +72,9 @@ stopsignal = do
 -- and therefore have to implement quoted values by ourselves
 quotedValue:: Parser String
 quotedValue = do
-    char '"'
+    void $ char '"'
     literal <- untilOccurrence "\""
-    char '"'
+    void $ char '"'
     return literal
 
 rawValue :: Parser String
@@ -91,7 +86,7 @@ singleValue = try quotedValue <|> try rawValue
 pair :: Parser (String, String)
 pair = do
   key <- rawValue
-  oneOf "= "
+  void $ oneOf "= "
   value <- singleValue
   return (key, value)
 
@@ -101,6 +96,7 @@ pairs = do
     next <- remainingPairs
     return (first:next)
 
+remainingPairs :: Parser Pairs
 remainingPairs =
     try (char ' ' >> pairs)
     <|> try (return [])
@@ -146,8 +142,8 @@ expose = do
 run :: Parser Instruction
 run = do
   reserved "RUN"
-  cmd <- arguments
-  return $ Run cmd
+  c <- arguments
+  return $ Run c
 
 -- Parse value until end of line is reached
 untilEol :: Parser String
