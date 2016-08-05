@@ -1,111 +1,171 @@
+-- This file has been generated from package.yaml by hpack version 0.14.1.
+--
+-- see: https://github.com/sol/hpack
+
 name:                language-dockerfile
 version:             1.0.0.0
-synopsis:            Dockerfile linter, parser and pretty-printer, forked from hadolint
-homepage:            https://github.com/beijaflor-io/language-dockerfile
+synopsis:            Dockerfile linter, parser, pretty-printer and embedded DSL, forked from hadolint
+homepage:            https://github.com/beijaflor-io/language-dockerfile#readme
+bug-reports:         https://github.com/beijaflor-io/language-dockerfile/issues
 license:             OtherLicense
 license-file:        LICENSE
-author:              Lukas Martinelli, Pedro Tacla Yamada
+author:              Lukas Martinelli,
+                     Pedro Tacla Yamada
 maintainer:          tacla.yamada@gmail.com
-copyright:           Lukas Martinelli, Copyright (c) 2016 Pedro Tacla Yamada
+copyright:           Lukas Martinelli, Copyright (c) 2016,
+                     Pedro Tacla Yamada, Copyright (c) 2016
 category:            Development
 build-type:          Simple
-extra-source-files:  README.md
-cabal-version:       >=1.10
+cabal-version:       >= 1.10
+
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/beijaflor-io/language-dockerfile
 
 library
-  hs-source-dirs: src
-  build-depends:       ShellCheck
-                     , base >=4.8
-                     , bytestring >=0.10
-                     , free
-                     , mtl
-                     , parsec >=3.1
-                     , pretty
-                     , split >= 0.2
-                     , template-haskell
-                     , th-lift
-                     , th-lift-instances
-  exposed-modules: Language.Dockerfile
-                 , Language.Dockerfile.Parser
-                 , Language.Dockerfile.PrettyPrint
-                 , Language.Dockerfile.Normalize
-                 , Language.Dockerfile.Rules
-                 , Language.Dockerfile.Syntax
-                 , Language.Dockerfile.Lexer
-                 , Language.Dockerfile.Bash
-                 , Language.Dockerfile.FormatCheck
-
-                 , Language.Dockerfile.Syntax.Lift
-                 , Language.Dockerfile.EDSL
-                 , Language.Dockerfile.EDSL.Quasi
-                 , Language.Dockerfile.EDSL.Types
-  default-language:    Haskell2010
-
-executable hadolint
-  hs-source-dirs:      src
-  main-is:             Main.hs
-  build-depends:       base >=4.8
-                     , parsec >=3.1
-                     , bytestring >=0.10
-                     , split >= 0.2
-                     , ShellCheck
-                     , pretty
-  default-language:    Haskell2010
-  other-modules: Language.Dockerfile
-                 , Language.Dockerfile.Parser
-                 , Language.Dockerfile.PrettyPrint
-                 , Language.Dockerfile.Normalize
-                 , Language.Dockerfile.Rules
-                 , Language.Dockerfile.Syntax
-                 , Language.Dockerfile.Bash
-                 , Language.Dockerfile.Lexer
-                 , Language.Dockerfile.FormatCheck
+  hs-source-dirs:
+      src
+  build-depends:
+      ShellCheck
+    , base >=4.8
+    , bytestring >=0.10
+    , parsec >=3.1
+    , pretty
+    , split >=0.2
+    , free
+    , mtl
+    , template-haskell
+    , th-lift
+    , th-lift-instances
+  exposed-modules:
+      Language.Dockerfile
+      Language.Dockerfile.Parser
+      Language.Dockerfile.PrettyPrint
+      Language.Dockerfile.Normalize
+      Language.Dockerfile.Rules
+      Language.Dockerfile.Syntax
+      Language.Dockerfile.Lexer
+      Language.Dockerfile.Bash
+      Language.Dockerfile.FormatCheck
+      Language.Dockerfile.Syntax.Lift
+      Language.Dockerfile.EDSL
+      Language.Dockerfile.EDSL.Quasi
+      Language.Dockerfile.EDSL.Types
+  other-modules:
+      Paths_language_dockerfile
+  default-language: Haskell2010
 
 executable dockerfmt
-  hs-source-dirs:      bin
-  main-is:             DockerFmt.hs
-  build-depends:       base >=4.8
-                     , parsec >=3.1
-                     , bytestring >=0.10
-                     , split >= 0.2
-                     , ShellCheck
-                     , pretty
-                     , language-dockerfile
-  default-language:    Haskell2010
+  hs-source-dirs:
+      bin
+  main-is: DockerFmt.hs
+  build-depends:
+      ShellCheck
+    , base >=4.8
+    , bytestring >=0.10
+    , parsec >=3.1
+    , pretty
+    , split >=0.2
+    , free
+    , mtl
+    , template-haskell
+    , th-lift
+    , th-lift-instances
+    , language-dockerfile
+  other-modules:
+      Dockerfmt
+      HadoLint
+  default-language: Haskell2010
+
+executable hadolint
+  hs-source-dirs:
+      bin
+  main-is: HadoLint.hs
+  build-depends:
+      ShellCheck
+    , base >=4.8
+    , bytestring >=0.10
+    , parsec >=3.1
+    , pretty
+    , split >=0.2
+    , free
+    , mtl
+    , template-haskell
+    , th-lift
+    , th-lift-instances
+    , language-dockerfile
+  default-language: Haskell2010
+  other-modules:
+      Dockerfmt
 
 test-suite hadolint-unit-tests
-  hs-source-dirs:      src
-  type:                exitcode-stdio-1.0
-  main-is:             Test.hs
-  build-depends:       HUnit >= 1.2,
-                       ShellCheck,
-                       base >= 4.8,
-                       bytestring >=0.10,
-                       parsec >=3.1,
-                       pretty,
-                       split >= 0.2,
-                       test-framework,
-                       test-framework-hunit,
-                       th-lift
-  default-language:    Haskell2010
-
-  other-modules: Language.Dockerfile
-                 , Language.Dockerfile.Parser
-                 , Language.Dockerfile.PrettyPrint
-                 , Language.Dockerfile.Normalize
-                 , Language.Dockerfile.Rules
-                 , Language.Dockerfile.Syntax
-                 , Language.Dockerfile.Bash
-                 , Language.Dockerfile.Lexer
-                 , Language.Dockerfile.FormatCheck
+  hs-source-dirs:
+      src
+    , test
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
+  build-depends:
+      ShellCheck
+    , base >=4.8
+    , bytestring >=0.10
+    , parsec >=3.1
+    , pretty
+    , split >=0.2
+    , free
+    , mtl
+    , template-haskell
+    , th-lift
+    , th-lift-instances
+    , HUnit >=1.2
+    , test-framework
+    , test-framework-hunit
+  default-language: Haskell2010
+  other-modules:
+      Language.Dockerfile
+      Language.Dockerfile.Bash
+      Language.Dockerfile.EDSL
+      Language.Dockerfile.EDSL.Quasi
+      Language.Dockerfile.EDSL.Types
+      Language.Dockerfile.FormatCheck
+      Language.Dockerfile.Lexer
+      Language.Dockerfile.Normalize
+      Language.Dockerfile.Parser
+      Language.Dockerfile.PrettyPrint
+      Language.Dockerfile.Rules
+      Language.Dockerfile.Syntax
+      Language.Dockerfile.Syntax.Lift
+      Language.Dockerfile.EDSL.QuasiSpec
+      Language.Dockerfile.EDSLSpec
+      SanitySpec
+      Spec
 
 test-suite hspec
   main-is: Spec.hs
   type: exitcode-stdio-1.0
-  other-modules: Language.Dockerfile.EDSLSpec
-  build-depends: base
-               , hspec
-               , QuickCheck
-               , language-dockerfile
-  hs-source-dirs: test
+  other-modules:
+      Language.Dockerfile.EDSL.QuasiSpec
+      Language.Dockerfile.EDSLSpec
+      SanitySpec
+      Test
+  build-depends:
+      ShellCheck
+    , base >=4.8
+    , bytestring >=0.10
+    , parsec >=3.1
+    , pretty
+    , split >=0.2
+    , free
+    , mtl
+    , template-haskell
+    , th-lift
+    , th-lift-instances
+    , base
+    , hspec
+    , QuickCheck
+    , language-dockerfile
+  hs-source-dirs:
+      test
   default-language: Haskell2010

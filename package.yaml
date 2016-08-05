@@ -1,0 +1,77 @@
+name: language-dockerfile
+version: '1.0.0.0'
+synopsis: Dockerfile linter, parser, pretty-printer and embedded DSL, forked from hadolint
+category: Development
+author:
+- Lukas Martinelli
+- Pedro Tacla Yamada
+maintainer: tacla.yamada@gmail.com
+copyright:
+- Lukas Martinelli, Copyright (c) 2016
+- Pedro Tacla Yamada, Copyright (c) 2016
+license: OtherLicense
+github: beijaflor-io/language-dockerfile
+extra-source-files:
+- README.md
+
+dependencies:
+- ShellCheck
+- base >=4.8
+- bytestring >=0.10
+- parsec >=3.1
+- pretty
+- split >=0.2
+- free
+- mtl
+- template-haskell
+- th-lift
+- th-lift-instances
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Language.Dockerfile
+  - Language.Dockerfile.Parser
+  - Language.Dockerfile.PrettyPrint
+  - Language.Dockerfile.Normalize
+  - Language.Dockerfile.Rules
+  - Language.Dockerfile.Syntax
+  - Language.Dockerfile.Lexer
+  - Language.Dockerfile.Bash
+  - Language.Dockerfile.FormatCheck
+  - Language.Dockerfile.Syntax.Lift
+  - Language.Dockerfile.EDSL
+  - Language.Dockerfile.EDSL.Quasi
+  - Language.Dockerfile.EDSL.Types
+
+executables:
+  hadolint:
+    main: HadoLint.hs
+    source-dirs: bin
+    dependencies:
+    - language-dockerfile
+  dockerfmt:
+    main: DockerFmt.hs
+    source-dirs: bin
+    dependencies:
+    - language-dockerfile
+
+tests:
+  hspec:
+    main: Spec.hs
+    source-dirs: test
+    dependencies:
+    - base
+    - hspec
+    - QuickCheck
+    - language-dockerfile
+
+  hadolint-unit-tests:
+    main: Test.hs
+    source-dirs:
+    - src
+    - test
+    dependencies:
+    - HUnit >=1.2
+    - test-framework
+    - test-framework-hunit
