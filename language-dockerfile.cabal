@@ -41,6 +41,18 @@ executable hadolint
                  , Language.Dockerfile.Lexer
                  , Language.Dockerfile.FormatCheck
 
+executable dockerfmt
+  hs-source-dirs:      bin
+  main-is:             DockerFmt.hs
+  build-depends:       base >=4.8
+                     , parsec >=3.1
+                     , bytestring >=0.10
+                     , split >= 0.2
+                     , ShellCheck
+                     , pretty
+                     , language-dockerfile
+  default-language:    Haskell2010
+
 test-suite hadolint-unit-tests
   hs-source-dirs:      src
   type:                exitcode-stdio-1.0
