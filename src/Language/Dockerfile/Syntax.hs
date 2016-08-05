@@ -44,7 +44,8 @@ type Filename = String
 type Linenumber = Int
 -- additional location information about an instruction
 -- required for creating good check messages
-data InstructionPos = InstructionPos Instruction Filename Linenumber deriving (Eq, Ord, Show)
+data InstructionPos = InstructionPos Instruction Filename Linenumber
+  deriving (Eq, Ord, Show)
 
 instruction :: InstructionPos -> Instruction
 instruction (InstructionPos i _ _) = i

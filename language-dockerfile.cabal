@@ -14,7 +14,17 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs: src
-  build-depends:       base >=4.8, parsec >=3.1, bytestring >=0.10, split >= 0.2, ShellCheck, pretty
+  build-depends:       ShellCheck
+                     , base >=4.8
+                     , bytestring >=0.10
+                     , free
+                     , mtl
+                     , parsec >=3.1
+                     , pretty
+                     , split >= 0.2
+                     , template-haskell
+                     , th-lift
+                     , th-lift-instances
   exposed-modules: Language.Dockerfile
                  , Language.Dockerfile.Parser
                  , Language.Dockerfile.PrettyPrint
@@ -24,12 +34,22 @@ library
                  , Language.Dockerfile.Lexer
                  , Language.Dockerfile.Bash
                  , Language.Dockerfile.FormatCheck
+
+                 , Language.Dockerfile.Syntax.Lift
+                 , Language.Dockerfile.EDSL
+                 , Language.Dockerfile.EDSL.Quasi
+                 , Language.Dockerfile.EDSL.Types
   default-language:    Haskell2010
 
 executable hadolint
   hs-source-dirs:      src
   main-is:             Main.hs
-  build-depends:       base >=4.8, parsec >=3.1, bytestring >=0.10, split >= 0.2, ShellCheck, pretty
+  build-depends:       base >=4.8
+                     , parsec >=3.1
+                     , bytestring >=0.10
+                     , split >= 0.2
+                     , ShellCheck
+                     , pretty
   default-language:    Haskell2010
   other-modules: Language.Dockerfile
                  , Language.Dockerfile.Parser
@@ -57,8 +77,16 @@ test-suite hadolint-unit-tests
   hs-source-dirs:      src
   type:                exitcode-stdio-1.0
   main-is:             Test.hs
-  build-depends:       base >= 4.8, parsec >=3.1, bytestring >=0.10, split >= 0.2, ShellCheck, pretty,
-                       test-framework, test-framework-hunit, HUnit >= 1.2
+  build-depends:       HUnit >= 1.2,
+                       ShellCheck,
+                       base >= 4.8,
+                       bytestring >=0.10,
+                       parsec >=3.1,
+                       pretty,
+                       split >= 0.2,
+                       test-framework,
+                       test-framework-hunit,
+                       th-lift
   default-language:    Haskell2010
 
   other-modules: Language.Dockerfile
@@ -70,3 +98,14 @@ test-suite hadolint-unit-tests
                  , Language.Dockerfile.Bash
                  , Language.Dockerfile.Lexer
                  , Language.Dockerfile.FormatCheck
+
+test-suite hspec
+  main-is: Spec.hs
+  type: exitcode-stdio-1.0
+  other-modules: Language.Dockerfile.EDSLSpec
+  build-depends: base
+               , hspec
+               , QuickCheck
+               , language-dockerfile
+  hs-source-dirs: test
+  default-language: Haskell2010
