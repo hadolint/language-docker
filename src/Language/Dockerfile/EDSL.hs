@@ -4,10 +4,12 @@
 module Language.Dockerfile.EDSL
   where
 
+import           Control.Exception
 import           Control.Monad.Except
 import           Control.Monad.Free
 import           Control.Monad.Free.TH
 import           Control.Monad.Writer
+import           Data.List (isInfixOf)
 import           Text.Parsec
 
 import qualified Language.Dockerfile.Parser     as Parser
@@ -68,3 +70,14 @@ onBuild
   -> m (Either EDockerError ())
 onBuild b = forM (toDocker b) $ \eip ->
   mapM_ (onBuildRaw . Syntax.instruction) eip
+
+dockerIgnore :: String -> IO ()
+dockerIgnore str = do
+    let str' = str ++ "\n"
+    -- TODO - Use projectroot
+    di <- readFile "./.dockerignore" `catch` (\(SomeException e) -> return "")
+    when (not ((str') `isInfixOf` di)) $ do
+        appendFile "./.dockerignore" str'
+
+dockerBuild :: FilePath -> IO ()
+dockerBuild dir = undefined
