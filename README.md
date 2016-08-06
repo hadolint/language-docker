@@ -21,7 +21,6 @@ main = do
 ## Pretty-printing files
 ```haskell
 import Language.Dockerfile
-import Language.Dockerfile.PrettyPrint
 main = do
     Right d <- parseFile "./Dockerfile"
     putStr (prettyPrint d)
