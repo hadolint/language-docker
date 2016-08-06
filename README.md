@@ -37,3 +37,6 @@ main = do
         run "apt-get update"
         -- ...
 ```
+
+## License
+GPLv3
