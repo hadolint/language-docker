@@ -27,6 +27,16 @@ dependencies:
 - th-lift
 - th-lift-instances
 
+flags:
+  hadolint:
+    description: Build the hadolint executable
+    default: false
+    manual: true
+  dockerfmt:
+    description: Build the dockerfmt executable
+    default: false
+    manual: true
+
 library:
   source-dirs: src
   exposed-modules:
@@ -50,11 +60,20 @@ executables:
     source-dirs: bin
     dependencies:
     - language-dockerfile
+    buildable: false
+    when:
+      condition: 'flag(hadolint)'
+      buildable: true
+
   dockerfmt:
     main: DockerFmt.hs
     source-dirs: bin
     dependencies:
     - language-dockerfile
+    buildable: false
+    when:
+      condition: 'flag(dockerfmt)'
+      buildable: true
 
 tests:
   hspec:
