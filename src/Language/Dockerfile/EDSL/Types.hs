@@ -2,9 +2,19 @@
 module Language.Dockerfile.EDSL.Types
   where
 
+import           Data.ByteString.Char8 (ByteString)
+import           Data.String
 import qualified Language.Dockerfile.Syntax as Syntax
 
-data EInstruction next = From String next
+data EBaseImage = EUntaggedImage String
+                | ETaggedImage String String
+                | EDigestedImage String ByteString
+  deriving(Show, Eq, Ord)
+
+instance IsString EBaseImage where
+    fromString = EUntaggedImage
+
+data EInstruction next = From EBaseImage next
                        | Add Syntax.Source Syntax.Destination next
                        | User String next
                        | Label Syntax.Pairs next

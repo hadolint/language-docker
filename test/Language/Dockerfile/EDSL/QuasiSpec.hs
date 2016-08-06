@@ -1,4 +1,5 @@
-{-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
 module Language.Dockerfile.EDSL.QuasiSpec
   where
 
@@ -30,9 +31,9 @@ spec = do
                                 RUN apt-get update
                                 CMD node something.js
                                 |]
-                df = map instruction <$> toDocker d
-            df `shouldBe` Right [ From (UntaggedImage "node")
-                                , Expose [8080]
-                                , Run ["apt-get", "update"]
-                                , Cmd ["node", "something.js"]
-                                ]
+                df = map instruction (toDocker d)
+            df `shouldBe` [ From (UntaggedImage "node")
+                          , Expose [8080]
+                          , Run ["apt-get", "update"]
+                          , Cmd ["node", "something.js"]
+                          ]

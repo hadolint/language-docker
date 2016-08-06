@@ -5,37 +5,31 @@ module Language.Dockerfile.EDSL
   where
 
 import           Control.Exception
-import           Control.Monad.Except
 import           Control.Monad.Free
 import           Control.Monad.Free.TH
 import           Control.Monad.Writer
-import           Data.List (isInfixOf)
-import           Text.Parsec
+import           Data.ByteString                (ByteString)
+import           Data.List                      (isInfixOf)
 
-import qualified Language.Dockerfile.Parser     as Parser
 import qualified Language.Dockerfile.Syntax     as Syntax
 
 import           Language.Dockerfile.EDSL.Types
 
 type EInstructionM = Free EInstruction
 
-data EDockerError = EDockerParseError ParseError
-                  | EDockerEmptyFromError
-  deriving(Eq, Show)
-
 makeFree ''EInstruction
 
 runDockerWriter
-    :: (MonadError EDockerError m, MonadWriter [Syntax.Instruction] m)
+    :: (MonadWriter [Syntax.Instruction] m)
     => EInstructionM a -> m a
 runDockerWriter = iterM runD
   where
     runDef f a n = tell [ f a ] >> n
     runDef2 f a b n = tell [ f a b ] >> n
-    runD (From bi n) = case parse Parser.baseImage "" (bi ++ "\n") of
-        Left e -> throwError (EDockerParseError e)
-        Right (Syntax.UntaggedImage "") -> throwError EDockerEmptyFromError
-        Right bi' -> runDef Syntax.From bi' n
+    runD (From bi n) = case bi of
+        EUntaggedImage bi' -> runDef Syntax.From (Syntax.UntaggedImage bi') n
+        ETaggedImage bi' tg -> runDef Syntax.From (Syntax.TaggedImage bi' tg) n
+        EDigestedImage bi' d -> runDef Syntax.From (Syntax.DigestedImage bi' d) n
     runD (Cmd as n) = runDef Syntax.Cmd as n
     runD (Add s d n) = runDef2 Syntax.Add s d n
     runD (User u n) = runDef Syntax.User u n
@@ -59,25 +53,33 @@ runDockerWriter = iterM runD
 instructionPos :: Syntax.Instruction -> Syntax.InstructionPos
 instructionPos i = Syntax.InstructionPos i "" 0
 
-toDocker :: EInstructionM a -> Either EDockerError Syntax.Dockerfile
-toDocker e = do
-    (_, w) <- runWriterT (runDockerWriter e)
-    return (map instructionPos w)
+toDocker :: EInstructionM a -> Syntax.Dockerfile
+toDocker e =
+    let (_, w) = runWriter (runDockerWriter e)
+    in map instructionPos w
+
+untagged :: String -> EBaseImage
+untagged = EUntaggedImage
+
+tagged :: String -> String -> EBaseImage
+tagged = ETaggedImage
+
+digested :: String -> ByteString -> EBaseImage
+digested = EDigestedImage
 
 onBuild
   :: MonadFree EInstruction m
   => EInstructionM a
-  -> m (Either EDockerError ())
-onBuild b = forM (toDocker b) $ \eip ->
-  mapM_ (onBuildRaw . Syntax.instruction) eip
+  -> m ()
+onBuild b = mapM_ (onBuildRaw . Syntax.instruction) (toDocker b)
 
 dockerIgnore :: String -> IO ()
 dockerIgnore str = do
     let str' = str ++ "\n"
     -- TODO - Use projectroot
-    di <- readFile "./.dockerignore" `catch` (\(SomeException e) -> return "")
-    when (not ((str') `isInfixOf` di)) $ do
+    di <- readFile "./.dockerignore" `catch` (\(SomeException _) -> return "")
+    unless (str' `isInfixOf` di) $
         appendFile "./.dockerignore" str'
 
 dockerBuild :: FilePath -> IO ()
-dockerBuild dir = undefined
+dockerBuild _dir = undefined
