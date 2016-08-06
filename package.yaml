@@ -1,5 +1,5 @@
 name: language-dockerfile
-version: '1.0.0.0'
+version: '0.1.0.0'
 synopsis: Dockerfile linter, parser, pretty-printer and embedded DSL, forked from hadolint
 category: Development
 author:
