@@ -29,12 +29,31 @@ main = do
 
 ## Writting Dockerfiles in Haskell
 ```haskell
+{-# LANGUAGE OverloadedStrings #-}
 import Language.Dockerfile.EDSL
 import Language.Dockerfile.PrettyPrint
 main = do
     putStr $ toDocker $ do
         from "node"
         run "apt-get update"
+        -- ...
+```
+
+## Using the QuasiQuoter
+```haskell
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuasiQuotes       #-}
+import Language.Dockerfile.EDSL
+import Language.Dockerfile.EDSL.Quasi
+import Language.Dockerfile.PrettyPrint
+main = do
+    putStr $ toDocker $ do
+        from "node"
+        run "apt-get update"
+        [edockerfile|
+        RUN apt-get update
+        CMD node something.js
+        |]
         -- ...
 ```
 
