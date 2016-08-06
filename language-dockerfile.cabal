@@ -76,7 +76,6 @@ executable dockerfmt
     , th-lift-instances
     , language-dockerfile
   other-modules:
-      Dockerfmt
       HadoLint
   default-language: Haskell2010
 
@@ -99,7 +98,7 @@ executable hadolint
     , language-dockerfile
   default-language: Haskell2010
   other-modules:
-      Dockerfmt
+      DockerFmt
 
 test-suite hadolint-unit-tests
   hs-source-dirs:
