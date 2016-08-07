@@ -9,7 +9,7 @@ maintainer: tacla.yamada@gmail.com
 copyright:
 - Lukas Martinelli, Copyright (c) 2016
 - Pedro Tacla Yamada, Copyright (c) 2016
-license: OtherLicense
+license: GPL-3
 github: beijaflor-io/language-dockerfile
 extra-source-files:
 - README.md

@@ -7,7 +7,7 @@ version:             0.1.0.0
 synopsis:            Dockerfile linter, parser, pretty-printer and embedded DSL, forked from hadolint
 homepage:            https://github.com/beijaflor-io/language-dockerfile#readme
 bug-reports:         https://github.com/beijaflor-io/language-dockerfile/issues
-license:             OtherLicense
+license:             GPL-3
 license-file:        LICENSE
 author:              Lukas Martinelli,
                      Pedro Tacla Yamada
