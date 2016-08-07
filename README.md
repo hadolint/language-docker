@@ -1,6 +1,9 @@
 # haskell-language-dockerfile
-This is a Dockerfile parser and pretty-printer forked from the GPL licensed
-[hadolint project https://github.com/lukasmartinelli/hadolint](https://github.com/lukasmartinelli/hadolint).
+Dockerfile linter, parser, pretty-printer and embedded DSL, forked from
+[hadolint](https://github.com/lukasmartinelli/hadolint).
+
+It extends hadolint with the pretty-printer and EDSL for writting Dockerfiles in
+Haskell.
 
 ## Parsing files
 ```haskell
