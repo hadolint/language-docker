@@ -4,8 +4,10 @@
 
 name:           language-dockerfile
 version:        0.1.1.0
-synopsis:       Dockerfile linter, parser, pretty-printer and embedded DSL, forked from hadolint
-description:     All functions for parsing, printing and writting Dockerfiles are exported through @Language.Dockerfile@. For more fine-grained operations look for specific modules that implement a certain functionality.
+synopsis:       Dockerfile linter, parser, pretty-printer and embedded DSL
+description:     Forked from @hadolint@.
+                .
+                All functions for parsing, printing and writting Dockerfiles are exported through @Language.Dockerfile@. For more fine-grained operations look for specific modules that implement a certain functionality.
                 .
                 There are two flags in this package, which enable building two executables:
                 .
@@ -48,7 +50,7 @@ library
       src
   build-depends:
       ShellCheck
-    , base >=4.8
+    , base >=4.8 && <5
     , bytestring >=0.10
     , parsec >=3.1
     , pretty
@@ -82,7 +84,7 @@ executable dockerfmt
   main-is: DockerFmt.hs
   build-depends:
       ShellCheck
-    , base >=4.8
+    , base >=4.8 && <5
     , bytestring >=0.10
     , parsec >=3.1
     , pretty
@@ -106,7 +108,7 @@ executable hadolint
   main-is: HadoLint.hs
   build-depends:
       ShellCheck
-    , base >=4.8
+    , base >=4.8 && <5
     , bytestring >=0.10
     , parsec >=3.1
     , pretty
@@ -132,7 +134,7 @@ test-suite hadolint-unit-tests
   main-is: Test.hs
   build-depends:
       ShellCheck
-    , base >=4.8
+    , base >=4.8 && <5
     , bytestring >=0.10
     , parsec >=3.1
     , pretty
@@ -175,7 +177,7 @@ test-suite hspec
       Test
   build-depends:
       ShellCheck
-    , base >=4.8
+    , base >=4.8 && <5
     , bytestring >=0.10
     , parsec >=3.1
     , pretty
@@ -185,7 +187,6 @@ test-suite hspec
     , template-haskell
     , th-lift
     , th-lift-instances
-    , base
     , hspec
     , QuickCheck
     , language-dockerfile

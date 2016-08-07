@@ -1,8 +1,11 @@
 name: language-dockerfile
 version: '0.1.1.0'
 
-synopsis: Dockerfile linter, parser, pretty-printer and embedded DSL, forked from hadolint
+synopsis: Dockerfile linter, parser, pretty-printer and embedded DSL
 description: '
+Forked from @hadolint@.
+
+
 All functions for parsing, printing and writting Dockerfiles are exported
 through @Language.Dockerfile@. For more fine-grained operations look for
 specific modules that implement a certain functionality.
@@ -35,7 +38,7 @@ extra-source-files:
 
 dependencies:
 - ShellCheck
-- base >=4.8
+- base >=4.8 && <5
 - bytestring >=0.10
 - parsec >=3.1
 - pretty
@@ -99,7 +102,6 @@ tests:
     main: Spec.hs
     source-dirs: test
     dependencies:
-    - base
     - hspec
     - QuickCheck
     - language-dockerfile
