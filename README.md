@@ -18,7 +18,7 @@ main = do
 import Language.Dockerfile
 main = do
     c <- readFile "./Dockerfile"
-    print (parseString "./Dockerfile")
+    print (parseString c)
 ```
 
 ## Pretty-printing files
@@ -33,11 +33,10 @@ main = do
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
 import Language.Dockerfile
-main = do
-    putStr $ toDockerfileStr $ do
-        from "node"
-        run "apt-get update"
-        -- ...
+main = putStr $ toDockerfileStr $ do
+    from "node"
+    run (words "apt-get update")
+    -- ...
 ```
 
 ## Using the QuasiQuoter
@@ -45,15 +44,14 @@ main = do
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 import Language.Dockerfile
-main = do
-    putStr $ toDockerfileStr $ do
-        from "node"
-        run "apt-get update"
-        [edockerfile|
-        RUN apt-get update
-        CMD node something.js
-        |]
-        -- ...
+main = putStr $ toDockerfileStr $ do
+    from "node"
+    run (words "apt-get update")
+    [edockerfile|
+    RUN apt-get update
+    CMD node something.js
+    |]
+    -- ...
 ```
 
 ## License
