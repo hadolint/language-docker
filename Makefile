@@ -1,6 +1,9 @@
 all: FORCE
 	stack build --flag language-dockerfile:hadolint --flag language-dockerfile:dockerfmt
 
+doctests: FORCE
+	find src | grep "\.hs$$" | while read pkg; do echo $$pkg; stack exec doctest $$pkg; done
+
 examples: FORCE
 	stack runghc ./examples/parse.hs
 	stack runghc ./examples/parse-string.hs
