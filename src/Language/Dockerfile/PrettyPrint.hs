@@ -11,7 +11,7 @@ import           Prelude                    hiding (return, (>>), (>>=))
 import qualified Prelude                    ((>>), (>>=))
 import           Text.PrettyPrint
 
---| Pretty print a 'Dockerfile' to a 'String'
+-- | Pretty print a 'Dockerfile' to a 'String'
 prettyPrint :: Dockerfile -> String
 prettyPrint = unlines
     . reverse . snd . foldl removeDoubleBlank (False, [])
@@ -23,7 +23,7 @@ prettyPrint = unlines
     removeDoubleBlank (False, m) "" = (True, "":m)
     removeDoubleBlank (_, m) s = (False, s:m)
 
---| Pretty print a 'InstructionPos' to a 'String'
+-- | Pretty print a 'InstructionPos' to a 'String'
 prettyPrintInstructionPos :: InstructionPos -> String
 prettyPrintInstructionPos (InstructionPos i _ _) = render (prettyPrintInstruction i)
 

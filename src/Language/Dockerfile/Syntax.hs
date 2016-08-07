@@ -13,12 +13,14 @@ data BaseImage
   | DigestedImage Image ByteString
   deriving (Eq, Ord, Show)
 
+-- | Type of the Dockerfile AST
 type Dockerfile = [InstructionPos]
 type Source = String
 type Destination = String
 type Arguments = [String]
 type Pairs = [(String, String)]
 
+-- | All commands available in Dockerfiles
 data Instruction
   = From BaseImage
   | Add Source Destination
@@ -42,8 +44,10 @@ data Instruction
 
 type Filename = String
 type Linenumber = Int
--- additional location information about an instruction
--- required for creating good check messages
+
+
+-- | 'Instruction' with additional location information required for creating
+-- good check messages
 data InstructionPos = InstructionPos Instruction Filename Linenumber
   deriving (Eq, Ord, Show)
 

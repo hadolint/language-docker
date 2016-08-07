@@ -12,6 +12,17 @@ import qualified Language.Dockerfile.Parser      as Parser
 import           Language.Dockerfile.Syntax
 import           Language.Dockerfile.Syntax.Lift
 
+-- | Quasiquoter for embedding dockerfiles on the EDSL
+--
+-- @
+-- putStr $ 'toDockerfile' $ do
+--     from "node"
+--     run "apt-get update"
+--     [edockerfile|
+--     RUN apt-get update
+--     CMD node something.js
+--     |]
+-- @
 edockerfile :: QuasiQuoter
 edockerfile = dockerfile { quoteExp = edockerfileE
                          }

@@ -8,18 +8,18 @@ import           Test.Hspec
 
 spec :: Spec
 spec = do
-    describe "toDocker s" $
+    describe "toDockerfile s" $
         it "allows us to write haskell code that represents Dockerfiles" $ do
-            let r = map Syntax.instruction $ toDocker (do
+            let r = map Syntax.instruction $ toDockerfile (do
                         from "node"
                         cmd ["node", "-e", "'console.log(\'hey\')'"])
             r `shouldBe` [ Syntax.From (Syntax.UntaggedImage "node")
                          , Syntax.Cmd ["node", "-e", "'console.log(\'hey\')'"]
                          ]
 
-    describe "prettyPrint $ toDocker s" $ do
+    describe "prettyPrint $ toDockerfile s" $ do
         it "allows us to write haskell code that represents Dockerfiles" $ do
-            let r = prettyPrint $ toDocker (do
+            let r = prettyPrint $ toDockerfile (do
                         from "node"
                         cmd ["node", "-e", "'console.log(\'hey\')'"])
             r `shouldBe` unlines [ "FROM node"
@@ -27,7 +27,7 @@ spec = do
                                  ]
 
         it "onBuild let's us nest statements" $ do
-            let r = prettyPrint $ toDocker (do
+            let r = prettyPrint $ toDockerfile (do
                         from "node"
                         cmd ["node", "-e", "'console.log(\'hey\')'"]
                         onBuild $ do

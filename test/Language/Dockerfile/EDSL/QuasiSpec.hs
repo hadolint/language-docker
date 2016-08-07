@@ -31,7 +31,7 @@ spec = do
                                 RUN apt-get update
                                 CMD node something.js
                                 |]
-                df = map instruction (toDocker d)
+                df = map instruction (toDockerfile d)
             df `shouldBe` [ From (UntaggedImage "node")
                           , Expose [8080]
                           , Run ["apt-get", "update"]
