@@ -2,6 +2,8 @@
 Dockerfile linter, parser, pretty-printer and embedded DSL, forked from
 [hadolint](https://github.com/lukasmartinelli/hadolint).
 
+Published on Hackage as [language-dockerfile](https://hackage.haskell.org/package/language-dockerfile).
+
 It extends hadolint with the pretty-printer and EDSL for writting Dockerfiles in
 Haskell.
 
