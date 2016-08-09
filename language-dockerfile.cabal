@@ -15,16 +15,16 @@ description:     Forked from @hadolint@.
                 - @dockerfmt@ Builds example pretty-printer usage, which reads a Dockerfile and pretty-prints it to stdout
                 .
                 See the <https://github.com/beijaflor-io/haskell-language-dockerfile GitHub project> for the source-code and examples. 
+category:       Development
 homepage:       https://github.com/beijaflor-io/language-dockerfile#readme
 bug-reports:    https://github.com/beijaflor-io/language-dockerfile/issues
-license:        GPL-3
-license-file:   LICENSE
 author:         Lukas Martinelli,
                 Pedro Tacla Yamada
 maintainer:     tacla.yamada@gmail.com
 copyright:      Lukas Martinelli, Copyright (c) 2016,
                 Pedro Tacla Yamada, Copyright (c) 2016
-category:       Development
+license:        GPL-3
+license-file:   LICENSE
 build-type:     Simple
 cabal-version:  >= 1.10
 
@@ -79,9 +79,9 @@ library
   default-language: Haskell2010
 
 executable dockerfmt
+  main-is: DockerFmt.hs
   hs-source-dirs:
       bin
-  main-is: DockerFmt.hs
   build-depends:
       ShellCheck
     , base >=4.8 && <5
@@ -103,9 +103,9 @@ executable dockerfmt
   default-language: Haskell2010
 
 executable hadolint
+  main-is: HadoLint.hs
   hs-source-dirs:
       bin
-  main-is: HadoLint.hs
   build-depends:
       ShellCheck
     , base >=4.8 && <5
@@ -122,16 +122,16 @@ executable hadolint
   buildable: False
   if flag(hadolint)
     buildable: True
-  default-language: Haskell2010
   other-modules:
       DockerFmt
+  default-language: Haskell2010
 
 test-suite hadolint-unit-tests
+  type: exitcode-stdio-1.0
+  main-is: Test.hs
   hs-source-dirs:
       src
     , test
-  type: exitcode-stdio-1.0
-  main-is: Test.hs
   build-depends:
       ShellCheck
     , base >=4.8 && <5
@@ -147,7 +147,6 @@ test-suite hadolint-unit-tests
     , HUnit >=1.2
     , test-framework
     , test-framework-hunit
-  default-language: Haskell2010
   other-modules:
       Language.Dockerfile
       Language.Dockerfile.Bash
@@ -166,15 +165,13 @@ test-suite hadolint-unit-tests
       Language.Dockerfile.EDSLSpec
       SanitySpec
       Spec
+  default-language: Haskell2010
 
 test-suite hspec
-  main-is: Spec.hs
   type: exitcode-stdio-1.0
-  other-modules:
-      Language.Dockerfile.EDSL.QuasiSpec
-      Language.Dockerfile.EDSLSpec
-      SanitySpec
-      Test
+  main-is: Spec.hs
+  hs-source-dirs:
+      test
   build-depends:
       ShellCheck
     , base >=4.8 && <5
@@ -190,6 +187,9 @@ test-suite hspec
     , hspec
     , QuickCheck
     , language-dockerfile
-  hs-source-dirs:
-      test
+  other-modules:
+      Language.Dockerfile.EDSL.QuasiSpec
+      Language.Dockerfile.EDSLSpec
+      SanitySpec
+      Test
   default-language: Haskell2010
