@@ -7,6 +7,14 @@ Published on Hackage as [language-dockerfile](https://hackage.haskell.org/packag
 It extends hadolint with the pretty-printer and EDSL for writting Dockerfiles in
 Haskell.
 
+- [Parsing files](#parsing-files)
+- [Parsing strings](#parsing-strings)
+- [Pretty-printing files](#pretty-printing-files)
+- [Writing Dockerfiles in Haskell](#writing-dockerfiles-in-haskell)
+- [Using the QuasiQuoter](#using-the-quasiquoter)
+- [Templating Dockerfiles in Haskell](#templating-dockerfiles-in-haskell)
+- [Templating Dockerfiles in Haskell](#templating-dockerfiles-in-haskell)
+
 ## Parsing files
 ```haskell
 import Language.Dockerfile
@@ -78,6 +86,27 @@ main =
             from ("haskell" `tagged` tag)
             cabalSandboxBuild "mypackage"
         writeFile ("./examples/templating-" ++ tag ++ ".dockerfile") df
+```
+
+## Using IO in the DSL
+By default the DSL runs in the `Identity` monad. By running in IO we can
+support more features like file globbing:
+
+```haskell
+{-# LANGUAGE OverloadedStrings #-}
+import           Language.Dockerfile
+import qualified System.Directory     as Directory
+import qualified System.FilePath      as FilePath
+import qualified System.FilePath.Glob as Glob
+main = do
+    str <- toDockerfileStrIO $ do
+        fs <- liftIO $ do
+            cwd <- Directory.getCurrentDirectory
+            fs <- Glob.glob "./test/*.hs"
+            return (map (FilePath.makeRelative cwd) fs)
+        from "ubuntu"
+        mapM_ (\f -> add f ("/app/" ++ FilePath.takeFileName f)) fs
+    putStr str
 ```
 
 ## License

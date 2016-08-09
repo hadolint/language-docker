@@ -12,6 +12,13 @@ module Language.Dockerfile
       -- * Writting Dockerfiles (@Language.Dockerfile.EDSL@)
     , Language.Dockerfile.EDSL.toDockerfileStr
     , Language.Dockerfile.EDSL.toDockerfile
+
+    , Language.Dockerfile.EDSL.toDockerfileStrIO
+    , Language.Dockerfile.EDSL.toDockerfileIO
+    , Language.Dockerfile.EDSL.runDockerfileIO
+    , Language.Dockerfile.EDSL.runDockerfileStrIO
+    , Control.Monad.IO.Class.liftIO
+
     , Language.Dockerfile.EDSL.from
 
       -- ** Constructing base images
@@ -74,6 +81,7 @@ module Language.Dockerfile
     )
   where
 
+import qualified Control.Monad.IO.Class
 import qualified Language.Dockerfile.EDSL
 import qualified Language.Dockerfile.EDSL.Quasi
 import qualified Language.Dockerfile.EDSL.Types
