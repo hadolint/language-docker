@@ -10,6 +10,7 @@ examples: FORCE
 	stack runghc ./examples/pretty-print.hs
 	stack runghc ./examples/edsl.hs
 	stack runghc ./examples/edsl-quasi.hs
+	stack runghc ./examples/templating.hs
 
 pull-upstream: FORCE
 	if ! ``git remote -v | grep lukasmartinelli`` ; then git remote add lukasmartinelli https://github.com/lukasmartinelli/hadolint ; fi

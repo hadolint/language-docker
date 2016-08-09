@@ -87,6 +87,15 @@ tagged = ETaggedImage
 digested :: String -> ByteString -> EBaseImage
 digested = EDigestedImage
 
+runW :: MonadFree EInstruction m => String -> m ()
+runW = run . words
+
+entrypointW :: MonadFree EInstruction m => String -> m ()
+entrypointW = entrypoint . words
+
+cmdW :: MonadFree EInstruction m => String -> m ()
+cmdW = cmd . words
+
 -- | ONBUILD Dockerfile instruction
 --
 -- Each nested instruction gets emitted as a separate @ONBUILD@ block
