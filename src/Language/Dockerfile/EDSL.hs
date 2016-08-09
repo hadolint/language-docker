@@ -8,8 +8,10 @@ module Language.Dockerfile.EDSL
 -- import           Data.List                      (isInfixOf)
 import           Control.Monad.Free
 import           Control.Monad.Free.TH
+import           Control.Monad.Identity          (Identity)
+import           Control.Monad.Trans.Free        (FreeT, iterTM, runFreeT)
 import           Control.Monad.Writer
-import           Data.ByteString                (ByteString)
+import           Data.ByteString                 (ByteString)
 
 import qualified Language.Dockerfile.PrettyPrint as PrettyPrint
 import qualified Language.Dockerfile.Syntax      as Syntax
@@ -17,6 +19,7 @@ import qualified Language.Dockerfile.Syntax      as Syntax
 import           Language.Dockerfile.EDSL.Types
 
 type EInstructionM = Free EInstruction
+type EInstructionTM = FreeT EInstruction
 
 makeFree ''EInstruction
 
@@ -24,32 +27,45 @@ runDockerWriter
     :: (MonadWriter [Syntax.Instruction] m)
     => EInstructionM a -> m a
 runDockerWriter = iterM runD
-  where
-    runDef f a n = tell [ f a ] >> n
-    runDef2 f a b n = tell [ f a b ] >> n
-    runD (From bi n) = case bi of
-        EUntaggedImage bi' -> runDef Syntax.From (Syntax.UntaggedImage bi') n
-        ETaggedImage bi' tg -> runDef Syntax.From (Syntax.TaggedImage bi' tg) n
-        EDigestedImage bi' d -> runDef Syntax.From (Syntax.DigestedImage bi' d) n
-    runD (CmdArgs as n) = runDef Syntax.Cmd as n
-    runD (Add s d n) = runDef2 Syntax.Add s d n
-    runD (User u n) = runDef Syntax.User u n
-    runD (Label ps n) = runDef Syntax.Label ps n
-    runD (StopSignal s n) = runDef Syntax.Stopsignal s n
-    runD (Copy s d n) = runDef2 Syntax.Copy s d n
-    runD (RunArgs as n) = runDef Syntax.Run as n
-    runD (Workdir d n) = runDef Syntax.Workdir d n
-    runD (Expose ps n) = runDef Syntax.Expose ps n
-    runD (Volume v n) = runDef Syntax.Volume v n
-    runD (EntrypointArgs e n) = runDef Syntax.Entrypoint e n
-    runD (Maintainer m n) = runDef Syntax.Maintainer m n
-    runD (Env ps n) = runDef Syntax.Env ps n
-    runD (Arg s n) = runDef Syntax.Arg s n
-    runD (Comment c n) = runDef Syntax.Comment c n
-    runD (OnBuildRaw i n) = runDef Syntax.OnBuild i n
-    runD (Embed is n) = do
-        tell (map Syntax.instruction is)
-        n
+
+runDockerWriterIO ::
+    ( Monad m
+    , MonadTrans t
+    , Monad (t m)
+    , MonadWriter [Syntax.Instruction] (t m)
+    , MonadIO (t m)
+    ) => EInstructionTM m a -> t m a
+runDockerWriterIO = iterTM runD
+
+runDef :: MonadWriter [t] m => (t1 -> t) -> t1 -> m b -> m b
+runDef f a n = tell [ f a ] >> n
+runDef2 :: MonadWriter [t] m => (t1 -> t2 -> t) -> t1 -> t2 -> m b -> m b
+runDef2 f a b n = tell [ f a b ] >> n
+
+runD :: MonadWriter [Syntax.Instruction] m => EInstruction (m b) -> m b
+runD (From bi n) = case bi of
+    EUntaggedImage bi' -> runDef Syntax.From (Syntax.UntaggedImage bi') n
+    ETaggedImage bi' tg -> runDef Syntax.From (Syntax.TaggedImage bi' tg) n
+    EDigestedImage bi' d -> runDef Syntax.From (Syntax.DigestedImage bi' d) n
+runD (CmdArgs as n) = runDef Syntax.Cmd as n
+runD (Add s d n) = runDef2 Syntax.Add s d n
+runD (User u n) = runDef Syntax.User u n
+runD (Label ps n) = runDef Syntax.Label ps n
+runD (StopSignal s n) = runDef Syntax.Stopsignal s n
+runD (Copy s d n) = runDef2 Syntax.Copy s d n
+runD (RunArgs as n) = runDef Syntax.Run as n
+runD (Workdir d n) = runDef Syntax.Workdir d n
+runD (Expose ps n) = runDef Syntax.Expose ps n
+runD (Volume v n) = runDef Syntax.Volume v n
+runD (EntrypointArgs e n) = runDef Syntax.Entrypoint e n
+runD (Maintainer m n) = runDef Syntax.Maintainer m n
+runD (Env ps n) = runDef Syntax.Env ps n
+runD (Arg s n) = runDef Syntax.Arg s n
+runD (Comment c n) = runDef Syntax.Comment c n
+runD (OnBuildRaw i n) = runDef Syntax.OnBuild i n
+runD (Embed is n) = do
+    tell (map Syntax.instruction is)
+    n
 
 instructionPos :: Syntax.Instruction -> Syntax.InstructionPos
 instructionPos i = Syntax.InstructionPos i "" 0
@@ -61,7 +77,7 @@ toDockerfile e =
     let (_, w) = runWriter (runDockerWriter e)
     in map instructionPos w
 
--- | Runs the Dockerfile EDSL and returns a 'String' using
+-- | runs the Dockerfile EDSL and returns a 'String' using
 -- 'Language.Dockerfile.PrettyPrint'
 --
 -- @
@@ -114,12 +130,22 @@ onBuild
   -> m ()
 onBuild b = mapM_ (onBuildRaw . Syntax.instruction) (toDockerfile b)
 
--- dockerIgnore :: String -> IO ()
--- dockerIgnore str = do
---     let str' = str ++ "\n"
---     -- TODO - Use projectroot
---     di <- readFile "./.dockerignore" `catch` (\(SomeException _) -> return "")
---     unless (str' `isInfixOf` di) $
---         appendFile "./.dockerignore" str'
--- dockerBuild :: FilePath -> IO ()
--- dockerBuild _dir = undefined
+-- | A version of 'toDockerfile' which allows IO actions
+toDockerfileIO :: MonadIO m => EInstructionTM m t -> m Syntax.Dockerfile
+toDockerfileIO e = liftM snd (runDockerfileIO e)
+
+-- | A version of 'toDockerfileStr' which allows IO actions
+toDockerfileStrIO :: MonadIO m => EInstructionTM m t -> m String
+toDockerfileStrIO e = liftM snd (runDockerfileStrIO e)
+
+-- | Just runs the EDSL's writer monad
+runDockerfileIO :: MonadIO m => EInstructionTM m t -> m (t, Syntax.Dockerfile)
+runDockerfileIO e = do
+    (r, w) <- runWriterT (runDockerWriterIO e)
+    return (r, map instructionPos w)
+
+-- | Runs the EDSL's writer monad and pretty-prints the result
+runDockerfileStrIO :: MonadIO m => EInstructionTM m t -> m (t, String)
+runDockerfileStrIO e = do
+    (r, w) <- runDockerfileIO e
+    return (r, PrettyPrint.prettyPrint w)

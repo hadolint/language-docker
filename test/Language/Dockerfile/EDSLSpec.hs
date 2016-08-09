@@ -1,9 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Language.Dockerfile.EDSLSpec where
 
+import           Control.Monad.IO.Class
 import           Language.Dockerfile.EDSL
 import           Language.Dockerfile.PrettyPrint
 import qualified Language.Dockerfile.Syntax      as Syntax
+import           System.Directory
+import           System.FilePath
+import           System.FilePath.Glob
 import           Test.Hspec
 
 spec :: Spec
@@ -40,3 +44,19 @@ spec = do
                                  ]
 
         it "onBuild disallows unallowed instructions" pending
+
+    describe "toDockerfileStrIO" $
+        it "let's us run in the IO monad" $ do
+            -- TODO - "glob" is a really useful combinator
+            str <- toDockerfileStrIO $ do
+                fs <- liftIO $ do
+                    cwd <- getCurrentDirectory
+                    fs <- glob "./test/*.hs"
+                    return (map (makeRelative cwd) fs)
+                from "ubuntu"
+                mapM_ (\f -> add f ("/app/" ++ takeFileName f)) fs
+            str `shouldBe` unlines [ "FROM ubuntu"
+                                   , "ADD ./test/SanitySpec.hs /app/SanitySpec.hs"
+                                   , "ADD ./test/Spec.hs /app/Spec.hs"
+                                   , "ADD ./test/Test.hs /app/Test.hs"
+                                   ]

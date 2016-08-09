@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.1.
+-- This file has been generated from package.yaml by hpack version 0.14.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -57,6 +57,7 @@ library
     , split >=0.2
     , free
     , mtl
+    , transformers
     , template-haskell
     , th-lift
     , th-lift-instances
@@ -75,6 +76,7 @@ library
       Language.Dockerfile.EDSL.Quasi
       Language.Dockerfile.EDSL.Types
   other-modules:
+      Language.Dockerfile.EDSL.Plugins
       Paths_language_dockerfile
   default-language: Haskell2010
 
@@ -91,6 +93,7 @@ executable dockerfmt
     , split >=0.2
     , free
     , mtl
+    , transformers
     , template-haskell
     , th-lift
     , th-lift-instances
@@ -115,6 +118,7 @@ executable hadolint
     , split >=0.2
     , free
     , mtl
+    , transformers
     , template-haskell
     , th-lift
     , th-lift-instances
@@ -141,6 +145,7 @@ test-suite hadolint-unit-tests
     , split >=0.2
     , free
     , mtl
+    , transformers
     , template-haskell
     , th-lift
     , th-lift-instances
@@ -151,6 +156,7 @@ test-suite hadolint-unit-tests
       Language.Dockerfile
       Language.Dockerfile.Bash
       Language.Dockerfile.EDSL
+      Language.Dockerfile.EDSL.Plugins
       Language.Dockerfile.EDSL.Quasi
       Language.Dockerfile.EDSL.Types
       Language.Dockerfile.FormatCheck
@@ -161,6 +167,7 @@ test-suite hadolint-unit-tests
       Language.Dockerfile.Rules
       Language.Dockerfile.Syntax
       Language.Dockerfile.Syntax.Lift
+      Language.Dockerfile.EDSL.PluginsSpec
       Language.Dockerfile.EDSL.QuasiSpec
       Language.Dockerfile.EDSLSpec
       SanitySpec
@@ -181,13 +188,18 @@ test-suite hspec
     , split >=0.2
     , free
     , mtl
+    , transformers
     , template-haskell
     , th-lift
     , th-lift-instances
     , hspec
     , QuickCheck
     , language-dockerfile
+    , Glob
+    , directory
+    , filepath
   other-modules:
+      Language.Dockerfile.EDSL.PluginsSpec
       Language.Dockerfile.EDSL.QuasiSpec
       Language.Dockerfile.EDSLSpec
       SanitySpec

@@ -48,6 +48,7 @@ dependencies:
 - split >=0.2
 - free
 - mtl
+- transformers
 - template-haskell
 - th-lift
 - th-lift-instances
@@ -108,6 +109,9 @@ tests:
     - hspec
     - QuickCheck
     - language-dockerfile
+    - Glob
+    - directory
+    - filepath
 
   hadolint-unit-tests:
     main: Test.hs
