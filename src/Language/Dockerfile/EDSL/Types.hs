@@ -20,12 +20,12 @@ data EInstruction next = From EBaseImage next
                        | Label Syntax.Pairs next
                        | StopSignal String next
                        | Copy Syntax.Source Syntax.Destination next
-                       | Run Syntax.Arguments next
-                       | Cmd Syntax.Arguments next
+                       | RunArgs Syntax.Arguments next
+                       | CmdArgs Syntax.Arguments next
                        | Workdir Syntax.Directory next
                        | Expose [Syntax.Port] next
                        | Volume String next
-                       | Entrypoint Syntax.Arguments next
+                       | EntrypointArgs Syntax.Arguments next
                        | Maintainer String next
                        | Env Syntax.Pairs next
                        | Arg String next

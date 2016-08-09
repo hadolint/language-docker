@@ -26,14 +26,14 @@ module Language.Dockerfile
     , Language.Dockerfile.EDSL.stopSignal
     , Language.Dockerfile.EDSL.copy
     , Language.Dockerfile.EDSL.run
-    , Language.Dockerfile.EDSL.runW
+    , Language.Dockerfile.EDSL.runArgs
     , Language.Dockerfile.EDSL.cmd
-    , Language.Dockerfile.EDSL.cmdW
+    , Language.Dockerfile.EDSL.cmdArgs
     , Language.Dockerfile.EDSL.workdir
     , Language.Dockerfile.EDSL.expose
     , Language.Dockerfile.EDSL.volume
     , Language.Dockerfile.EDSL.entrypoint
-    , Language.Dockerfile.EDSL.entrypointW
+    , Language.Dockerfile.EDSL.entrypointArgs
     , Language.Dockerfile.EDSL.maintainer
     , Language.Dockerfile.EDSL.env
     , Language.Dockerfile.EDSL.arg

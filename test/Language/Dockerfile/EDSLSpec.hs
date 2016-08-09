@@ -12,7 +12,7 @@ spec = do
         it "allows us to write haskell code that represents Dockerfiles" $ do
             let r = map Syntax.instruction $ toDockerfile (do
                         from "node"
-                        cmd ["node", "-e", "'console.log(\'hey\')'"])
+                        cmdArgs ["node", "-e", "'console.log(\'hey\')'"])
             r `shouldBe` [ Syntax.From (Syntax.UntaggedImage "node")
                          , Syntax.Cmd ["node", "-e", "'console.log(\'hey\')'"]
                          ]
@@ -21,22 +21,22 @@ spec = do
         it "allows us to write haskell code that represents Dockerfiles" $ do
             let r = prettyPrint $ toDockerfile (do
                         from "node"
-                        cmd ["node", "-e", "'console.log(\'hey\')'"])
+                        cmdArgs ["node", "-e", "'console.log(\'hey\')'"])
             r `shouldBe` unlines [ "FROM node"
                                  , "CMD node -e 'console.log(\'hey\')'"
                                  ]
 
         it "onBuild let's us nest statements" $ do
-            let r = prettyPrint $ toDockerfile (do
+            let r = prettyPrint $ toDockerfile $ do
                         from "node"
-                        cmd ["node", "-e", "'console.log(\'hey\')'"]
+                        cmdArgs ["node", "-e", "'console.log(\'hey\')'"]
                         onBuild $ do
-                            run ["echo", "hello world"]
-                            run ["echo", "hello world2"])
+                            run "echo \"hello world\""
+                            run "echo \"hello world2\""
             r `shouldBe` unlines [ "FROM node"
                                  , "CMD node -e 'console.log(\'hey\')'"
-                                 , "ONBUILD RUN echo hello world"
-                                 , "ONBUILD RUN echo hello world2"
+                                 , "ONBUILD RUN echo \"hello world\""
+                                 , "ONBUILD RUN echo \"hello world2\""
                                  ]
 
         it "onBuild disallows unallowed instructions" pending

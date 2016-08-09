@@ -5,5 +5,5 @@ main = writeFile "./examples/test-dockerfile.dockerfile" $ toDockerfileStr $ do
     from (tagged "fpco/stack-build" "lts-6.9")
     add "." "/app/language-dockerfile"
     workdir "/app/language-dockerfile"
-    runW "stack build --test --only-dependencies"
-    cmdW "stack test"
+    run "stack build --test --only-dependencies"
+    cmd "stack test"

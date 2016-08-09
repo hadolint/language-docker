@@ -31,17 +31,17 @@ runDockerWriter = iterM runD
         EUntaggedImage bi' -> runDef Syntax.From (Syntax.UntaggedImage bi') n
         ETaggedImage bi' tg -> runDef Syntax.From (Syntax.TaggedImage bi' tg) n
         EDigestedImage bi' d -> runDef Syntax.From (Syntax.DigestedImage bi' d) n
-    runD (Cmd as n) = runDef Syntax.Cmd as n
+    runD (CmdArgs as n) = runDef Syntax.Cmd as n
     runD (Add s d n) = runDef2 Syntax.Add s d n
     runD (User u n) = runDef Syntax.User u n
     runD (Label ps n) = runDef Syntax.Label ps n
     runD (StopSignal s n) = runDef Syntax.Stopsignal s n
     runD (Copy s d n) = runDef2 Syntax.Copy s d n
-    runD (Run as n) = runDef Syntax.Run as n
+    runD (RunArgs as n) = runDef Syntax.Run as n
     runD (Workdir d n) = runDef Syntax.Workdir d n
     runD (Expose ps n) = runDef Syntax.Expose ps n
     runD (Volume v n) = runDef Syntax.Volume v n
-    runD (Entrypoint e n) = runDef Syntax.Entrypoint e n
+    runD (EntrypointArgs e n) = runDef Syntax.Entrypoint e n
     runD (Maintainer m n) = runDef Syntax.Maintainer m n
     runD (Env ps n) = runDef Syntax.Env ps n
     runD (Arg s n) = runDef Syntax.Arg s n
@@ -87,14 +87,14 @@ tagged = ETaggedImage
 digested :: String -> ByteString -> EBaseImage
 digested = EDigestedImage
 
-runW :: MonadFree EInstruction m => String -> m ()
-runW = run . words
+run :: MonadFree EInstruction m => String -> m ()
+run = runArgs . words
 
-entrypointW :: MonadFree EInstruction m => String -> m ()
-entrypointW = entrypoint . words
+entrypoint :: MonadFree EInstruction m => String -> m ()
+entrypoint = entrypointArgs . words
 
-cmdW :: MonadFree EInstruction m => String -> m ()
-cmdW = cmd . words
+cmd :: MonadFree EInstruction m => String -> m ()
+cmd = cmdArgs . words
 
 -- | ONBUILD Dockerfile instruction
 --

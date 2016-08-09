@@ -3,5 +3,5 @@ import Language.Dockerfile
 main = do
     putStr $ toDockerfileStr $ do
         from "node"
-        runW "apt-get update"
+        run "apt-get update"
         -- ...

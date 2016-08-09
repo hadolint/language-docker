@@ -37,7 +37,7 @@ main = do
 import Language.Dockerfile
 main = putStr $ toDockerfileStr $ do
     from "node"
-    runW "apt-get update"
+    run "apt-get update"
     run ["apt-get", "install", "something"]
     -- ...
 ```
@@ -49,7 +49,7 @@ main = putStr $ toDockerfileStr $ do
 import Language.Dockerfile
 main = putStr $ toDockerfileStr $ do
     from "node"
-    run (words "apt-get update")
+    run "apt-get update"
     [edockerfile|
     RUN apt-get update
     CMD node something.js
@@ -66,12 +66,12 @@ import Language.Dockerfile
 tags = ["7.8", "7.10", "8"]
 cabalSandboxBuild packageName = do
     let cabalFile = packageName ++ ".cabal"
-    runW "cabal sandbox init"
-    runW "cabal update"
+    run "cabal sandbox init"
+    run "cabal update"
     add cabalFile ("/app/" ++ cabalFile)
-    runW "cabal install --only-dep -j"
+    run "cabal install --only-dep -j"
     add "." "/app/"
-    runW "cabal build"
+    run "cabal build"
 main =
     forM_ tags $ \tag -> do
         let df = toDockerfileStr $ do
