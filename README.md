@@ -13,7 +13,7 @@ Haskell.
 - [Writing Dockerfiles in Haskell](#writing-dockerfiles-in-haskell)
 - [Using the QuasiQuoter](#using-the-quasiquoter)
 - [Templating Dockerfiles in Haskell](#templating-dockerfiles-in-haskell)
-- [Templating Dockerfiles in Haskell](#templating-dockerfiles-in-haskell)
+- [Using IO in the DSL](#using-io-in-the-dsl)
 
 ## Parsing files
 ```haskell
