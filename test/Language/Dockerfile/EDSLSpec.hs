@@ -2,6 +2,7 @@
 module Language.Dockerfile.EDSLSpec where
 
 import           Control.Monad.IO.Class
+import           Data.List                       (sort)
 import           Language.Dockerfile.EDSL
 import           Language.Dockerfile.PrettyPrint
 import qualified Language.Dockerfile.Syntax      as Syntax
@@ -52,7 +53,7 @@ spec = do
                 fs <- liftIO $ do
                     cwd <- getCurrentDirectory
                     fs <- glob "./test/*.hs"
-                    return (map (makeRelative cwd) fs)
+                    return (map (makeRelative cwd) (sort fs))
                 from "ubuntu"
                 mapM_ (\f -> add f ("/app/" ++ takeFileName f)) fs
             str `shouldBe` unlines [ "FROM ubuntu"
