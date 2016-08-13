@@ -1,10 +1,27 @@
 module Language.Dockerfile.Syntax where
 
 import           Data.ByteString.Char8 (ByteString)
+import           Data.Maybe
+import           Data.String
+import           Text.Read
 
 type Image = String
 type Tag = String
-type Port = Integer
+
+data Ports = Ports [Integer]
+           | PortStr String
+  deriving(Show, Eq, Ord)
+
+instance IsString Ports where
+    fromString p = case readMaybe p of
+        Just i -> Ports [i]
+        Nothing ->
+            let rs = map readMaybe (words p)
+            in if all isJust rs
+            then Ports (catMaybes rs)
+            else PortStr p
+
+
 type Directory = String
 
 data BaseImage
@@ -31,7 +48,7 @@ data Instruction
   | Run Arguments
   | Cmd Arguments
   | Workdir Directory
-  | Expose [Port]
+  | Expose Ports
   | Volume String
   | Entrypoint Arguments
   | Maintainer String

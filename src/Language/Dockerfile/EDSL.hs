@@ -103,6 +103,12 @@ tagged = ETaggedImage
 digested :: String -> ByteString -> EBaseImage
 digested = EDigestedImage
 
+ports :: [Integer] -> Syntax.Ports
+ports = Syntax.Ports
+
+port :: Integer -> Syntax.Ports
+port = Syntax.Ports . (:[])
+
 run :: MonadFree EInstruction m => String -> m ()
 run = runArgs . words
 

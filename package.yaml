@@ -108,6 +108,7 @@ tests:
     - Glob
     - directory
     - filepath
+    - process
 
   hadolint-unit-tests:
     main: Test.hs

@@ -73,9 +73,12 @@ prettyPrintInstruction i =
       Workdir w -> do
           text "WORKDIR"
           text w
-      Expose ps -> do
+      Expose (Ports ps) -> do
           text "EXPOSE"
           hsep (map (text . show) ps)
+      Expose (PortStr p) -> do
+          text "EXPOSE"
+          text p
       Volume dir -> do
           text "VOLUME"
           text dir

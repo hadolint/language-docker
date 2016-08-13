@@ -38,6 +38,8 @@ module Language.Dockerfile
     , Language.Dockerfile.EDSL.cmdArgs
     , Language.Dockerfile.EDSL.workdir
     , Language.Dockerfile.EDSL.expose
+    , Language.Dockerfile.EDSL.ports
+    , Language.Dockerfile.EDSL.port
     , Language.Dockerfile.EDSL.volume
     , Language.Dockerfile.EDSL.entrypoint
     , Language.Dockerfile.EDSL.entrypointArgs
@@ -62,7 +64,7 @@ module Language.Dockerfile
     , Language.Dockerfile.Syntax.BaseImage(..)
     , Language.Dockerfile.Syntax.Image
     , Language.Dockerfile.Syntax.Tag
-    , Language.Dockerfile.Syntax.Port
+    , Language.Dockerfile.Syntax.Ports
     , Language.Dockerfile.Syntax.Directory
     , Language.Dockerfile.Syntax.Source
     , Language.Dockerfile.Syntax.Destination

@@ -1,11 +1,10 @@
 module Language.Dockerfile.Parser where
 
-import           Text.Parsec                   hiding (label)
-import           Text.Parsec.String            (Parser)
-
 import           Control.Monad                 (void)
 import           Data.ByteString.Char8         (pack)
-
+import           Data.String
+import           Text.Parsec                   hiding (label)
+import           Text.Parsec.String            (Parser)
 import qualified Text.Parsec.Token             as Token
 
 import           Language.Dockerfile.Lexer
@@ -136,8 +135,9 @@ add = do
 expose :: Parser Instruction
 expose = do
   reserved "EXPOSE"
-  ports <- many natural
-  return $ Expose ports
+  sports <- untilEol
+  let port = fromString sports
+  return $ Expose port
 
 run :: Parser Instruction
 run = do

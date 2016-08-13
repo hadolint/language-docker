@@ -229,7 +229,7 @@ invalidPort = instructionRule code severity message check
     where code = "DL3011"
           severity = ErrorC
           message = "Valid UNIX ports range from 0 to 65535"
-          check (Expose ports) = and [p <= 65535 | p <- ports]
+          check (Expose (Ports ports)) = and [p <= 65535 | p <- ports]
           check _ = True
 
 maintainerAddress = instructionRule code severity message check

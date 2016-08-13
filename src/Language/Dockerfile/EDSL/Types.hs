@@ -2,7 +2,7 @@
 module Language.Dockerfile.EDSL.Types
   where
 
-import           Data.ByteString.Char8 (ByteString)
+import           Data.ByteString.Char8      (ByteString)
 import           Data.String
 import qualified Language.Dockerfile.Syntax as Syntax
 
@@ -23,7 +23,7 @@ data EInstruction next = From EBaseImage next
                        | RunArgs Syntax.Arguments next
                        | CmdArgs Syntax.Arguments next
                        | Workdir Syntax.Directory next
-                       | Expose [Syntax.Port] next
+                       | Expose Syntax.Ports next
                        | Volume String next
                        | EntrypointArgs Syntax.Arguments next
                        | Maintainer String next
