@@ -5,6 +5,7 @@ echo ">>> Building Haddock for $pname"
 time stack haddock --no-haddock-deps --fast
 doc_root=`stack path --local-doc-root`/$pname*
 du -h $doc_root
+git branch -D gh-pages || echo "gh-pages branch didn't exist"
 git checkout --orphan gh-pages
 rm -rf *
 cp -r $doc_root/* .
