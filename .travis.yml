@@ -1,9 +1,43 @@
-sudo: required
-language: generic
-services:
-- docker
-before_script:
-- docker build -t lukasmartinelli/hadolint .
+sudo: false
+
+language: c
+
+matrix:
+  include:
+    - env: BUILD=stack GHCVER=7.10.3 STACK_YAML=stack.yaml
+      compiler: ": #stack 7.10.3"
+      addons: {apt: {packages: [ghc-7.10.3,happy-1.19.5], sources: [hvr-ghc]}}
+    - env: BUILD=stack STACK_YAML=stack.yaml
+      compiler: ": #stack 7.10.3 osx"
+      os: osx
+
+before_install:
+  - unset CC
+  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:/opt/happy/1.19.5/bin:$PATH
+  - ./.travis-setup.sh
+  - ghc --version || stack exec -- ghc --version
+  - happy --version || true
+  - cabal --version || true
+  - stack --version || true
+  - tick --version || true
+
+install:
+  - case "$BUILD" in
+      tinc)
+        tinc;;
+      stack)
+        stack --no-terminal test --only-dependencies;;
+    esac
+
 script:
-- docker run --rm lukasmartinelli/hadolint bash -c 'cabal configure --enable-tests && cabal test'
-- docker run --rm lukasmartinelli/hadolint bash integration_test.sh
+  - case "$BUILD" in
+      tinc)
+        cabal configure --enable-tests --ghc-options=-Werror --disable-optimization && cabal build && cabal test;;
+      stack)
+        stack --no-terminal test --haddock --no-haddock-deps;;
+    esac
+
+cache:
+  directories:
+    - $HOME/.tinc/cache
+    - $HOME/.stack
