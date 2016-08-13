@@ -1,6 +1,9 @@
 all: FORCE
 	stack build --flag language-dockerfile:hadolint --flag language-dockerfile:dockerfmt
 
+gh-pages:
+	bash -e ./stack-gh-pages
+
 doctests: FORCE
 	find src | grep "\.hs$$" | while read pkg; do echo $$pkg; stack exec doctest $$pkg; done
 
