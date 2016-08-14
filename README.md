@@ -1,5 +1,9 @@
 # haskell-language-dockerfile
-| [![Build Status](https://travis-ci.org/beijaflor-io/haskell-language-dockerfile.svg?branch=master)](https://travis-ci.org/beijaflor-io/haskell-language-dockerfile) | [Hackage](https://hackage.haskell.org/package/language-dockerfile/) | [GH Pages Haddock](http://beijaflor-io.github.io/haskell-language-dockerfile/) |
+[![Build Status](https://travis-ci.org/beijaflor-io/haskell-language-dockerfile.svg?branch=master)](https://travis-ci.org/beijaflor-io/haskell-language-dockerfile)
+
+[Hackage](https://hackage.haskell.org/package/language-dockerfile/)
+
+[GH Pages Haddock](http://beijaflor-io.github.io/haskell-language-dockerfile/) |
 - - -
 Dockerfile linter, parser, pretty-printer and embedded DSL, forked from
 [hadolint](https://github.com/lukasmartinelli/hadolint).
