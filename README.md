@@ -1,6 +1,5 @@
 # haskell-language-dockerfile
 [![Build Status](https://travis-ci.org/beijaflor-io/haskell-language-dockerfile.svg?branch=master)](https://travis-ci.org/beijaflor-io/haskell-language-dockerfile)
-
 [![CircleCI](https://circleci.com/gh/beijaflor-io/haskell-language-dockerfile.svg?style=svg&circle-token=2680cd3ee724bcd30338bf212cdec48898f0a062)](https://circleci.com/gh/beijaflor-io/haskell-language-dockerfile)
 
 [Hackage](https://hackage.haskell.org/package/language-dockerfile/)
