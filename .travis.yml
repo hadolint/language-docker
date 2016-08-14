@@ -41,3 +41,4 @@ cache:
   directories:
     - $HOME/.tinc/cache
     - $HOME/.stack
+    - ./.stack-work
