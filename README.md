@@ -3,7 +3,7 @@
 
 [Hackage](https://hackage.haskell.org/package/language-dockerfile/)
 
-[GH Pages Haddock](http://beijaflor-io.github.io/haskell-language-dockerfile/) |
+[GH Pages Haddock](http://beijaflor-io.github.io/haskell-language-dockerfile/)
 - - -
 Dockerfile linter, parser, pretty-printer and embedded DSL, forked from
 [hadolint](https://github.com/lukasmartinelli/hadolint).
