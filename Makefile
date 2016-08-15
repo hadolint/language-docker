@@ -1,6 +1,9 @@
 all: FORCE
 	stack build --flag language-dockerfile:hadolint --flag language-dockerfile:dockerfmt
 
+docker: FORCE
+	stack runghc ./language-dockerfile.dockerfile.hs
+
 gh-pages:
 	bash -e ./stack-gh-pages
 
