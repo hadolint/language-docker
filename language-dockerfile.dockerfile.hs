@@ -10,7 +10,7 @@ main = do
     sha <- init <$> readCreateProcess (shell "git rev-parse --short HEAD") ""
     print sha
     print ("docker build --tag beijaflor-io/language-dockerfile:" <> sha <> " .")
-    ph <- runCommand ("docker build -f ./language-dockerfile.dockerfile --tag language-dockerfile:" <> sha <> " .")
+    ph <- runCommand ("docker build --tag language-dockerfile:" <> sha <> " .")
     ec <- waitForProcess ph
     _ <- waitForProcess =<< runCommand ("docker tag language-dockerfile:" <> sha <> " language-dockerfile:latest")
     _ <- waitForProcess =<< runCommand "docker images | grep language-dockerfile"
