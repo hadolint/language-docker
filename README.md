@@ -53,7 +53,7 @@ import Language.Dockerfile
 main = putStr $ toDockerfileStr $ do
     from "node"
     run "apt-get update"
-    run ["apt-get", "install", "something"]
+    runArgs ["apt-get", "install", "something"]
     -- ...
 ```
 
