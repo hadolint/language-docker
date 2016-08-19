@@ -53,6 +53,8 @@ module Language.Dockerfile
     , Language.Dockerfile.EDSL.Quasi.edockerfile
 
       -- ** Support types for the EDSL
+    , Language.Dockerfile.EDSL.EDockerfileM
+    , Language.Dockerfile.EDSL.EDockerfileTM
     , Language.Dockerfile.EDSL.Types.EBaseImage(..)
 
       -- * QuasiQuoter (@Language.Dockerfile.EDSL.Quasi@)

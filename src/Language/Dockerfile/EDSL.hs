@@ -4,12 +4,9 @@
 module Language.Dockerfile.EDSL
   where
 
--- import           Control.Exception
--- import           Data.List                      (isInfixOf)
 import           Control.Monad.Free
 import           Control.Monad.Free.TH
-import           Control.Monad.Identity          (Identity)
-import           Control.Monad.Trans.Free        (FreeT, iterTM, runFreeT)
+import           Control.Monad.Trans.Free        (FreeT, iterTM)
 import           Control.Monad.Writer
 import           Data.ByteString                 (ByteString)
 
@@ -18,6 +15,12 @@ import qualified Language.Dockerfile.Syntax      as Syntax
 
 import           Language.Dockerfile.EDSL.Types
 
+-- | The type of 'Identity' based EDSL blocks
+type EDockerfileM = Free EInstruction
+
+-- | The type of free monad EDSL blocks
+type EDockerfileTM = FreeT EInstruction
+
 type EInstructionM = Free EInstruction
 type EInstructionTM = FreeT EInstruction
 
@@ -25,7 +28,7 @@ makeFree ''EInstruction
 
 runDockerWriter
     :: (MonadWriter [Syntax.Instruction] m)
-    => EInstructionM a -> m a
+    => EDockerfileM a -> m a
 runDockerWriter = iterM runD
 
 runDockerWriterIO ::
@@ -34,7 +37,7 @@ runDockerWriterIO ::
     , Monad (t m)
     , MonadWriter [Syntax.Instruction] (t m)
     , MonadIO (t m)
-    ) => EInstructionTM m a -> t m a
+    ) => EDockerfileTM m a -> t m a
 runDockerWriterIO = iterTM runD
 
 runDef :: MonadWriter [t] m => (t1 -> t) -> t1 -> m b -> m b
@@ -72,7 +75,7 @@ instructionPos i = Syntax.InstructionPos i "" 0
 
 -- | Runs the Dockerfile EDSL and returns a 'Dockerfile' you can pretty print
 -- or manipulate
-toDockerfile :: EInstructionM a -> Syntax.Dockerfile
+toDockerfile :: EDockerfileM a -> Syntax.Dockerfile
 toDockerfile e =
     let (_, w) = runWriter (runDockerWriter e)
     in map instructionPos w
@@ -91,7 +94,7 @@ toDockerfile e =
 --     run (words "stack build --test --only-dependencies")
 --     cmd (words "stack test")
 -- @
-toDockerfileStr :: EInstructionM a -> String
+toDockerfileStr :: EDockerfileM a -> String
 toDockerfileStr = PrettyPrint.prettyPrint . toDockerfile
 
 untagged :: String -> EBaseImage
@@ -132,26 +135,26 @@ cmd = cmdArgs . words
 -- @
 onBuild
   :: MonadFree EInstruction m
-  => EInstructionM a
+  => EDockerfileM a
   -> m ()
 onBuild b = mapM_ (onBuildRaw . Syntax.instruction) (toDockerfile b)
 
 -- | A version of 'toDockerfile' which allows IO actions
-toDockerfileIO :: MonadIO m => EInstructionTM m t -> m Syntax.Dockerfile
+toDockerfileIO :: MonadIO m => EDockerfileTM m t -> m Syntax.Dockerfile
 toDockerfileIO e = liftM snd (runDockerfileIO e)
 
 -- | A version of 'toDockerfileStr' which allows IO actions
-toDockerfileStrIO :: MonadIO m => EInstructionTM m t -> m String
+toDockerfileStrIO :: MonadIO m => EDockerfileTM m t -> m String
 toDockerfileStrIO e = liftM snd (runDockerfileStrIO e)
 
 -- | Just runs the EDSL's writer monad
-runDockerfileIO :: MonadIO m => EInstructionTM m t -> m (t, Syntax.Dockerfile)
+runDockerfileIO :: MonadIO m => EDockerfileTM m t -> m (t, Syntax.Dockerfile)
 runDockerfileIO e = do
     (r, w) <- runWriterT (runDockerWriterIO e)
     return (r, map instructionPos w)
 
 -- | Runs the EDSL's writer monad and pretty-prints the result
-runDockerfileStrIO :: MonadIO m => EInstructionTM m t -> m (t, String)
+runDockerfileStrIO :: MonadIO m => EDockerfileTM m t -> m (t, String)
 runDockerfileStrIO e = do
     (r, w) <- runDockerfileIO e
     return (r, PrettyPrint.prettyPrint w)
