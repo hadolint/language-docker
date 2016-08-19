@@ -48,7 +48,7 @@ main = do
     putStr (prettyPrint d)
 ```
 
-## Writting Dockerfiles in Haskell
+## Writing Dockerfiles in Haskell
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
 import Language.Dockerfile
