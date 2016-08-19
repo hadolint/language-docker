@@ -5,6 +5,8 @@
 [Hackage](https://hackage.haskell.org/package/language-dockerfile/)
 
 [GH Pages Haddock](http://beijaflor-io.github.io/haskell-language-dockerfile/)
+
+[Blog Post in Portuguese](http://blog.haskellbr.com/2016/08/18/escrevendo-dockerfiles-em-haskell.html)
 - - -
 Dockerfile linter, parser, pretty-printer and embedded DSL, forked from
 [hadolint](https://github.com/lukasmartinelli/hadolint).
