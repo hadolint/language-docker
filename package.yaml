@@ -49,6 +49,14 @@ dependencies:
 - th-lift
 - th-lift-instances
 
+- text
+- yaml
+- aeson
+- Glob
+- unordered-containers
+- directory
+- filepath
+
 flags:
   hadolint:
     description: Build the hadolint executable
@@ -64,6 +72,7 @@ library:
   exposed-modules:
   - Language.Dockerfile
   - Language.Dockerfile.Parser
+  - Language.Dockerfile.Predef
   - Language.Dockerfile.PrettyPrint
   - Language.Dockerfile.Normalize
   - Language.Dockerfile.Rules

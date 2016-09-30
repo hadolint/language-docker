@@ -61,9 +61,17 @@ library
     , template-haskell
     , th-lift
     , th-lift-instances
+    , text
+    , yaml
+    , aeson
+    , Glob
+    , unordered-containers
+    , directory
+    , filepath
   exposed-modules:
       Language.Dockerfile
       Language.Dockerfile.Parser
+      Language.Dockerfile.Predef
       Language.Dockerfile.PrettyPrint
       Language.Dockerfile.Normalize
       Language.Dockerfile.Rules
@@ -97,6 +105,13 @@ executable dockerfmt
     , template-haskell
     , th-lift
     , th-lift-instances
+    , text
+    , yaml
+    , aeson
+    , Glob
+    , unordered-containers
+    , directory
+    , filepath
     , language-dockerfile
   buildable: False
   if flag(dockerfmt)
@@ -122,6 +137,13 @@ executable hadolint
     , template-haskell
     , th-lift
     , th-lift-instances
+    , text
+    , yaml
+    , aeson
+    , Glob
+    , unordered-containers
+    , directory
+    , filepath
     , language-dockerfile
   buildable: False
   if flag(hadolint)
@@ -149,6 +171,13 @@ test-suite hadolint-unit-tests
     , template-haskell
     , th-lift
     , th-lift-instances
+    , text
+    , yaml
+    , aeson
+    , Glob
+    , unordered-containers
+    , directory
+    , filepath
     , HUnit >=1.2
     , test-framework
     , test-framework-hunit
@@ -163,6 +192,7 @@ test-suite hadolint-unit-tests
       Language.Dockerfile.Lexer
       Language.Dockerfile.Normalize
       Language.Dockerfile.Parser
+      Language.Dockerfile.Predef
       Language.Dockerfile.PrettyPrint
       Language.Dockerfile.Rules
       Language.Dockerfile.Syntax
@@ -194,6 +224,13 @@ test-suite hspec
     , template-haskell
     , th-lift
     , th-lift-instances
+    , text
+    , yaml
+    , aeson
+    , Glob
+    , unordered-containers
+    , directory
+    , filepath
     , hspec
     , QuickCheck
     , language-dockerfile
