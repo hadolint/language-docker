@@ -7,12 +7,24 @@ import qualified Text.Parsec.Token    as Token
 lexer :: Token.TokenParser ()
 lexer = Token.makeTokenParser style -- style
   where
-    names = ["FROM","ADD","RUN","WORKDIR","EXPOSE","VOLUME","ENTRYPOINT","MAINTAINER","ENV","LABEL","USER","STOPSIGNAL","CMD", "ONBUILD", "ARG"]
-    style = emptyDef {
-        -- Token.commentLine = "#",
-             -- ,
-             Token.reservedNames = names
-             }
+    names =
+      [ "FROM"
+      , "ADD"
+      , "RUN"
+      , "WORKDIR"
+      , "EXPOSE"
+      , "VOLUME"
+      , "ENTRYPOINT"
+      , "MAINTAINER"
+      , "ENV"
+      , "LABEL"
+      , "USER"
+      , "STOPSIGNAL"
+      , "CMD"
+      , "ONBUILD"
+      , "ARG"
+      ]
+    style = emptyDef {Token.caseSensitive = False, Token.reservedNames = names}
 
 reserved :: String -> Parser ()
 reserved = Token.reserved lexer

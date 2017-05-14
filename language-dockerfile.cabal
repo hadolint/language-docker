@@ -1,4 +1,4 @@
--- This file has been generated from package.yaml by hpack version 0.14.0.
+-- This file has been generated from package.yaml by hpack version 0.17.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -157,7 +157,7 @@ test-suite hadolint-unit-tests
   main-is: Test.hs
   hs-source-dirs:
       src
-    , test
+      test
   build-depends:
       ShellCheck
     , base >=4.8 && <5
