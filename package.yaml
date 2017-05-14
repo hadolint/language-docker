@@ -1,5 +1,5 @@
 name: language-dockerfile
-version: '0.3.5.0'
+version: '0.3.6.0'
 synopsis: Dockerfile linter, parser, pretty-printer and embedded DSL
 description: '
 Forked from @hadolint@.
