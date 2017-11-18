@@ -15,6 +15,8 @@ spec :: Spec
 spec = do
         describe "parse FROM" $
             it "parse untagged image" $ assertAst "FROM busybox" [From (UntaggedImage "busybox")]
+
+
         describe "parse ENV" $ do
             it "parses unquoted pair" $ assertAst "ENV foo=bar" [Env [("foo", "bar")]]
             it "parse with space between key and value" $
@@ -28,6 +30,31 @@ spec = do
                 let dockerfile = "ENV PATH=\"/root\"\nCMD [\"hadolint\",\"-i\"]"
                     ast = [Env [("PATH", "/root")], Cmd ["hadolint", "-i"]]
                 in assertAst dockerfile ast
+            it "parse with two spaces between" $
+                let dockerfile = "ENV NODE_VERSION=v5.7.1  DEBIAN_FRONTEND=noninteractive"
+                in assertAst dockerfile [Env[("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]]
+            it "have envs on multiple lines" $
+                let dockerfile = unlines [ "FROM busybox"
+                                 , "ENV NODE_VERSION=v5.7.1 \\"
+                                 , "DEBIAN_FRONTEND=noninteractive"
+                                 ]
+                    ast = [ From (UntaggedImage "busybox")
+                          , Env[("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]
+                          , EOL
+                          ]
+                in assertAst dockerfile ast
+            it "parses long env over multiple lines" $
+                let dockerfile = unlines [ "ENV LD_LIBRARY_PATH=\"/usr/lib/\" \\"
+                                         , "APACHE_RUN_USER=\"www-data\" APACHE_RUN_GROUP=\"www-data\""]
+                    ast = [Env [("LD_LIBRARY_PATH", "/usr/lib/")
+                               ,("APACHE_RUN_USER", "www-data")
+                               ,("APACHE_RUN_GROUP", "www-data")
+                               ]
+                          , EOL
+                          ]
+                in assertAst dockerfile ast
+
+
         describe "parse RUN" $
             it "escaped with space before" $
             let dockerfile = unlines ["RUN yum install -y \\ ", "imagemagick \\ ", "mysql"]
@@ -58,6 +85,15 @@ spec = do
                        dockerfile
                        [Run ["apt-get", "update"], Comment " line 1", Comment " line 2", EOL]
         describe "normalize lines" $ do
+            it "join multiple ENV" $
+                let dockerfile = unlines [ "FROM busybox"
+                                 , "ENV NODE_VERSION=v5.7.1 \\"
+                                 , "DEBIAN_FRONTEND=noninteractive"
+                                 ]
+                    normalizedDockerfile = unlines [ "FROM busybox"
+                                                   , "ENV NODE_VERSION=v5.7.1  DEBIAN_FRONTEND=noninteractive\n"
+                                                   ]
+                in normalizeEscapedLines dockerfile `shouldBe` normalizedDockerfile
             it "join escaped lines" $
                 let dockerfile = unlines ["ENV foo=bar \\", "baz=foz"]
                     normalizedDockerfile = unlines ["ENV foo=bar  baz=foz", ""]
