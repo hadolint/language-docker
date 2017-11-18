@@ -203,6 +203,12 @@ eolInstruction = do
     eol
     return EOL
 
+healthcheck :: Parser Instruction
+healthcheck = do
+    reserved "HEALTHCHECK"
+    args <- untilEol
+    return $ Healthcheck args
+
 parseInstruction :: Parser Instruction
 parseInstruction =
     try onbuild <|> -- parse all main instructions
@@ -223,6 +229,7 @@ parseInstruction =
     try maintainer <|>
     try add <|>
     try comment <|>
+    try healthcheck <|>
     try eolInstruction
 
 contents :: Parser a -> Parser a

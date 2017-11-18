@@ -64,6 +64,7 @@ runD (Maintainer m n) = runDef Syntax.Maintainer m n
 runD (Env ps n) = runDef Syntax.Env ps n
 runD (Arg s n) = runDef Syntax.Arg s n
 runD (Comment c n) = runDef Syntax.Comment c n
+runD (Healthcheck c n) = runDef Syntax.Healthcheck c n
 runD (OnBuildRaw i n) = runDef Syntax.OnBuild i n
 runD (Embed is n) = do
     tell (map Syntax.instruction is)

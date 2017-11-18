@@ -27,10 +27,12 @@ spec = do
             let r = prettyPrint $ toDockerfile (do
                         from "node"
                         shell ["cmd", "/S"]
-                        cmdArgs ["node", "-e", "'console.log(\'hey\')'"])
+                        cmdArgs ["node", "-e", "'console.log(\'hey\')'"]
+                        healthcheck "--interval=5m CMD curl -f http://localhost/ || exit 1")
             r `shouldBe` unlines [ "FROM node"
                                  , "SHELL [\"cmd\" , \"/S\"]"
                                  , "CMD node -e 'console.log(\'hey\')'"
+                                 , "HEALTHCHECK --interval=5m CMD curl -f http://localhost/ || exit 1"
                                  ]
 
         it "onBuild let's us nest statements" $ do

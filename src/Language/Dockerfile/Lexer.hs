@@ -24,6 +24,7 @@ lexer = Token.makeTokenParser style -- style
         , "CMD"
         , "ONBUILD"
         , "ARG"
+        , "HEALTHCHECK"
         ]
     style = emptyDef {Token.caseSensitive = False, Token.reservedNames = names}
 

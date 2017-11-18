@@ -115,6 +115,9 @@ prettyPrintInstruction i =
         Shell args -> do
             text "SHELL"
             prettyPrintJSON args
+        Healthcheck c -> do
+            text "HEALTHCHECK"
+            text c
         EOL -> mempty
   where
     (>>) = (<+>)

@@ -76,6 +76,10 @@ spec = do
             it "quoted shell params" $
                 assertAst "SHELL [\"/bin/bash\",  \"-c\"]" [Shell ["/bin/bash", "-c"]]
 
+        describe "parse HEALTHCHECK" $
+            it "parse healthcheck without args" $
+              assertAst "HEALTHCHECK --interval=5m \\nCMD curl -f http://localhost/" [Healthcheck "--interval=5m \\nCMD curl -f http://localhost/"]
+
         describe "parse MAINTAINER" $ do
             it "maintainer of untagged scratch image" $
                 assertAst

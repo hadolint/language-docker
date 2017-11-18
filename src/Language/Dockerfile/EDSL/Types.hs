@@ -54,6 +54,8 @@ data EInstruction next
           next
     | Comment String
               next
+    | Healthcheck String
+              next
     | OnBuildRaw Syntax.Instruction
                  next
     | Embed [Syntax.InstructionPos]
