@@ -1,19 +1,19 @@
-{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TemplateHaskell       #-}
-module Language.Dockerfile.EDSL
-  where
+{-# LANGUAGE TemplateHaskell #-}
 
-import           Control.Monad.Free
-import           Control.Monad.Free.TH
-import           Control.Monad.Trans.Free        (FreeT, iterTM)
-import           Control.Monad.Writer
-import           Data.ByteString                 (ByteString)
+module Language.Dockerfile.EDSL where
+
+import Control.Monad.Free
+import Control.Monad.Free.TH
+import Control.Monad.Trans.Free (FreeT, iterTM)
+import Control.Monad.Writer
+import Data.ByteString (ByteString)
 
 import qualified Language.Dockerfile.PrettyPrint as PrettyPrint
-import qualified Language.Dockerfile.Syntax      as Syntax
+import qualified Language.Dockerfile.Syntax as Syntax
 
-import           Language.Dockerfile.EDSL.Types
+import Language.Dockerfile.EDSL.Types
 
 -- | The type of 'Identity' based EDSL blocks
 type EDockerfileM = Free EInstruction
@@ -22,34 +22,32 @@ type EDockerfileM = Free EInstruction
 type EDockerfileTM = FreeT EInstruction
 
 type EInstructionM = Free EInstruction
+
 type EInstructionTM = FreeT EInstruction
 
 makeFree ''EInstruction
 
-runDockerWriter
-    :: (MonadWriter [Syntax.Instruction] m)
-    => EDockerfileM a -> m a
+runDockerWriter :: (MonadWriter [Syntax.Instruction] m) => EDockerfileM a -> m a
 runDockerWriter = iterM runD
 
 runDockerWriterIO ::
-    ( Monad m
-    , MonadTrans t
-    , Monad (t m)
-    , MonadWriter [Syntax.Instruction] (t m)
-    , MonadIO (t m)
-    ) => EDockerfileTM m a -> t m a
+       (Monad m, MonadTrans t, Monad (t m), MonadWriter [Syntax.Instruction] (t m), MonadIO (t m))
+    => EDockerfileTM m a
+    -> t m a
 runDockerWriterIO = iterTM runD
 
 runDef :: MonadWriter [t] m => (t1 -> t) -> t1 -> m b -> m b
-runDef f a n = tell [ f a ] >> n
+runDef f a n = tell [f a] >> n
+
 runDef2 :: MonadWriter [t] m => (t1 -> t2 -> t) -> t1 -> t2 -> m b -> m b
-runDef2 f a b n = tell [ f a b ] >> n
+runDef2 f a b n = tell [f a b] >> n
 
 runD :: MonadWriter [Syntax.Instruction] m => EInstruction (m b) -> m b
-runD (From bi n) = case bi of
-    EUntaggedImage bi' -> runDef Syntax.From (Syntax.UntaggedImage bi') n
-    ETaggedImage bi' tg -> runDef Syntax.From (Syntax.TaggedImage bi' tg) n
-    EDigestedImage bi' d -> runDef Syntax.From (Syntax.DigestedImage bi' d) n
+runD (From bi n) =
+    case bi of
+        EUntaggedImage bi' -> runDef Syntax.From (Syntax.UntaggedImage bi') n
+        ETaggedImage bi' tg -> runDef Syntax.From (Syntax.TaggedImage bi' tg) n
+        EDigestedImage bi' d -> runDef Syntax.From (Syntax.DigestedImage bi' d) n
 runD (CmdArgs as n) = runDef Syntax.Cmd as n
 runD (Add s d n) = runDef2 Syntax.Add s d n
 runD (User u n) = runDef Syntax.User u n
@@ -110,7 +108,7 @@ ports :: [Integer] -> Syntax.Ports
 ports = Syntax.Ports
 
 port :: Integer -> Syntax.Ports
-port = Syntax.Ports . (:[])
+port = Syntax.Ports . (: [])
 
 run :: MonadFree EInstruction m => String -> m ()
 run = runArgs . words
@@ -133,10 +131,7 @@ cmd = cmdArgs . words
 --         run "echo more-stuff"
 --         run "echo here"
 -- @
-onBuild
-  :: MonadFree EInstruction m
-  => EDockerfileM a
-  -> m ()
+onBuild :: MonadFree EInstruction m => EDockerfileM a -> m ()
 onBuild b = mapM_ (onBuildRaw . Syntax.instruction) (toDockerfile b)
 
 -- | A version of 'toDockerfile' which allows IO actions

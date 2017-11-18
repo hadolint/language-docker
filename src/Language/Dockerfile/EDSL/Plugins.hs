@@ -1,5 +1,3 @@
-module Language.Dockerfile.EDSL.Plugins
-  where
+module Language.Dockerfile.EDSL.Plugins where
 
-import           Language.Dockerfile.EDSL
-
+import Language.Dockerfile.EDSL

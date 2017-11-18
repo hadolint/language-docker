@@ -1,16 +1,19 @@
 {-# LANGUAGE FlexibleContexts #-}
-module Language.Dockerfile.Normalize (
- normalizeEscapedLines
-) where
 
-import           Data.List       (intercalate)
-import           Data.List.Split (splitOn)
-import           Debug.Trace
+module Language.Dockerfile.Normalize
+    ( normalizeEscapedLines
+    ) where
+
+import Data.List (intercalate)
+import Data.List.Split (splitOn)
+import Debug.Trace
 
 escapePlaceHolder = "\\\\"
+
 escapeSeq = "\\\n"
 
 replace old new = intercalate new . splitOn old
+
 count s x = length (splitOn x s) - 1
 
 trimLines :: String -> String
@@ -36,4 +39,5 @@ compensateLinebreaks s = concatMap compensate $ lines s
 --   to simplify parsing later on. Escapes are replaced with line breaks
 --   to not alter the line numbers.
 normalizeEscapedLines :: String -> String
-normalizeEscapedLines s = removeEscapePlaceholder $ compensateLinebreaks $ replaceEscapeSigns $ trimLines s
+normalizeEscapedLines s =
+    removeEscapePlaceholder $ compensateLinebreaks $ replaceEscapeSigns $ trimLines s
