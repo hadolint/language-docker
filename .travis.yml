@@ -1,50 +1,55 @@
+# Use new container infrastructure to enable caching
 sudo: false
 
+# Choose a lightweight base image; we provide our own build tools.
 language: c
+compiler: gcc
+
+# Caching so the next build will be fast too.
+cache:
+  directories:
+  - $HOME/.stack
+  timeout: 300
 
 matrix:
   include:
-    - env: BUILD=stack GHCVER=7.10.3 STACK_YAML=stack.yaml
-      compiler: ": #stack 7.10.3"
-      addons: {apt: {packages: [ghc-7.10.3,happy-1.19.5], sources: [hvr-ghc]}}
-    - env: BUILD=stack GHCVER=7.10.3 STACK_YAML=stack-old.yaml
-      compiler: ": #stack 7.10.3 (ShellCheck-0.4.2)"
-      addons: {apt: {packages: [ghc-7.10.3,happy-1.19.5], sources: [hvr-ghc]}}
-    - env: BUILD=stack STACK_YAML=stack.yaml
-      compiler: ": #stack 7.10.3 osx"
-      os: osx
-    - env: BUILD=stack STACK_YAML=stack-old.yaml
-      compiler: ": #stack 7.10.3 osx (ShellCheck-0.4.2)"
-      os: osx
+  # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
+  # variable, such as using --stack-yaml to point to a different file.
+  - env: ARGS="--resolver lts"
+
+  - env: ARGS="--resolver lts-9.14"
+
+  # Nightly builds are allowed to fail
+  - env: ARGS="--resolver nightly"
+
+  # Build on OS X in addition to Linux
+  - env: ARGS="--resolver lts"
+    os: osx
+
+  - env: ARGS="--resolver lts-9.14"
+    os: osx
+
+  - env: ARGS="--resolver nightly"
+    os: osx
+
+  allow_failures:
+  - env: ARGS="--resolver nightly"
 
 before_install:
-  - unset CC
-  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:/opt/happy/1.19.5/bin:$PATH
-  - ./.travis-setup.sh
-  - ghc --version || stack exec -- ghc --version
-  - happy --version || true
-  - cabal --version || true
-  - stack --version || true
-  - tick --version || true
+# Download and unpack the stack executable
+- mkdir -p ~/.local/bin
+- |
+  if [ `uname` = "Darwin" ]
+  then
+    travis_retry curl --insecure -L https://www.stackage.org/stack/osx-x86_64 \
+      | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
+  else
+    travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 \
+      | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  fi
 
 install:
-  - case "$BUILD" in
-      tinc)
-        tinc;;
-      stack)
-        stack --no-terminal test --only-dependencies;;
-    esac
+- travis_retry stack --no-terminal --install-ghc $ARGS test --only-dependencies
 
 script:
-  - case "$BUILD" in
-      tinc)
-        cabal configure --enable-tests --ghc-options=-Werror --disable-optimization && cabal build && cabal test;;
-      stack)
-        stack --no-terminal test --haddock --no-haddock-deps;;
-    esac
-
-cache:
-  directories:
-    - $HOME/.tinc/cache
-    - $HOME/.stack
-    - ./.stack-work
+- stack --no-terminal $ARGS test --no-run-benchmarks --haddock --no-haddock-deps
