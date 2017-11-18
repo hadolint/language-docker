@@ -35,12 +35,17 @@ reservedOp = Token.reservedOp lexer
 natural :: Parser Integer
 natural = Token.natural lexer
 
+commaSep :: Parser a -> Parser [a]
 commaSep = Token.commaSep lexer
 
+stringLiteral :: Parser String
 stringLiteral = Token.stringLiteral lexer
 
+brackets :: Parser a -> Parser a
 brackets = Token.brackets lexer
 
+identifier :: Parser String
 identifier = Token.identifier lexer
 
+lexeme :: Parser a -> Parser a
 lexeme = Token.lexeme lexer

@@ -5,10 +5,8 @@ module Language.Dockerfile.PrettyPrint where
 
 import qualified Data.ByteString.Char8 as ByteString (unpack)
 import Data.String
-import Language.Dockerfile.Parser (parseFile)
 import Language.Dockerfile.Syntax
 import Prelude hiding ((>>), (>>=), return)
-import qualified Prelude ((>>), (>>=))
 import Text.PrettyPrint
 
 -- | Pretty print a 'Dockerfile' to a 'String'

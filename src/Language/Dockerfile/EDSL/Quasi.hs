@@ -10,7 +10,7 @@ import Language.Haskell.TH.Syntax
 import Language.Dockerfile.EDSL
 import qualified Language.Dockerfile.Parser as Parser
 import Language.Dockerfile.Syntax
-import Language.Dockerfile.Syntax.Lift
+import Language.Dockerfile.Syntax.Lift ()
 
 -- | Quasiquoter for embedding dockerfiles on the EDSL
 --
@@ -51,4 +51,5 @@ dockerfileE e =
             let d' = filterEOL d
             in lift d'
 
+filterEOL :: [InstructionPos] -> [InstructionPos]
 filterEOL = filter (\(InstructionPos i _ _) -> i /= EOL)

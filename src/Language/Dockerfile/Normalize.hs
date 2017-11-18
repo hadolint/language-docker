@@ -6,14 +6,17 @@ module Language.Dockerfile.Normalize
 
 import Data.List (intercalate)
 import Data.List.Split (splitOn)
-import Debug.Trace
 
+escapePlaceHolder :: String
 escapePlaceHolder = "\\\\"
 
+escapeSeq :: String
 escapeSeq = "\\\n"
 
+replace :: Eq a => [a] -> [a] -> [a] -> [a]
 replace old new = intercalate new . splitOn old
 
+count :: Eq a => [a] -> [a] -> Int
 count s x = length (splitOn x s) - 1
 
 trimLines :: String -> String
