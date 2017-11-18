@@ -1,8 +1,0 @@
-resolver: lts-4.1
-packages:
-- '.'
-extra-deps:
-- ShellCheck-0.4.2
-- th-lift-instances-0.1.10
-flags: {}
-extra-package-dbs: []
