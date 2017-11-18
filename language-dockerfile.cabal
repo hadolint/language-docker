@@ -66,11 +66,8 @@ library
       Language.Dockerfile.Predef
       Language.Dockerfile.PrettyPrint
       Language.Dockerfile.Normalize
-      Language.Dockerfile.Rules
       Language.Dockerfile.Syntax
       Language.Dockerfile.Lexer
-      Language.Dockerfile.Bash
-      Language.Dockerfile.FormatCheck
       Language.Dockerfile.Syntax.Lift
       Language.Dockerfile.EDSL
       Language.Dockerfile.EDSL.Quasi
