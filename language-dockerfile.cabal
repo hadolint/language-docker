@@ -112,12 +112,11 @@ test-suite hspec
     , directory
     , filepath
     , process
+    , HUnit >=1.2
   other-modules:
       Language.Dockerfile.EDSL.PluginsSpec
       Language.Dockerfile.EDSL.QuasiSpec
       Language.Dockerfile.EDSLSpec
       Language.Dockerfile.ExamplesSpec
       Language.Dockerfile.ParserSpec
-      SanitySpec
-      Test
   default-language: Haskell2010

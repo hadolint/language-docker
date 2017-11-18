@@ -52,12 +52,12 @@ spec = do
             str <- toDockerfileStrIO $ do
                 fs <- liftIO $ do
                     cwd <- getCurrentDirectory
-                    fs <- glob "./test/*.hs"
+                    fs <- glob "./test/Language/Dockerfile/*.hs"
                     return (map (makeRelative cwd) (sort fs))
                 from "ubuntu"
                 mapM_ (\f -> add f ("/app/" ++ takeFileName f)) fs
             str `shouldBe` unlines [ "FROM ubuntu"
-                                   , "ADD ./test/SanitySpec.hs /app/SanitySpec.hs"
-                                   , "ADD ./test/Spec.hs /app/Spec.hs"
-                                   , "ADD ./test/Test.hs /app/Test.hs"
+                                   , "ADD ./test/Language/Dockerfile/EDSLSpec.hs /app/EDSLSpec.hs"
+                                   , "ADD ./test/Language/Dockerfile/ExamplesSpec.hs /app/ExamplesSpec.hs"
+                                   , "ADD ./test/Language/Dockerfile/ParserSpec.hs /app/ParserSpec.hs"
                                    ]

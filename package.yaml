@@ -89,3 +89,4 @@ tests:
     - directory
     - filepath
     - process
+    - HUnit >=1.2
