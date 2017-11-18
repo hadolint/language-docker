@@ -7,7 +7,7 @@ import Language.Dockerfile.Normalize
 import Language.Dockerfile.Parser
 import Language.Dockerfile.Syntax
 
-import Test.HUnit
+import Test.HUnit hiding (Label)
 import Test.Hspec
 import Text.Parsec
 
@@ -16,6 +16,12 @@ spec = do
         describe "parse FROM" $
             it "parse untagged image" $ assertAst "FROM busybox" [From (UntaggedImage "busybox")]
 
+        describe "parse LABEL" $ do
+            it "parse label" $ assertAst "LABEL foo=bar" [Label[("foo", "bar")]]
+            it "parses multiline labels" $
+                let dockerfile = unlines [ "LABEL foo=bar \\", "hobo=mobo"]
+                    ast = [ Label [("foo", "bar"), ("hobo", "mobo")], EOL ]
+                in assertAst dockerfile ast
 
         describe "parse ENV" $ do
             it "parses unquoted pair" $ assertAst "ENV foo=bar" [Env [("foo", "bar")]]
