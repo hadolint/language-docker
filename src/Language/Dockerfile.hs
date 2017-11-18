@@ -1,6 +1,5 @@
 module Language.Dockerfile
-      -- * Parsing Dockerfiles (@Language.Dockerfile.Syntax@ and @Language.Dockerfile.Parser@)
-    ( Language.Dockerfile.Syntax.Dockerfile
+    ( Language.Dockerfile.Syntax.Dockerfile -- * Parsing Dockerfiles (@Language.Dockerfile.Syntax@ and @Language.Dockerfile.Parser@)
     , parseString
     , parseFile
       -- * Pretty-printing Dockerfiles (@Language.Dockerfile.PrettyPrint@)
