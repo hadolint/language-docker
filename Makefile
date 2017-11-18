@@ -1,8 +1,5 @@
 all: FORCE
-	stack build --flag language-dockerfile:hadolint --flag language-dockerfile:dockerfmt
-
-docker: FORCE
-	stack runghc ./language-dockerfile.dockerfile.hs
+	stack build
 
 gh-pages:
 	bash -e ./stack-gh-pages
@@ -17,11 +14,6 @@ examples: FORCE
 	stack runghc ./examples/edsl.hs
 	stack runghc ./examples/edsl-quasi.hs
 	stack runghc ./examples/templating.hs
-
-pull-upstream: FORCE
-	if ! ``git remote -v | grep lukasmartinelli`` ; then git remote add lukasmartinelli https://github.com/lukasmartinelli/hadolint ; fi
-	git fetch lukasmartinelli
-	git rebase lukasmartinelli/master
 
 hlint: FORCE
 	find test | grep "\.hs$$" | xargs hlint
