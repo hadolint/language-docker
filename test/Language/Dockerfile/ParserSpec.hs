@@ -65,11 +65,17 @@ spec = do
             it "escaped with space before" $
             let dockerfile = unlines ["RUN yum install -y \\ ", "imagemagick \\ ", "mysql"]
             in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"], EOL, EOL]
+
         describe "parse CMD" $ do
             it "one line cmd" $ assertAst "CMD true" [Cmd ["true"]]
             it "cmd over several lines" $
                 assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"], EOL]
             it "quoted command params" $ assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
+
+        describe "parse SHELL" $ do
+            it "quoted shell params" $
+                assertAst "SHELL [\"/bin/bash\",  \"-c\"]" [Shell ["/bin/bash", "-c"]]
+
         describe "parse MAINTAINER" $ do
             it "maintainer of untagged scratch image" $
                 assertAst

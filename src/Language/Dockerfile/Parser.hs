@@ -59,6 +59,12 @@ copy = do
     dst <- many (noneOf "\n")
     return $ Copy src dst
 
+shell :: Parser Instruction
+shell = do
+    reserved "SHELL"
+    args <- arguments
+    return $ Shell args
+
 stopsignal :: Parser Instruction
 stopsignal = do
     reserved "STOPSIGNAL"
@@ -213,6 +219,7 @@ parseInstruction =
     try label <|>
     try stopsignal <|>
     try cmd <|>
+    try shell <|>
     try maintainer <|>
     try add <|>
     try comment <|>

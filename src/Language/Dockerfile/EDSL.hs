@@ -49,6 +49,7 @@ runD (From bi n) =
         ETaggedImage bi' tg -> runDef Syntax.From (Syntax.TaggedImage bi' tg) n
         EDigestedImage bi' d -> runDef Syntax.From (Syntax.DigestedImage bi' d) n
 runD (CmdArgs as n) = runDef Syntax.Cmd as n
+runD (Shell as n) = runDef Syntax.Shell as n
 runD (Add s d n) = runDef2 Syntax.Add s d n
 runD (User u n) = runDef Syntax.User u n
 runD (Label ps n) = runDef Syntax.Label ps n
@@ -136,11 +137,11 @@ onBuild b = mapM_ (onBuildRaw . Syntax.instruction) (toDockerfile b)
 
 -- | A version of 'toDockerfile' which allows IO actions
 toDockerfileIO :: MonadIO m => EDockerfileTM m t -> m Syntax.Dockerfile
-toDockerfileIO e = liftM snd (runDockerfileIO e)
+toDockerfileIO e = fmap snd (runDockerfileIO e)
 
 -- | A version of 'toDockerfileStr' which allows IO actions
 toDockerfileStrIO :: MonadIO m => EDockerfileTM m t -> m String
-toDockerfileStrIO e = liftM snd (runDockerfileStrIO e)
+toDockerfileStrIO e = fmap snd (runDockerfileStrIO e)
 
 -- | Just runs the EDSL's writer monad
 runDockerfileIO :: MonadIO m => EDockerfileTM m t -> m (t, Syntax.Dockerfile)

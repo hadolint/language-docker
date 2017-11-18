@@ -4,6 +4,7 @@
 module Language.Dockerfile.PrettyPrint where
 
 import qualified Data.ByteString.Char8 as ByteString (unpack)
+import Data.List (intersperse)
 import Data.String
 import Language.Dockerfile.Syntax
 import Prelude hiding ((>>), (>>=), return)
@@ -51,6 +52,9 @@ prettyPrintArguments as = text (unwords (map helper as))
   where
     helper "&&" = "\\\n &&"
     helper a = a
+
+prettyPrintJSON :: Arguments -> Doc
+prettyPrintJSON as = brackets $ hsep $ intersperse comma $ map (doubleQuotes . text) as
 
 prettyPrintInstruction :: Instruction -> Doc
 prettyPrintInstruction i =
@@ -108,6 +112,9 @@ prettyPrintInstruction i =
             text "ADD"
             text s
             text d
+        Shell args -> do
+            text "SHELL"
+            prettyPrintJSON args
         EOL -> mempty
   where
     (>>) = (<+>)

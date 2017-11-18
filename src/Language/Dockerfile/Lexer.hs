@@ -19,6 +19,7 @@ lexer = Token.makeTokenParser style -- style
         , "ENV"
         , "LABEL"
         , "USER"
+        , "SHELL"
         , "STOPSIGNAL"
         , "CMD"
         , "ONBUILD"

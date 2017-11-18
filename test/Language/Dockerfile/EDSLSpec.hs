@@ -26,8 +26,10 @@ spec = do
         it "allows us to write haskell code that represents Dockerfiles" $ do
             let r = prettyPrint $ toDockerfile (do
                         from "node"
+                        shell ["cmd", "/S"]
                         cmdArgs ["node", "-e", "'console.log(\'hey\')'"])
             r `shouldBe` unlines [ "FROM node"
+                                 , "SHELL [\"cmd\" , \"/S\"]"
                                  , "CMD node -e 'console.log(\'hey\')'"
                                  ]
 

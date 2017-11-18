@@ -36,6 +36,8 @@ data EInstruction next
               next
     | CmdArgs Syntax.Arguments
               next
+    | Shell Syntax.Arguments
+              next
     | Workdir Syntax.Directory
               next
     | Expose Syntax.Ports

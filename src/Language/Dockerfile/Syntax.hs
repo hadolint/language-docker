@@ -57,6 +57,7 @@ data Instruction
            Destination
     | Run Arguments
     | Cmd Arguments
+    | Shell Arguments
     | Workdir Directory
     | Expose Ports
     | Volume String
