@@ -14,6 +14,7 @@ examples: FORCE
 	stack runghc ./examples/edsl.hs
 	stack runghc ./examples/edsl-quasi.hs
 	stack runghc ./examples/templating.hs
+	stack runghc ./examples/complex.hs
 
 hlint: FORCE
 	find test | grep "\.hs$$" | xargs hlint

@@ -1,13 +1,18 @@
 #!/usr/bin/env stack --silent runghc --package language-dockerfile --package ShellCheck-0.4.4 ./dockerfile.hs
 -- https://github.com/mhart/alpine-node
 {-# LANGUAGE QuasiQuotes #-}
+
 import Language.Dockerfile
 
-main = putStr $ toDockerfileStr $ [edockerfile| 
+main =
+    putStr $
+    toDockerfileStr $
+    [edockerfile|
     # https://github.com/mhart/alpine-node
     FROM mhart/alpine-node:5.5.0
 
-    ENV DIR=/opt/este PORT=8000 NODE_ENV=production
+    ENV DIR=/opt/este PORT=8000 \
+        NODE_ENV=production
 
     RUN apk add --update python python-dev build-base git libpng automake gettext libpng-dev autoconf make zlib-dev nasm
 
