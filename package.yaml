@@ -26,12 +26,14 @@ category: Development
 author:
 - Lukas Martinelli
 - Pedro Tacla Yamada
-maintainer: tacla.yamada@gmail.com
+- José Lorenzo Rodríguez
+maintainer: lorenzo@seatgeek.com
 copyright:
 - Lukas Martinelli, Copyright (c) 2016
 - Pedro Tacla Yamada, Copyright (c) 2016
+- José Lorenzo Rodríguez, Copyright (c) 2016
 license: GPL-3
-github: beijaflor-io/language-dockerfile
+github: lorenzo/language-dockerfile
 extra-source-files:
 - README.md
 
@@ -57,16 +59,6 @@ dependencies:
 - directory
 - filepath
 
-flags:
-  hadolint:
-    description: Build the hadolint executable
-    default: false
-    manual: true
-  dockerfmt:
-    description: Build the dockerfmt executable
-    default: false
-    manual: true
-
 library:
   source-dirs: src
   exposed-modules:
@@ -85,27 +77,6 @@ library:
   - Language.Dockerfile.EDSL.Quasi
   - Language.Dockerfile.EDSL.Types
 
-executables:
-  hadolint:
-    main: HadoLint.hs
-    source-dirs: bin
-    dependencies:
-    - language-dockerfile
-    buildable: false
-    when:
-      condition: 'flag(hadolint)'
-      buildable: true
-
-  dockerfmt:
-    main: DockerFmt.hs
-    source-dirs: bin
-    dependencies:
-    - language-dockerfile
-    buildable: false
-    when:
-      condition: 'flag(dockerfmt)'
-      buildable: true
-
 tests:
   hspec:
     main: Spec.hs
@@ -118,13 +89,3 @@ tests:
     - directory
     - filepath
     - process
-
-  hadolint-unit-tests:
-    main: Test.hs
-    source-dirs:
-    - src
-    - test
-    dependencies:
-    - HUnit >=1.2
-    - test-framework
-    - test-framework-hunit
