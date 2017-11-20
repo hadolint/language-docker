@@ -3,7 +3,7 @@
 -- see: https://github.com/sol/hpack
 
 name:           language-dockerfile
-version:        0.3.6.0
+version:        1.0.0
 synopsis:       Dockerfile linter, parser, pretty-printer and embedded DSL
 description:     Forked from @hadolint@.
                 .
@@ -18,7 +18,7 @@ author:         Lukas Martinelli,
 maintainer:     lorenzo@seatgeek.com
 copyright:      Lukas Martinelli, Copyright (c) 2016,
                 Pedro Tacla Yamada, Copyright (c) 2016,
-                José Lorenzo Rodríguez, Copyright (c) 2016
+                José Lorenzo Rodríguez, Copyright (c) 2017
 license:        GPL-3
 license-file:   LICENSE
 build-type:     Simple
