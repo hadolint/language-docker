@@ -1,4 +1,4 @@
-module Language.Dockerfile.Syntax where
+module Language.Docker.Syntax where
 
 import Data.ByteString.Char8 (ByteString)
 import Data.Maybe

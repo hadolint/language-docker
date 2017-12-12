@@ -1,4 +1,4 @@
-module Language.Dockerfile.Parser where
+module Language.Docker.Parser where
 
 import Control.Monad (void)
 import Data.ByteString.Char8 (pack)
@@ -7,9 +7,9 @@ import Text.Parsec hiding (label)
 import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token
 
-import Language.Dockerfile.Lexer
-import Language.Dockerfile.Normalize
-import Language.Dockerfile.Syntax
+import Language.Docker.Lexer
+import Language.Docker.Normalize
+import Language.Docker.Syntax
 
 comment :: Parser Instruction
 comment = do

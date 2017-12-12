@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-import Language.Dockerfile
+import Language.Docker
 main = do
     putStr $ toDockerfileStr $ do
         from "node"

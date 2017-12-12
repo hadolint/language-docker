@@ -1,16 +1,16 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Language.Dockerfile.EDSL.Quasi where
+module Language.Docker.EDSL.Quasi where
 
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
 
-import Language.Dockerfile.EDSL
-import qualified Language.Dockerfile.Parser as Parser
-import Language.Dockerfile.Syntax
-import Language.Dockerfile.Syntax.Lift ()
+import Language.Docker.EDSL
+import qualified Language.Docker.Parser as Parser
+import Language.Docker.Syntax
+import Language.Docker.Syntax.Lift ()
 
 -- | Quasiquoter for embedding dockerfiles on the EDSL
 --

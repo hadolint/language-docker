@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Language.Dockerfile.Normalize
+module Language.Docker.Normalize
     ( normalizeEscapedLines
     ) where
 

@@ -1,19 +1,10 @@
-# haskell-language-dockerfile
-[![Build Status](https://travis-ci.org/beijaflor-io/haskell-language-dockerfile.svg?branch=master)](https://travis-ci.org/beijaflor-io/haskell-language-dockerfile)
-[![CircleCI](https://circleci.com/gh/beijaflor-io/haskell-language-dockerfile.svg?style=svg&circle-token=2680cd3ee724bcd30338bf212cdec48898f0a062)](https://circleci.com/gh/beijaflor-io/haskell-language-dockerfile)
+# haskell-language-docker
+[Hackage](https://hackage.haskell.org/package/language-docker)
 
-[Hackage](https://hackage.haskell.org/package/language-dockerfile/)
-
-[GH Pages Haddock](http://beijaflor-io.github.io/haskell-language-dockerfile/)
-
-[Blog Post in Portuguese](http://blog.haskellbr.com/2016/08/18/escrevendo-dockerfiles-em-haskell.html)
 - - -
-Dockerfile linter, parser, pretty-printer and embedded DSL, forked from
-[hadolint](https://github.com/lukasmartinelli/hadolint).
+Dockerfile parser, pretty-printer and embedded DSL
 
-Published on Hackage as [language-dockerfile](https://hackage.haskell.org/package/language-dockerfile).
-
-It extends hadolint with the pretty-printer and EDSL for writting Dockerfiles in
+Provides de ability to parse docker files, a pretty-printer and EDSL for writting Dockerfiles in
 Haskell.
 
 - [Parsing files](#parsing-files)
@@ -26,7 +17,7 @@ Haskell.
 
 ## Parsing files
 ```haskell
-import Language.Dockerfile
+import Language.Docker
 main = do
     ef <- parseFile "./Dockerfile"
     print ef
@@ -34,7 +25,7 @@ main = do
 
 ## Parsing strings
 ```haskell
-import Language.Dockerfile
+import Language.Docker
 main = do
     c <- readFile "./Dockerfile"
     print (parseString c)
@@ -42,7 +33,7 @@ main = do
 
 ## Pretty-printing files
 ```haskell
-import Language.Dockerfile
+import Language.Docker
 main = do
     Right d <- parseFile "./Dockerfile"
     putStr (prettyPrint d)
@@ -51,7 +42,7 @@ main = do
 ## Writing Dockerfiles in Haskell
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
-import Language.Dockerfile
+import Language.Docker
 main = putStr $ toDockerfileStr $ do
     from "node"
     run "apt-get update"
@@ -63,7 +54,7 @@ main = putStr $ toDockerfileStr $ do
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-import Language.Dockerfile
+import Language.Docker
 main = putStr $ toDockerfileStr $ do
     from "node"
     run "apt-get update"
@@ -79,7 +70,7 @@ main = putStr $ toDockerfileStr $ do
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 import Control.Monad
-import Language.Dockerfile
+import Language.Docker
 tags = ["7.8", "7.10", "8"]
 cabalSandboxBuild packageName = do
     let cabalFile = packageName ++ ".cabal"
@@ -103,7 +94,7 @@ support more features like file globbing:
 
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
-import           Language.Dockerfile
+import           Language.Docker
 import qualified System.Directory     as Directory
 import qualified System.FilePath      as FilePath
 import qualified System.FilePath.Glob as Glob

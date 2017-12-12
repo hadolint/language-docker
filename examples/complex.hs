@@ -2,7 +2,7 @@
 -- https://github.com/mhart/alpine-node
 {-# LANGUAGE QuasiQuotes #-}
 
-import Language.Dockerfile
+import Language.Docker
 
 main =
     putStr $

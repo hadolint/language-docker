@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 import Control.Monad
-import Language.Dockerfile
+import Language.Docker
 tags = ["7.8", "7.10", "8"]
 cabalSandboxBuild packageName = do
     let cabalFile = packageName ++ ".cabal"

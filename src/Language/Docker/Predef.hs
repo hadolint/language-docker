@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Language.Dockerfile.Predef where
+module Language.Docker.Predef where
 
 import Control.Monad
 import Control.Monad.Free.Class
@@ -19,8 +19,8 @@ import System.Directory
 import System.FilePath
 import qualified System.FilePath.Glob as Glob
 
-import Language.Dockerfile
-import Language.Dockerfile.EDSL.Types
+import Language.Docker
+import Language.Docker.EDSL.Types
 
 appendLnIfMissing :: FilePath -> Text -> IO ()
 appendLnIfMissing fp cts = do

@@ -1,4 +1,4 @@
-import           Language.Dockerfile
+import           Language.Docker
 
 main :: IO ()
 main = writeFile "./examples/test-dockerfile.dockerfile" $ toDockerfileStr $ do

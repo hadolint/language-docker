@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
-module Language.Dockerfile.EDSL.QuasiSpec
+module Language.Docker.EDSL.QuasiSpec
   where
 
-import           Language.Dockerfile.EDSL
-import           Language.Dockerfile.EDSL.Quasi
-import           Language.Dockerfile.Syntax
+import           Language.Docker.EDSL
+import           Language.Docker.EDSL.Quasi
+import           Language.Docker.Syntax
 import           Test.Hspec
 
 spec :: Spec

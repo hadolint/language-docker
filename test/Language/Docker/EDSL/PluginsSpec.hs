@@ -1,8 +1,8 @@
-module Language.Dockerfile.EDSL.PluginsSpec
+module Language.Docker.EDSL.PluginsSpec
   where
 
--- import           Language.Dockerfile.EDSL
--- import           Language.Dockerfile.EDSL.Plugins
+-- import           Language.Docker.EDSL
+-- import           Language.Docker.EDSL.Plugins
 import           Test.Hspec
 
 spec =

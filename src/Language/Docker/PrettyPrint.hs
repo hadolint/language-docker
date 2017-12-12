@@ -1,12 +1,12 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE RebindableSyntax #-}
 
-module Language.Dockerfile.PrettyPrint where
+module Language.Docker.PrettyPrint where
 
 import qualified Data.ByteString.Char8 as ByteString (unpack)
 import Data.List (intersperse)
 import Data.String
-import Language.Dockerfile.Syntax
+import Language.Docker.Syntax
 import Prelude hiding ((>>), (>>=), return)
 import Text.PrettyPrint
 

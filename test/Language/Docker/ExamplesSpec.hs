@@ -1,4 +1,4 @@
-module Language.Dockerfile.ExamplesSpec where
+module Language.Docker.ExamplesSpec where
 
 import           Control.Monad
 import           Data.Monoid

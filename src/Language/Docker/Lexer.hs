@@ -1,4 +1,4 @@
-module Language.Dockerfile.Lexer where
+module Language.Docker.Lexer where
 
 import Text.Parsec.Language (emptyDef)
 import Text.Parsec.String (Parser)

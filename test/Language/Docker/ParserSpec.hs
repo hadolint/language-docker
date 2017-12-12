@@ -1,11 +1,11 @@
-module Language.Dockerfile.ParserSpec where
+module Language.Docker.ParserSpec where
 
 import Data.List (find)
 import Data.Maybe (fromMaybe, isJust)
 
-import Language.Dockerfile.Normalize
-import Language.Dockerfile.Parser
-import Language.Dockerfile.Syntax
+import Language.Docker.Normalize
+import Language.Docker.Parser
+import Language.Docker.Syntax
 
 import Test.HUnit hiding (Label)
 import Test.Hspec

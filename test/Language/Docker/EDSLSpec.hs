@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Language.Dockerfile.EDSLSpec where
+module Language.Docker.EDSLSpec where
 
 import           Control.Monad.IO.Class
 import           Data.List                       (sort)
-import           Language.Dockerfile.EDSL
-import           Language.Dockerfile.PrettyPrint
-import qualified Language.Dockerfile.Syntax      as Syntax
+import           Language.Docker.EDSL
+import           Language.Docker.PrettyPrint
+import qualified Language.Docker.Syntax      as Syntax
 import           System.Directory
 import           System.FilePath
 import           System.FilePath.Glob
@@ -56,12 +56,12 @@ spec = do
             str <- toDockerfileStrIO $ do
                 fs <- liftIO $ do
                     cwd <- getCurrentDirectory
-                    fs <- glob "./test/Language/Dockerfile/*.hs"
+                    fs <- glob "./test/Language/Docker/*.hs"
                     return (map (makeRelative cwd) (sort fs))
                 from "ubuntu"
                 mapM_ (\f -> add f ("/app/" ++ takeFileName f)) fs
             str `shouldBe` unlines [ "FROM ubuntu"
-                                   , "ADD ./test/Language/Dockerfile/EDSLSpec.hs /app/EDSLSpec.hs"
-                                   , "ADD ./test/Language/Dockerfile/ExamplesSpec.hs /app/ExamplesSpec.hs"
-                                   , "ADD ./test/Language/Dockerfile/ParserSpec.hs /app/ParserSpec.hs"
+                                   , "ADD ./test/Language/Docker/EDSLSpec.hs /app/EDSLSpec.hs"
+                                   , "ADD ./test/Language/Docker/ExamplesSpec.hs /app/ExamplesSpec.hs"
+                                   , "ADD ./test/Language/Docker/ParserSpec.hs /app/ParserSpec.hs"
                                    ]

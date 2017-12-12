@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Language.Dockerfile.EDSL where
+module Language.Docker.EDSL where
 
 import Control.Monad.Free
 import Control.Monad.Free.TH
@@ -10,10 +10,10 @@ import Control.Monad.Trans.Free (FreeT, iterTM)
 import Control.Monad.Writer
 import Data.ByteString (ByteString)
 
-import qualified Language.Dockerfile.PrettyPrint as PrettyPrint
-import qualified Language.Dockerfile.Syntax as Syntax
+import qualified Language.Docker.PrettyPrint as PrettyPrint
+import qualified Language.Docker.Syntax as Syntax
 
-import Language.Dockerfile.EDSL.Types
+import Language.Docker.EDSL.Types
 
 -- | The type of 'Identity' based EDSL blocks
 type EDockerfileM = Free EInstruction
@@ -81,10 +81,10 @@ toDockerfile e =
     in map instructionPos w
 
 -- | runs the Dockerfile EDSL and returns a 'String' using
--- 'Language.Dockerfile.PrettyPrint'
+-- 'Language.Docker.PrettyPrint'
 --
 -- @
--- import           Language.Dockerfile
+-- import           Language.Docker
 --
 -- main :: IO ()
 -- main = writeFile "something.dockerfile" $ toDockerfileStr $ do

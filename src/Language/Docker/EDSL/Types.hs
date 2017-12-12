@@ -1,10 +1,10 @@
 {-# LANGUAGE DeriveFunctor #-}
 
-module Language.Dockerfile.EDSL.Types where
+module Language.Docker.EDSL.Types where
 
 import Data.ByteString.Char8 (ByteString)
 import Data.String
-import qualified Language.Dockerfile.Syntax as Syntax
+import qualified Language.Docker.Syntax as Syntax
 
 data EBaseImage
     = EUntaggedImage String
