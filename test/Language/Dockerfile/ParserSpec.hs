@@ -27,6 +27,9 @@ spec = do
             it "parses unquoted pair" $ assertAst "ENV foo=bar" [Env [("foo", "bar")]]
             it "parse with space between key and value" $
                 assertAst "ENV foo bar" [Env [("foo", "bar")]]
+            it "parse with more then one (white)space between key and value" $
+                let dockerfile = "ENV          NODE_VERSION  \t   v5.7.1"
+                in assertAst dockerfile [Env[("NODE_VERSION",    "v5.7.1")]]
             it "parse quoted value pair" $ assertAst "ENV foo=\"bar\"" [Env [("foo", "bar")]]
             it "parse multiple unquoted pairs" $
                 assertAst "ENV foo=bar baz=foo" [Env [("foo", "bar"), ("baz", "foo")]]
