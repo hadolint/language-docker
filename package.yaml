@@ -9,7 +9,7 @@ All functions for parsing, printing and writting Dockerfiles are exported
 through @Language.Docker@. For more fine-grained operations look for
 specific modules that implement a certain functionality.
 
-See the <https://github.com/lorenzo/haskell-language-dockerfile GitHub project> for the source-code and examples.
+See the <https://github.com/hadolint/language-dockerfile GitHub project> for the source-code and examples.
 '
 category: Development
 author:
