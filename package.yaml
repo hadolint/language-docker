@@ -2,9 +2,6 @@ name: language-docker
 version: '1.0.0'
 synopsis: Dockerfile parser, pretty-printer and embedded DSL
 description: '
-Forked from @hadolint@.
-
-
 All functions for parsing, printing and writting Dockerfiles are exported
 through @Language.Docker@. For more fine-grained operations look for
 specific modules that implement a certain functionality.
