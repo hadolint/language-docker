@@ -8,7 +8,7 @@ import           System.FilePath.Glob
 import           System.Process
 import           Test.Hspec
 
-stackRunGhc e = callProcess "stack" ["runghc", "--package", "language-dockerfile", e]
+stackRunGhc e = callProcess "stack" ["runghc", "--package", "language-docker", e]
 
 spec :: Spec
 spec = do

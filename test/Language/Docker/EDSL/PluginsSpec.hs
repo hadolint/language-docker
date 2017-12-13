@@ -7,7 +7,7 @@ import           Test.Hspec
 
 spec =
     describe "listPlugins" $
-        it "lists docker images matching language-dockerfile-*" pending
+        it "lists docker images matching language-docker-*" pending
             -- str <- toDockerFileStrIO $ do
             --     ds <- liftIO (glob "./test/*.hs")
             --     from "ubuntu"
