@@ -1,11 +1,13 @@
-# haskell-language-docker
-[Hackage](https://hackage.haskell.org/package/language-docker)
+[![Build Status][travis-img]][travis]
+[![Hackage][hackage-img]][hackage]
+[![GPL-3 licensed][license-img]][license]
 
-- - -
+# haskell-language-docker
+
 Dockerfile parser, pretty-printer and embedded DSL
 
-Provides de ability to parse docker files, a pretty-printer and EDSL for writting Dockerfiles in
-Haskell.
+Provides de ability to parse docker files, a pretty-printer and EDSL for
+writting Dockerfiles in Haskell.
 
 - [Parsing files](#parsing-files)
 - [Parsing strings](#parsing-strings)
@@ -16,6 +18,7 @@ Haskell.
 - [Using IO in the DSL](#using-io-in-the-dsl)
 
 ## Parsing files
+
 ```haskell
 import Language.Docker
 main = do
@@ -24,6 +27,7 @@ main = do
 ```
 
 ## Parsing strings
+
 ```haskell
 import Language.Docker
 main = do
@@ -32,6 +36,7 @@ main = do
 ```
 
 ## Pretty-printing files
+
 ```haskell
 import Language.Docker
 main = do
@@ -40,6 +45,7 @@ main = do
 ```
 
 ## Writing Dockerfiles in Haskell
+
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
 import Language.Docker
@@ -51,6 +57,7 @@ main = putStr $ toDockerfileStr $ do
 ```
 
 ## Using the QuasiQuoter
+
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
@@ -66,6 +73,7 @@ main = putStr $ toDockerfileStr $ do
 ```
 
 ## Templating Dockerfiles in Haskell
+
 ```haskell
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -109,5 +117,9 @@ main = do
     putStr str
 ```
 
-## License
-GPLv3
+[hackage-img]: https://img.shields.io/hackage/v/language-docker.svg
+[hackage]: https://hackage.haskell.org/package/language-docker
+[travis-img]: https://travis-ci.org/hadolint/language-docker.svg?branch=master
+[travis]: https://travis-ci.org/hadolint/language-docker
+[license-img]: https://img.shields.io/badge/license-GPL--3-blue.svg
+[license]: https://tldrlegal.com/license/gnu-general-public-license-v3-(gpl-3)
