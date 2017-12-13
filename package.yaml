@@ -50,7 +50,6 @@ library:
   source-dirs: src
   ghc-options:
   - -Wall
-  - -Werror
   - -fno-warn-unused-do-bind
   - -fno-warn-orphans
   exposed-modules:
