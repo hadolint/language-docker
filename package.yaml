@@ -1,50 +1,48 @@
 name: language-docker
 version: '1.0.0'
 synopsis: Dockerfile parser, pretty-printer and embedded DSL
-description: '
-All functions for parsing, printing and writting Dockerfiles are exported
-through @Language.Docker@. For more fine-grained operations look for
-specific modules that implement a certain functionality.
+description: 'All functions for parsing, printing and writting Dockerfiles are
+  exported through @Language.Docker@. For more fine-grained operations look for
+  specific modules that implement a certain functionality.
 
-See the <https://github.com/hadolint/language-dockerfile GitHub project> for the source-code and examples.
-'
+  See the <https://github.com/hadolint/language-docker GitHub project> for
+  the source-code and examples.'
 category: Development
 author:
-- Lukas Martinelli
-- Pedro Tacla Yamada
-- José Lorenzo Rodríguez
-maintainer: 
-- me@lukasmartinelli.ch
-- lorenzo@seatgeek.com
+  - Lukas Martinelli
+  - Pedro Tacla Yamada
+  - José Lorenzo Rodríguez
+maintainer:
+  - me@lukasmartinelli.ch
+  - lorenzo@seatgeek.com
 copyright:
-- Lukas Martinelli, Copyright (c) 2016
-- Pedro Tacla Yamada, Copyright (c) 2016
-- José Lorenzo Rodríguez, Copyright (c) 2017
+  - Lukas Martinelli, Copyright (c) 2016
+  - Pedro Tacla Yamada, Copyright (c) 2016
+  - José Lorenzo Rodríguez, Copyright (c) 2017
 license: GPL-3
 github: hadolint/language-docker
 extra-source-files:
-- README.md
+  - README.md
 
 dependencies:
-- base >=4.8 && <5
-- bytestring >=0.10
-- parsec >=3.1
-- pretty
-- split >=0.2
-- free
-- mtl
-- transformers
-- template-haskell
-- th-lift
-- th-lift-instances
-
-- text
-- yaml
-- aeson
-- Glob
-- unordered-containers
-- directory
-- filepath
+  - base >=4.8 && <5
+  - bytestring >=0.10
+  - parsec >=3.1
+  - pretty
+  - split >=0.2
+  - free
+  - mtl
+  - transformers
+  - template-haskell
+  - th-lift
+  - th-lift-instances
+  - text
+  - yaml
+  - aeson
+  - Glob
+  - unordered-containers
+  - directory
+  - filepath
 
 library:
   source-dirs: src
