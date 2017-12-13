@@ -39,7 +39,7 @@ before_install:
 # Download and unpack the stack executable
 - mkdir -p ~/.local/bin
 - |
-  if [ `uname` = "Darwin" ]
+  if [[ "${TRAVIS_OS_NAME}" = "osx" ]]
   then
     travis_retry curl --insecure -L https://www.stackage.org/stack/osx-x86_64 \
       | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
@@ -52,4 +52,4 @@ install:
 - travis_retry stack --no-terminal --install-ghc $ARGS test --only-dependencies
 
 script:
-- stack --no-terminal $ARGS test --no-run-benchmarks --haddock --no-haddock-deps
+- stack --no-terminal $ARGS test

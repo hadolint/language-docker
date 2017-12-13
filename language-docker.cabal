@@ -5,8 +5,8 @@
 name:           language-docker
 version:        1.0.0
 synopsis:       Dockerfile parser, pretty-printer and embedded DSL
-description:     All functions for parsing, printing and writting Dockerfiles are exported through @Language.Docker@. For more fine-grained operations look for specific modules that implement a certain functionality.
-                See the <https://github.com/hadolint/language-dockerfile GitHub project> for the source-code and examples. 
+description:    All functions for parsing, printing and writting Dockerfiles are exported through @Language.Docker@. For more fine-grained operations look for specific modules that implement a certain functionality.
+                See the <https://github.com/hadolint/language-docker GitHub project> for the source-code and examples.
 category:       Development
 homepage:       https://github.com/hadolint/language-docker#readme
 bug-reports:    https://github.com/hadolint/language-docker/issues
@@ -33,7 +33,7 @@ source-repository head
 library
   hs-source-dirs:
       src
-  ghc-options: -Wall -Werror -fno-warn-unused-do-bind -fno-warn-orphans
+  ghc-options: -Wall -fno-warn-unused-do-bind -fno-warn-orphans
   build-depends:
       base >=4.8 && <5
     , bytestring >=0.10

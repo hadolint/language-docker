@@ -1,4 +1,4 @@
-#!/usr/bin/env stack --silent runghc --package language-dockerfile --package ShellCheck-0.4.4 ./dockerfile.hs
+#!/usr/bin/env stack --silent runghc --package language-docker --package ShellCheck-0.4.4 ./dockerfile.hs
 -- https://github.com/mhart/alpine-node
 {-# LANGUAGE QuasiQuotes #-}
 
