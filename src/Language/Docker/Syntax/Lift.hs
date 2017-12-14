@@ -8,6 +8,10 @@ import Language.Haskell.TH.Syntax ()
 
 import Language.Docker.Syntax
 
+deriveLift ''Protocol
+
+deriveLift ''Port
+
 deriveLift ''Ports
 
 deriveLift ''BaseImage

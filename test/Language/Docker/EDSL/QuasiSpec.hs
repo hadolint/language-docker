@@ -26,14 +26,14 @@ spec = do
         it "lets us use parsed dockerfiles seamlessly in our DSL" $ do
             let d = do
                     from "node"
-                    expose "8080"
+                    expose (ports [tcpPort 8080, variablePort "PORT"])
                     [edockerfile|
                                 RUN apt-get update
                                 CMD node something.js
                                 |]
                 df = map instruction (toDockerfile d)
             df `shouldBe` [ From (UntaggedImage "node")
-                          , Expose (Ports [8080])
+                          , Expose (Ports [Port 8080 TCP, PortStr "$PORT"])
                           , Run ["apt-get", "update"]
                           , Cmd ["node", "something.js"]
                           ]

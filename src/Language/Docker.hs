@@ -31,7 +31,9 @@ module Language.Docker
     , Language.Docker.EDSL.workdir
     , Language.Docker.EDSL.expose
     , Language.Docker.EDSL.ports
-    , Language.Docker.EDSL.port
+    , Language.Docker.EDSL.tcpPort
+    , Language.Docker.EDSL.udpPort
+    , Language.Docker.EDSL.variablePort
     , Language.Docker.EDSL.volume
     , Language.Docker.EDSL.entrypoint
     , Language.Docker.EDSL.entrypointArgs

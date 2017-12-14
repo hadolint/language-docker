@@ -77,9 +77,6 @@ prettyPrintInstruction i =
         Expose (Ports ps) -> do
             text "EXPOSE"
             hsep (map (text . show) ps)
-        Expose (PortStr p) -> do
-            text "EXPOSE"
-            text p
         Volume dir -> do
             text "VOLUME"
             text dir

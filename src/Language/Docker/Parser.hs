@@ -2,7 +2,7 @@ module Language.Docker.Parser where
 
 import Control.Monad (void)
 import Data.ByteString.Char8 (pack)
-import Data.String
+import Data.Char (toUpper)
 import Text.Parsec hiding (label)
 import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token
@@ -139,9 +139,32 @@ add = do
 expose :: Parser Instruction
 expose = do
     reserved "EXPOSE"
-    sports <- untilEol
-    let port = fromString sports
-    return $ Expose port
+    ports <- port `sepEndBy1` space
+    return $ Expose (Ports ports)
+
+port :: Parser Port
+port = try portWithProtocol <|> portInt <|> portVariable
+
+portInt :: Parser Port
+portInt = do
+    portNumber <- Token.decimal lexer
+    return $ Port portNumber TCP
+
+portWithProtocol :: Parser Port
+portWithProtocol = do
+    Port portNumber _ <- portInt
+    void (char '/')
+    proto <- choice [string "tcp", string "udp", string "TCP", string "UDP"]
+    case map toUpper proto of
+        "TCP" -> return $ Port portNumber TCP
+        "UDP" -> return $ Port portNumber UDP
+        _ -> fail "This case is absurd"
+
+portVariable :: Parser Port
+portVariable = do
+    void $ lookAhead (char '$')
+    variable <- untilOccurrence "\t\n "
+    return $ PortStr variable
 
 run :: Parser Instruction
 run = do
