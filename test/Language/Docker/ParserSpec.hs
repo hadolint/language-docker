@@ -142,7 +142,16 @@ spec = do
         describe "expose" $ do
             it "should handle number ports" $ do
                 let content = "EXPOSE 8080"
-                parse expose "" content `shouldBe` Right (Expose (Ports [8080]))
+                parse expose "" content `shouldBe` Right (Expose (Ports [Port 8080 TCP]))
+            it "should handle many number ports" $ do
+                let content = "EXPOSE 8080 8081"
+                parse expose "" content `shouldBe` Right (Expose (Ports [Port 8080 TCP, Port 8081 TCP]))
+            it "should handle ports with protocol" $ do
+                let content = "EXPOSE 8080/TCP 8081/UDP"
+                parse expose "" content `shouldBe` Right (Expose (Ports [Port 8080 TCP, Port 8081 UDP]))
+            it "should handle ports with protocol and variables" $ do
+                let content = "EXPOSE $PORT 8080 8081/UDP"
+                parse expose "" content `shouldBe` Right (Expose (Ports [PortStr "$PORT", Port 8080 TCP, Port 8081 UDP]))
         describe "syntax" $ do
             it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $ do
                 let content = "from ubuntu"

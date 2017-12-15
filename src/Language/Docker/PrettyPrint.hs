@@ -56,6 +56,11 @@ prettyPrintArguments as = text (unwords (map helper as))
 prettyPrintJSON :: Arguments -> Doc
 prettyPrintJSON as = brackets $ hsep $ intersperse comma $ map (doubleQuotes . text) as
 
+prettyPrintPort :: Port -> Doc
+prettyPrintPort (PortStr str) = text str
+prettyPrintPort (Port num TCP) = integer num <> char '/' <> text "tcp"
+prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
+
 prettyPrintInstruction :: Instruction -> Doc
 prettyPrintInstruction i =
     case i of
@@ -76,10 +81,7 @@ prettyPrintInstruction i =
             text w
         Expose (Ports ps) -> do
             text "EXPOSE"
-            hsep (map (text . show) ps)
-        Expose (PortStr p) -> do
-            text "EXPOSE"
-            text p
+            hsep (map prettyPrintPort ps)
         Volume dir -> do
             text "VOLUME"
             text dir

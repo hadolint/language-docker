@@ -106,11 +106,17 @@ tagged = ETaggedImage
 digested :: String -> ByteString -> EBaseImage
 digested = EDigestedImage
 
-ports :: [Integer] -> Syntax.Ports
+ports :: [Syntax.Port] -> Syntax.Ports
 ports = Syntax.Ports
 
-port :: Integer -> Syntax.Ports
-port = Syntax.Ports . (: [])
+tcpPort :: Integer -> Syntax.Port
+tcpPort = flip Syntax.Port Syntax.TCP
+
+udpPort :: Integer -> Syntax.Port
+udpPort = flip Syntax.Port Syntax.UDP
+
+variablePort :: String -> Syntax.Port
+variablePort varName = Syntax.PortStr ('$' : varName)
 
 run :: MonadFree EInstruction m => String -> m ()
 run = runArgs . words

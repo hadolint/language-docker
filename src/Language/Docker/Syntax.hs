@@ -1,28 +1,25 @@
 module Language.Docker.Syntax where
 
 import Data.ByteString.Char8 (ByteString)
-import Data.Maybe
-import Data.String
-import Text.Read
 
 type Image = String
 
 type Tag = String
 
-data Ports
-    = Ports [Integer]
+data Protocol
+    = TCP
+    | UDP
+    deriving (Show, Eq, Ord)
+
+data Port
+    = Port Integer
+           Protocol
     | PortStr String
     deriving (Show, Eq, Ord)
 
-instance IsString Ports where
-    fromString p =
-        case readMaybe p of
-            Just i -> Ports [i]
-            Nothing ->
-                let rs = map readMaybe (words p)
-                in if all isJust rs
-                       then Ports (catMaybes rs)
-                       else PortStr p
+newtype Ports =
+    Ports [Port]
+    deriving (Show, Eq, Ord)
 
 type Directory = String
 

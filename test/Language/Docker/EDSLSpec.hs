@@ -34,6 +34,13 @@ spec = do
                                  , "CMD node -e 'console.log(\'hey\')'"
                                  , "HEALTHCHECK --interval=5m CMD curl -f http://localhost/ || exit 1"
                                  ]
+        it "print expose instructions correctly" $ do
+            let r = prettyPrint $ toDockerfile (do
+                        from "scratch"
+                        expose $ ports [variablePort "PORT", tcpPort 80, udpPort 51])
+            r `shouldBe` unlines [ "FROM scratch"
+                                 , "EXPOSE $PORT 80/tcp 51/udp"
+                                 ]
 
         it "onBuild let's us nest statements" $ do
             let r = prettyPrint $ toDockerfile $ do
