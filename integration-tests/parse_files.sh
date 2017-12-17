@@ -102,7 +102,7 @@ function clone_repos() {
 function parse_dockerfiles() {
     local dockerfiles
     local result
-    stack ghc parseFile.hs
+    stack ghc parseFile.hs --package language-docker
     dockerfiles=$(find . -name 'Dockerfile')
     for dockerfile in $dockerfiles; do
         if ./parseFile "$dockerfile" | grep -a1 unexpected; then
