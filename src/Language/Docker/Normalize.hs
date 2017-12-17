@@ -20,8 +20,10 @@ trimLines = map strip
 
 normalize :: [String] -> [String]
 normalize allLines =
-    let (_, res) = mapAccumL transform Continue allLines
-    in catMaybes res
+    let (lastState, res) = mapAccumL transform Continue allLines
+    in case lastState of
+           Continue -> catMaybes res
+           Joined l -> catMaybes res ++ [l]
   where
     transform (Joined prev) ('#':_) = (Joined prev, Nothing)
     transform (Joined prev) l =
