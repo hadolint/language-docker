@@ -14,8 +14,11 @@ deriveLift ''Port
 
 deriveLift ''Ports
 
+deriveLift ''ImageAlias
+
 deriveLift ''BaseImage
 
 deriveLift ''Instruction
 
 deriveLift ''InstructionPos
+

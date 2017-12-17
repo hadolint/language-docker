@@ -28,18 +28,26 @@ prettyPrintInstructionPos (InstructionPos i _ _) = render (prettyPrintInstructio
 prettyPrintBaseImage :: BaseImage -> Doc
 prettyPrintBaseImage b =
     case b of
-        DigestedImage name digest -> do
+        DigestedImage name digest alias -> do
             text name
             char '@'
             text (ByteString.unpack digest)
-        UntaggedImage name -> text name
-        TaggedImage name tag -> do
+            prettyAlias alias
+        UntaggedImage name alias -> do
+            text name
+            prettyAlias alias
+        TaggedImage name tag alias -> do
             text name
             char ':'
             text tag
+            prettyAlias alias
   where
     (>>) = (<>)
     return = (mempty <>)
+    prettyAlias maybeAlias =
+        case maybeAlias of
+            Nothing -> mempty
+            Just (ImageAlias alias) -> text " AS " <> text alias
 
 prettyPrintPairs :: Pairs -> Doc
 prettyPrintPairs ps = hsep $ map prettyPrintPair ps

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Language.Docker.ParserSpec where
 
 import Data.List (find)
@@ -13,8 +14,25 @@ import Text.Parsec
 
 spec :: Spec
 spec = do
-        describe "parse FROM" $
-            it "parse untagged image" $ assertAst "FROM busybox" [From (UntaggedImage "busybox")]
+        describe "parse FROM" $ do
+            it "parse untagged image" $
+                assertAst "FROM busybox" [From (UntaggedImage "busybox" Nothing)]
+            it "parse tagged image" $
+                assertAst
+                    "FROM busybox:5.12-dev"
+                    [From (TaggedImage "busybox" "5.12-dev" Nothing)]
+            it "parse diggested image" $
+                assertAst
+                    "FROM ubuntu@sha256:0ef2e08ed3fab"
+                    [From (DigestedImage "ubuntu" "sha256:0ef2e08ed3fab" Nothing)]
+
+        describe "parse aliased FROM" $ do
+            it "parse untagged image" $
+                assertAst "FROM busybox as foo" [From (UntaggedImage "busybox" (Just $ ImageAlias "foo"))]
+            it "parse tagged image" $
+                assertAst "FROM busybox:5.12-dev AS foo-bar" [From (TaggedImage "busybox" "5.12-dev" (Just $ ImageAlias "foo-bar"))]
+            it "parse diggested image" $
+                assertAst "FROM ubuntu@sha256:0ef2e08ed3fab AS foo" [From (DigestedImage "ubuntu" "sha256:0ef2e08ed3fab" (Just $ ImageAlias "foo"))]
 
         describe "parse LABEL" $ do
             it "parse label" $ assertAst "LABEL foo=bar" [Label[("foo", "bar")]]
@@ -47,7 +65,7 @@ spec = do
                                  , "ENV NODE_VERSION=v5.7.1 \\"
                                  , "DEBIAN_FRONTEND=noninteractive"
                                  ]
-                    ast = [ From (UntaggedImage "busybox")
+                    ast = [ From (UntaggedImage "busybox" Nothing)
                           , Env[("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]
                           , EOL
                           ]
@@ -87,12 +105,12 @@ spec = do
             it "maintainer of untagged scratch image" $
                 assertAst
                     "FROM scratch\nMAINTAINER hudu@mail.com"
-                    [From (UntaggedImage "scratch"), Maintainer "hudu@mail.com"]
+                    [From (UntaggedImage "scratch" Nothing), Maintainer "hudu@mail.com"]
             it "maintainer with mail" $
                 assertAst "MAINTAINER hudu@mail.com" [Maintainer "hudu@mail.com"]
             it "maintainer only mail after from" $
                 let maintainerFromProg = "FROM busybox\nMAINTAINER hudu@mail.com"
-                    maintainerFromAst = [From (UntaggedImage "busybox"), Maintainer "hudu@mail.com"]
+                    maintainerFromAst = [From (UntaggedImage "busybox" Nothing), Maintainer "hudu@mail.com"]
                 in assertAst maintainerFromProg maintainerFromAst
         describe "parse # comment " $ do
             it "multiple comments before run" $
@@ -155,7 +173,7 @@ spec = do
         describe "syntax" $ do
             it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $ do
                 let content = "from ubuntu"
-                parse dockerfile "" content `shouldBe` Right [InstructionPos (From (UntaggedImage "ubuntu")) "" 1]
+                parse dockerfile "" content `shouldBe` Right [InstructionPos (From (UntaggedImage "ubuntu" Nothing)) "" 1]
 
 assertAst s ast =
     case parseString (s ++ "\n") of

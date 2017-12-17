@@ -23,12 +23,19 @@ newtype Ports =
 
 type Directory = String
 
+newtype ImageAlias =
+    ImageAlias String
+    deriving (Show, Eq, Ord)
+
 data BaseImage
     = UntaggedImage Image
+                    (Maybe ImageAlias)
     | TaggedImage Image
                   Tag
+                  (Maybe ImageAlias)
     | DigestedImage Image
                     ByteString
+                    (Maybe ImageAlias)
     deriving (Eq, Ord, Show)
 
 -- | Type of the Dockerfile AST

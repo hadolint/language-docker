@@ -18,7 +18,7 @@ spec = do
             let r = map Syntax.instruction $ toDockerfile (do
                         from "node"
                         cmdArgs ["node", "-e", "'console.log(\'hey\')'"])
-            r `shouldBe` [ Syntax.From (Syntax.UntaggedImage "node")
+            r `shouldBe` [ Syntax.From $ (Syntax.UntaggedImage "node") Nothing
                          , Syntax.Cmd ["node", "-e", "'console.log(\'hey\')'"]
                          ]
 
@@ -55,7 +55,13 @@ spec = do
                                  , "ONBUILD RUN echo \"hello world2\""
                                  ]
 
-        it "onBuild disallows unallowed instructions" pending
+        it "parses and prints from aliases correctly" $ do
+            let r = prettyPrint $ toDockerfile $ do
+                        from ("node" `tagged` "10.1" `aliased` "node-build")
+                        run "echo foo"
+            r `shouldBe` unlines [ "FROM node:10.1 AS node-build"
+                                 , "RUN echo foo"
+                                 ]
 
     describe "toDockerfileStrIO" $
         it "let's us run in the IO monad" $ do
