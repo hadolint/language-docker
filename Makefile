@@ -4,6 +4,9 @@ all: FORCE
 gh-pages:
 	bash -e ./stack-gh-pages
 
+tests:
+	integration-tests/parse_files.sh
+
 doctests: FORCE
 	find src | grep "\.hs$$" | while read pkg; do echo $$pkg; stack exec doctest $$pkg; done
 

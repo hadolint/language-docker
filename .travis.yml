@@ -32,8 +32,15 @@ matrix:
   - env: ARGS="--resolver nightly"
     os: osx
 
+  - &integration-tests
+    env:
+      - PURPOSE="Integration tests"
+      - ARGS="--resolver lts-9.13"
+    script: make tests
+
   allow_failures:
   - env: ARGS="--resolver nightly"
+  - <<: *integration-tests
 
 before_install:
 # Download and unpack the stack executable
