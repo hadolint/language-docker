@@ -146,9 +146,9 @@ spec = do
                             ]
                     longEscapedCmdExpected =
                         concat
-                            [ "RUN wget https://download.com/${version}.tar.gz -O /tmp/logstash.tar.gz &&  "
-                            , "(cd /tmp && tar zxf logstash.tar.gz && mv logstash-${version} /opt/logstash &&  "
-                            , "rm logstash.tar.gz) &&  "
+                            [ "RUN wget https://download.com/${version}.tar.gz -O /tmp/logstash.tar.gz && "
+                            , "(cd /tmp && tar zxf logstash.tar.gz && mv logstash-${version} /opt/logstash && "
+                            , "rm logstash.tar.gz) && "
                             , "(cd /opt/logstash &&  "
                             , "/opt/logstash/bin/plugin install contrib)\n"
                             ]
