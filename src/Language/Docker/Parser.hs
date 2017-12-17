@@ -19,25 +19,38 @@ comment = do
 
 taggedImage :: Parser BaseImage
 taggedImage = do
-    name <- untilOccurrence ":\n"
-    void $ oneOf ":"
-    tag <- untilEol
-    return $ TaggedImage name tag
+    name <- many (noneOf "\t\n: ")
+    void $ char ':'
+    tag <- untilOccurrence "\t\n "
+    maybeAlias <- maybeImageAlias
+    return $ TaggedImage name tag maybeAlias
 
 digestedImage :: Parser BaseImage
 digestedImage = do
-    name <- untilOccurrence "@\n"
-    void $ oneOf "@"
-    digest <- untilEol
-    return $ DigestedImage name (pack digest)
+    name <- many (noneOf "\t\n@ ")
+    void $ char '@'
+    digest <- untilOccurrence "\t\n "
+    maybeAlias <- maybeImageAlias
+    return $ DigestedImage name (pack digest) maybeAlias
 
 untaggedImage :: Parser BaseImage
 untaggedImage = do
-    name <- many (noneOf "\n")
-    return $ UntaggedImage name
+    name <- many (noneOf "\n\t ")
+    maybeAlias <- maybeImageAlias
+    return $ UntaggedImage name maybeAlias
+
+maybeImageAlias :: Parser (Maybe ImageAlias)
+maybeImageAlias = Just <$> try (spaces >> imageAlias) <|> return Nothing
+
+imageAlias :: Parser ImageAlias
+imageAlias = do
+    void $ choice [string "AS", string "as"]
+    many1 space
+    alias <- untilOccurrence "\t\n "
+    return $ ImageAlias alias
 
 baseImage :: Parser BaseImage
-baseImage = try taggedImage <|> try digestedImage <|> try untaggedImage
+baseImage = try digestedImage <|> try taggedImage <|> untaggedImage
 
 from :: Parser Instruction
 from = do

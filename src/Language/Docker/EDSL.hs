@@ -45,9 +45,9 @@ runDef2 f a b n = tell [f a b] >> n
 runD :: MonadWriter [Syntax.Instruction] m => EInstruction (m b) -> m b
 runD (From bi n) =
     case bi of
-        EUntaggedImage bi' -> runDef Syntax.From (Syntax.UntaggedImage bi') n
-        ETaggedImage bi' tg -> runDef Syntax.From (Syntax.TaggedImage bi' tg) n
-        EDigestedImage bi' d -> runDef Syntax.From (Syntax.DigestedImage bi' d) n
+        EUntaggedImage bi' alias -> runDef Syntax.From (Syntax.UntaggedImage bi' alias) n
+        ETaggedImage bi' tg alias -> runDef Syntax.From (Syntax.TaggedImage bi' tg alias) n
+        EDigestedImage bi' d alias -> runDef Syntax.From (Syntax.DigestedImage bi' d alias) n
 runD (CmdArgs as n) = runDef Syntax.Cmd as n
 runD (Shell as n) = runDef Syntax.Shell as n
 runD (Add s d n) = runDef2 Syntax.Add s d n
@@ -98,13 +98,20 @@ toDockerfileStr :: EDockerfileM a -> String
 toDockerfileStr = PrettyPrint.prettyPrint . toDockerfile
 
 untagged :: String -> EBaseImage
-untagged = EUntaggedImage
+untagged = flip EUntaggedImage Nothing
 
 tagged :: String -> String -> EBaseImage
-tagged = ETaggedImage
+tagged imageName tag = ETaggedImage imageName tag Nothing
 
 digested :: String -> ByteString -> EBaseImage
-digested = EDigestedImage
+digested imageName hash = EDigestedImage imageName hash Nothing
+
+aliased :: EBaseImage -> String -> EBaseImage
+aliased image alias =
+    case image of
+        EUntaggedImage n _ -> EUntaggedImage n (Just $ Syntax.ImageAlias alias)
+        ETaggedImage n t _ -> ETaggedImage n t (Just $ Syntax.ImageAlias alias)
+        EDigestedImage n h _ -> EDigestedImage n h (Just $ Syntax.ImageAlias alias)
 
 ports :: [Syntax.Port] -> Syntax.Ports
 ports = Syntax.Ports

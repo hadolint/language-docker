@@ -18,6 +18,7 @@ module Language.Docker
     , Language.Docker.EDSL.tagged
     , Language.Docker.EDSL.untagged
     , Language.Docker.EDSL.digested
+    , Language.Docker.EDSL.aliased
       -- ** Syntax
     , Language.Docker.EDSL.add
     , Language.Docker.EDSL.user

@@ -8,14 +8,17 @@ import qualified Language.Docker.Syntax as Syntax
 
 data EBaseImage
     = EUntaggedImage String
+                     (Maybe Syntax.ImageAlias)
     | ETaggedImage String
                    String
+                   (Maybe Syntax.ImageAlias)
     | EDigestedImage String
                      ByteString
+                     (Maybe Syntax.ImageAlias)
     deriving (Show, Eq, Ord)
 
 instance IsString EBaseImage where
-    fromString = EUntaggedImage
+    fromString = flip EUntaggedImage Nothing
 
 data EInstruction next
     = From EBaseImage
@@ -37,7 +40,7 @@ data EInstruction next
     | CmdArgs Syntax.Arguments
               next
     | Shell Syntax.Arguments
-              next
+            next
     | Workdir Syntax.Directory
               next
     | Expose Syntax.Ports
@@ -55,7 +58,7 @@ data EInstruction next
     | Comment String
               next
     | Healthcheck String
-              next
+                  next
     | OnBuildRaw Syntax.Instruction
                  next
     | Embed [Syntax.InstructionPos]
