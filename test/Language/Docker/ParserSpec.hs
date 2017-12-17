@@ -85,12 +85,12 @@ spec = do
         describe "parse RUN" $
             it "escaped with space before" $
             let dockerfile = unlines ["RUN yum install -y \\ ", "imagemagick \\ ", "mysql"]
-            in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"], EOL, EOL]
+            in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"], EOL]
 
         describe "parse CMD" $ do
             it "one line cmd" $ assertAst "CMD true" [Cmd ["true"]]
             it "cmd over several lines" $
-                assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"], EOL]
+                assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"]]
             it "quoted command params" $ assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
 
         describe "parse SHELL" $ do
@@ -128,12 +128,12 @@ spec = do
                                  , "DEBIAN_FRONTEND=noninteractive"
                                  ]
                     normalizedDockerfile = unlines [ "FROM busybox"
-                                                   , "ENV NODE_VERSION=v5.7.1  DEBIAN_FRONTEND=noninteractive\n"
+                                                   , "ENV NODE_VERSION=v5.7.1  DEBIAN_FRONTEND=noninteractive"
                                                    ]
                 in normalizeEscapedLines dockerfile `shouldBe` normalizedDockerfile
             it "join escaped lines" $
                 let dockerfile = unlines ["ENV foo=bar \\", "baz=foz"]
-                    normalizedDockerfile = unlines ["ENV foo=bar  baz=foz", ""]
+                    normalizedDockerfile = unlines ["ENV foo=bar  baz=foz"]
                 in normalizeEscapedLines dockerfile `shouldBe` normalizedDockerfile
             it "join long CMD" $
                 let longEscapedCmd =
@@ -151,10 +151,6 @@ spec = do
                             , "rm logstash.tar.gz) &&  "
                             , "(cd /opt/logstash &&  "
                             , "/opt/logstash/bin/plugin install contrib)\n"
-                            , "\n"
-                            , "\n"
-                            , "\n"
-                            , "\n"
                             ]
                 in normalizeEscapedLines longEscapedCmd `shouldBe` longEscapedCmdExpected
         describe "expose" $ do

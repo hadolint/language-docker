@@ -12,6 +12,7 @@ main =
     FROM mhart/alpine-node:5.5.0
 
     ENV DIR=/opt/este PORT=8000 \
+        # This is a docker comment
         NODE_ENV=production
 
     RUN apk add --update python python-dev build-base git libpng automake gettext libpng-dev autoconf make zlib-dev nasm
