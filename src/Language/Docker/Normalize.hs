@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Language.Docker.Normalize
     ( normalizeEscapedLines
     ) where
@@ -9,7 +7,8 @@ import Data.Maybe (catMaybes)
 
 data NormalizedLine
     = Continue
-    | Joined String
+    | Joined !String
+             !Int
 
 trimLines :: [String] -> [String]
 trimLines = map strip
@@ -18,27 +17,33 @@ trimLines = map strip
     lstrip = dropWhile (`elem` " \t")
     rstrip = reverse . lstrip . reverse
 
+-- Finds all lines ending with \ and joins them with the next line using
+-- a single space. If the next line is a comment, then the comment line is
+-- deleted. It finally adds the same amount of new lines for each of the
+-- lines it joined, in order to preser the line count in the document.
 normalize :: [String] -> [String]
 normalize allLines =
     let (lastState, res) = mapAccumL transform Continue allLines
     in case lastState of
            Continue -> catMaybes res
-           Joined l -> catMaybes res ++ [l]
+           Joined l times -> catMaybes res ++ [l ++ padNewlines times]
   where
-    transform (Joined prev) ('#':_) = (Joined prev, Nothing)
-    transform (Joined prev) l =
+    transform (Joined prev times) ('#':_) = (Joined prev (times + 1), Nothing)
+    transform (Joined prev times) l =
         if endsWithEscape l
-            then (Joined $ prev ++ normalizeLast l, Nothing)
-            else (Continue, Just (prev ++ ' ' : l))
+            then (Joined (prev ++ ' ' : normalizeLast l) (times + 1), Nothing)
+            else (Continue, Just (prev ++ ' ' : l ++ padNewlines times))
     transform Continue l =
         if endsWithEscape l
-            then (Joined (normalizeLast l), Nothing)
+            then (Joined (normalizeLast l) 1, Nothing)
             else (Continue, Just l)
     --
     endsWithEscape "" = False
     endsWithEscape s = last s == '\\'
     --
     normalizeLast = dropWhileEnd (== '\\')
+    --
+    padNewlines times = replicate times '\n'
 
 -- | Remove new line escapes and join escaped lines together on one line
 --   to simplify parsing later on. Escapes are replaced with line breaks
