@@ -38,7 +38,7 @@ spec = do
             it "parse label" $ assertAst "LABEL foo=bar" [Label[("foo", "bar")]]
             it "parses multiline labels" $
                 let dockerfile = unlines [ "LABEL foo=bar \\", "hobo=mobo"]
-                    ast = [ Label [("foo", "bar"), ("hobo", "mobo")], EOL ]
+                    ast = [ Label [("foo", "bar"), ("hobo", "mobo")] ]
                 in assertAst dockerfile ast
 
         describe "parse ENV" $ do
@@ -67,7 +67,6 @@ spec = do
                                  ]
                     ast = [ From (UntaggedImage "busybox" Nothing)
                           , Env[("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]
-                          , EOL
                           ]
                 in assertAst dockerfile ast
             it "parses long env over multiple lines" $
@@ -77,7 +76,16 @@ spec = do
                                ,("APACHE_RUN_USER", "www-data")
                                ,("APACHE_RUN_GROUP", "www-data")
                                ]
-                          , EOL
+                          ]
+                in assertAst dockerfile ast
+            it "parse single var list" $
+                assertAst "ENV foo val1 val2 val3 val4" [Env [("foo", "val1 val2 val3 val4")]]
+            it "parses many env lines with an equal sign in the value" $
+                let dockerfile = unlines [ "ENV TOMCAT_VERSION 9.0.2"
+                                         , "ENV TOMCAT_URL foo.com?q=1"
+                                         ]
+                    ast = [ Env [("TOMCAT_VERSION", "9.0.2")]
+                          , Env [("TOMCAT_URL", "foo.com?q=1")]
                           ]
                 in assertAst dockerfile ast
 
@@ -85,12 +93,12 @@ spec = do
         describe "parse RUN" $
             it "escaped with space before" $
             let dockerfile = unlines ["RUN yum install -y \\ ", "imagemagick \\ ", "mysql"]
-            in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"], EOL, EOL]
+            in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"]]
 
         describe "parse CMD" $ do
             it "one line cmd" $ assertAst "CMD true" [Cmd ["true"]]
             it "cmd over several lines" $
-                assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"], EOL]
+                assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"]]
             it "quoted command params" $ assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
 
         describe "parse SHELL" $ do
@@ -115,12 +123,12 @@ spec = do
         describe "parse # comment " $ do
             it "multiple comments before run" $
                 let dockerfile = unlines ["# line 1", "# line 2", "RUN apt-get update"]
-                in assertAst dockerfile [Comment " line 1", Comment " line 2", Run ["apt-get", "update"], EOL]
+                in assertAst dockerfile [Comment " line 1", Comment " line 2", Run ["apt-get", "update"]]
             it "multiple comments after run" $
                 let dockerfile = unlines ["RUN apt-get update", "# line 1", "# line 2"]
                 in assertAst
                        dockerfile
-                       [Run ["apt-get", "update"], Comment " line 1", Comment " line 2", EOL]
+                       [Run ["apt-get", "update"], Comment " line 1", Comment " line 2"]
         describe "normalize lines" $ do
             it "join multiple ENV" $
                 let dockerfile = unlines [ "FROM busybox"

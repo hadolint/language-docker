@@ -9,7 +9,6 @@ import Language.Haskell.TH.Syntax
 
 import Language.Docker.EDSL
 import qualified Language.Docker.Parser as Parser
-import Language.Docker.Syntax
 import Language.Docker.Syntax.Lift ()
 
 -- | Quasiquoter for embedding dockerfiles on the EDSL
@@ -30,9 +29,7 @@ edockerfileE :: String -> ExpQ
 edockerfileE e =
     case Parser.parseString e of
         Left err -> fail (show err)
-        Right d ->
-            let d' = filterEOL d
-            in [|embed d'|]
+        Right d -> [|embed d|]
 
 dockerfile :: QuasiQuoter
 dockerfile =
@@ -47,9 +44,4 @@ dockerfileE :: String -> ExpQ
 dockerfileE e =
     case Parser.parseString e of
         Left err -> fail (show err)
-        Right d ->
-            let d' = filterEOL d
-            in lift d'
-
-filterEOL :: [InstructionPos] -> [InstructionPos]
-filterEOL = filter (\(InstructionPos i _ _) -> i /= EOL)
+        Right d -> lift d
