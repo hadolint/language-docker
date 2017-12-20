@@ -1,53 +1,52 @@
 module Language.Docker.Lexer where
 
-import Text.Parsec.Language (emptyDef)
+import Control.Monad (void)
+import Data.Char
+import Text.Parsec hiding (space, spaces)
+import Text.Parsec.Language (haskell)
 import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token
 
-lexer :: Token.TokenParser ()
-lexer = Token.makeTokenParser style -- style
-  where
-    names =
-        [ "FROM"
-        , "ADD"
-        , "RUN"
-        , "WORKDIR"
-        , "EXPOSE"
-        , "VOLUME"
-        , "ENTRYPOINT"
-        , "MAINTAINER"
-        , "ENV"
-        , "LABEL"
-        , "USER"
-        , "SHELL"
-        , "STOPSIGNAL"
-        , "CMD"
-        , "ONBUILD"
-        , "ARG"
-        , "HEALTHCHECK"
-        ]
-    style = emptyDef {Token.caseSensitive = False, Token.reservedNames = names}
-
 reserved :: String -> Parser ()
-reserved = Token.reserved lexer
-
-reservedOp :: String -> Parser ()
-reservedOp = Token.reservedOp lexer
+reserved name = void (caseInsensitiveString name >> spaces1)
 
 natural :: Parser Integer
-natural = Token.natural lexer
+natural = zeroNumber <|> Token.decimal haskell <?> "positive number"
+  where
+    zeroNumber = char '0' >> return 0
 
 commaSep :: Parser a -> Parser [a]
-commaSep = Token.commaSep lexer
+commaSep p = sepBy p (symbol ",")
 
 stringLiteral :: Parser String
-stringLiteral = Token.stringLiteral lexer
+stringLiteral = Token.stringLiteral haskell
 
 brackets :: Parser a -> Parser a
-brackets = Token.brackets lexer
+brackets = between (symbol "[") (symbol "]")
 
-identifier :: Parser String
-identifier = Token.identifier lexer
+whiteSpace :: Parser ()
+whiteSpace = void (char ' ' <|> char '\t') <?> "space"
+
+space :: Parser ()
+space = whiteSpace
+
+spaces1 :: Parser ()
+spaces1 = void (many1 whiteSpace <?> "at least one space")
+
+spaces :: Parser ()
+spaces = void (many whiteSpace <?> "spaces")
+
+symbol :: String -> Parser String
+symbol name = lexeme (string name)
+
+caseInsensitiveChar :: Char -> Parser Char
+caseInsensitiveChar c = char (toUpper c) <|> char (toLower c)
+
+caseInsensitiveString :: String -> Parser String
+caseInsensitiveString s = mapM caseInsensitiveChar s <?> "\"" ++ s ++ "\""
 
 lexeme :: Parser a -> Parser a
-lexeme = Token.lexeme lexer
+lexeme p = do
+    x <- p
+    spaces
+    return x

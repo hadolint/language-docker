@@ -72,7 +72,6 @@ data Instruction
     | Healthcheck String
     | Comment String
     | OnBuild Instruction
-    | EOL
     deriving (Eq, Ord, Show)
 
 type Filename = String

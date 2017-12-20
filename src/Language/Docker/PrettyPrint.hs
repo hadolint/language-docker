@@ -128,7 +128,6 @@ prettyPrintInstruction i =
         Healthcheck c -> do
             text "HEALTHCHECK"
             text c
-        EOL -> mempty
   where
     (>>) = (<+>)
     return = (mempty <>)

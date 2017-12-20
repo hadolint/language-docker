@@ -3,9 +3,8 @@ module Language.Docker.Parser where
 import Control.Monad (void)
 import Data.ByteString.Char8 (pack)
 import Data.Char (toUpper)
-import Text.Parsec hiding (label)
+import Text.Parsec hiding (label, space, spaces)
 import Text.Parsec.String (Parser)
-import qualified Text.Parsec.Token as Token
 
 import Language.Docker.Lexer
 import Language.Docker.Normalize
@@ -68,7 +67,7 @@ copy :: Parser Instruction
 copy = do
     reserved "COPY"
     src <- many (noneOf " ")
-    Token.whiteSpace lexer
+    spaces1
     dst <- many (noneOf "\n")
     return $ Copy src dst
 
@@ -86,36 +85,24 @@ stopsignal = do
 
 -- We cannot use string literal because it swallows space
 -- and therefore have to implement quoted values by ourselves
-quotedValue :: Parser String
-quotedValue = do
-    void $ char '"'
-    literal <- untilOccurrence "\""
-    void $ char '"'
-    return literal
+doubleQuotedValue :: Parser String
+doubleQuotedValue = between (char '"') (char '"') (many1 $ noneOf "\n\"")
 
-rawValue :: Parser String
-rawValue = many1 (noneOf [' ', '=', '\n'])
+singleQuotedValue :: Parser String
+singleQuotedValue = between (void $ char '\'') (void $ char '\'') (many $ noneOf "\n'")
 
 singleValue :: Parser String
-singleValue = try quotedValue <|> try rawValue
+singleValue = try doubleQuotedValue <|> try singleQuotedValue <|> many1 (noneOf "\n\t ")
 
 pair :: Parser (String, String)
 pair = do
-    key <- rawValue
-    void $ oneOf "= "
-    spaces
+    key <- many (noneOf "\t\n= ")
+    void $ char '='
     value <- singleValue
     return (key, value)
 
 pairs :: Parser Pairs
-pairs = do
-    _ <- many (char ' ')
-    first <- pair
-    next <- remainingPairs
-    return (first : next)
-
-remainingPairs :: Parser Pairs
-remainingPairs = try (char ' ' >> pairs) <|> try (return [])
+pairs = pair `sepBy1` spaces1
 
 label :: Parser Instruction
 label = do
@@ -132,8 +119,18 @@ arg = do
 env :: Parser Instruction
 env = do
     reserved "ENV"
-    p <- pairs
+    p <- envPairs
     return $ Env p
+
+envPairs :: Parser Pairs
+envPairs = try pairs <|> singlePair
+
+singlePair :: Parser Pairs
+singlePair = do
+    key <- many (noneOf "\t\n ")
+    spaces1
+    val <- untilEol
+    return [(key, val)]
 
 user :: Parser Instruction
 user = do
@@ -144,9 +141,9 @@ user = do
 add :: Parser Instruction
 add = do
     reserved "ADD"
-    src <- untilOccurrence " "
-    Token.whiteSpace lexer
-    dst <- untilOccurrence "\n"
+    src <- many (noneOf "\t\n ")
+    spaces1
+    dst <- untilEol
     return $ Add src dst
 
 expose :: Parser Instruction
@@ -156,18 +153,18 @@ expose = do
     return $ Expose (Ports ports)
 
 port :: Parser Port
-port = try portWithProtocol <|> portInt <|> portVariable
+port = portVariable <|> try portWithProtocol <|> portInt
 
 portInt :: Parser Port
 portInt = do
-    portNumber <- Token.decimal lexer
+    portNumber <- natural
     return $ Port portNumber TCP
 
 portWithProtocol :: Parser Port
 portWithProtocol = do
     Port portNumber _ <- portInt
     void (char '/')
-    proto <- choice [string "tcp", string "udp", string "TCP", string "UDP"]
+    proto <- caseInsensitiveString "tcp" <|> caseInsensitiveString "udp"
     case map toUpper proto of
         "TCP" -> return $ Port portNumber TCP
         "UDP" -> return $ Port portNumber UDP
@@ -221,7 +218,7 @@ argumentsShell = do
     return $ words args
 
 arguments :: Parser Arguments
-arguments = try argumentsExec <|> try argumentsShell
+arguments = try argumentsExec <|> argumentsShell
 
 entrypoint :: Parser Instruction
 entrypoint = do
@@ -234,11 +231,6 @@ onbuild = do
     reserved "ONBUILD"
     i <- parseInstruction
     return $ OnBuild i
-
-eolInstruction :: Parser Instruction
-eolInstruction = do
-    eol
-    return EOL
 
 healthcheck :: Parser Instruction
 healthcheck = do
@@ -266,12 +258,11 @@ parseInstruction =
     try maintainer <|>
     try add <|>
     try comment <|>
-    try healthcheck <|>
-    try eolInstruction
+    try healthcheck
 
 contents :: Parser a -> Parser a
 contents p = do
-    Token.whiteSpace lexer
+    void $ many (space <|> void (char '\n'))
     r <- p
     eof
     return r
@@ -281,15 +272,10 @@ eol = void $ char '\n' <|> (char '\r' >> option '\n' (char '\n'))
 
 dockerfile :: Parser Dockerfile
 dockerfile =
-    many $
-    -- deal with empty lines that only contain spaces or tabs
-    -- skipMany space
-    -- skipMany $ char '\t'
-     do
+    many $ do
         pos <- getPosition
         i <- parseInstruction
-        optional eol
-        -- skipMany eol
+        void (many1 eol) <|> eof
         return $ InstructionPos i (sourceName pos) (sourceLine pos)
 
 parseString :: String -> Either ParseError Dockerfile
