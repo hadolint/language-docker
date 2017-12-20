@@ -55,6 +55,8 @@ normalize allLines =
     -- If we are buffering lines, and the next line is a comment,
     -- we simply ignore the comment and remember to add a newline
     transform (Joined prev times) ('#':_) = (Joined prev (times + 1), Nothing)
+    -- We do the same if we are buffering lines and the next one is empty
+    transform (Joined prev times) "" = (Joined prev (times + 1), Nothing)
     -- If we are buffering lines, then we check whether the current line end with \,
     -- if it does, then we merged it into the buffered state, otherwise we just yield
     -- the concatanation of the buffer and the current line as result, after padding with

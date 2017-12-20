@@ -82,7 +82,6 @@ function clone_repos() {
     git_named_clone https://github.com/seapy/dockerfiles.git seapy-dockerfiles &
     git_named_clone https://github.com/nickstenning/dockerfiles.git nickstenning-dockerfiles &
     git_named_clone https://github.com/crosbymichael/Dockerfiles.git crosbymichael-dockerfiles &
-    git_named_clone https://github.com/SvenDowideit/dockerfiles.git svendowideit-dockerfiles &
     git_named_clone https://github.com/codenvy/dockerfiles.git codenvy-dockerfiles &
     git_named_clone https://github.com/couchbase/docker.git couchbase-docker &
     git_named_clone https://github.com/EvaEngine/Dockerfiles.git evaengine-dockerfiles &
