@@ -36,6 +36,8 @@ spec = do
 
         describe "parse LABEL" $ do
             it "parse label" $ assertAst "LABEL foo=bar" [Label[("foo", "bar")]]
+            it "parse space separated label" $ assertAst "LABEL foo bar baz" [Label[("foo", "bar baz")]]
+            it "parse quoted labels" $ assertAst "LABEL \"foo bar\"=baz" [Label[("foo bar", "baz")]]
             it "parses multiline labels" $
                 let dockerfile = unlines [ "LABEL foo=bar \\", "hobo=mobo"]
                     ast = [ Label [("foo", "bar"), ("hobo", "mobo")] ]
