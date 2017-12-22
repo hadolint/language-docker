@@ -92,7 +92,7 @@ singleQuotedValue :: Parser String
 singleQuotedValue = between (void $ char '\'') (void $ char '\'') (many $ noneOf "\n'")
 
 singleValue :: Parser String
-singleValue = try doubleQuotedValue <|> try singleQuotedValue <|> many1 (noneOf "\n\t ")
+singleValue = try doubleQuotedValue <|> try singleQuotedValue <|> charsWithEscapedSpaces
 
 pair :: Parser (String, String)
 pair = do
