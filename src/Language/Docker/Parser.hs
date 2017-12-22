@@ -149,11 +149,21 @@ add = do
 expose :: Parser Instruction
 expose = do
     reserved "EXPOSE"
-    ports <- port `sepEndBy1` space
-    return $ Expose (Ports ports)
+    ps <- try portRange <|> ports
+    return $ Expose ps
 
 port :: Parser Port
 port = portVariable <|> try portWithProtocol <|> portInt
+
+ports :: Parser Ports
+ports = Ports <$> port `sepEndBy1` space
+
+portRange :: Parser Ports
+portRange = do
+    start <- portInt
+    void $ char '-'
+    finish <- portInt
+    return $ PortRange start finish
 
 portInt :: Parser Port
 portInt = do
@@ -173,7 +183,7 @@ portWithProtocol = do
 portVariable :: Parser Port
 portVariable = do
     void $ lookAhead (char '$')
-    variable <- untilOccurrence "\t\n "
+    variable <- untilOccurrence "\t\n- "
     return $ PortStr variable
 
 run :: Parser Instruction
