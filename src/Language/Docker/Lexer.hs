@@ -45,6 +45,16 @@ caseInsensitiveChar c = char (toUpper c) <|> char (toLower c)
 caseInsensitiveString :: String -> Parser String
 caseInsensitiveString s = mapM caseInsensitiveChar s <?> "\"" ++ s ++ "\""
 
+charsWithEscapedSpaces :: Parser String
+charsWithEscapedSpaces = do
+    buf <- many1 (noneOf "\n\t\\ ")
+    try (jumpEscapeSequence buf) <|> return buf
+  where
+    jumpEscapeSequence buf = do
+        void $ string "\\ "
+        rest <- charsWithEscapedSpaces
+        return $ buf ++ ' ' : rest
+
 lexeme :: Parser a -> Parser a
 lexeme p = do
     x <- p

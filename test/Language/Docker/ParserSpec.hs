@@ -88,6 +88,16 @@ spec = do
                           , Env [("TOMCAT_URL", "foo.com?q=1")]
                           ]
                 in assertAst dockerfile ast
+            it "parses many env lines in mixed style" $
+                let dockerfile = unlines [ "ENV myName=\"John Doe\" myDog=Rex\\ The\\ Dog \\"
+                                         , "    myCat=fluffy"
+                                         ]
+                    ast = [ Env [("myName", "John Doe")
+                                ,("myDog", "Rex The Dog")
+                                ,("myCat", "fluffy")
+                                ]
+                          ]
+                in assertAst dockerfile ast
 
 
         describe "parse RUN" $
