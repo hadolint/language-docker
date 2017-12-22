@@ -92,7 +92,8 @@ singleQuotedValue :: Parser String
 singleQuotedValue = between (void $ char '\'') (void $ char '\'') (many $ noneOf "\n'")
 
 singleValue :: String -> Parser String
-singleValue stopChars = try doubleQuotedValue <|> try singleQuotedValue <|> charsWithEscapedSpaces stopChars
+singleValue stopChars =
+    try doubleQuotedValue <|> try singleQuotedValue <|> charsWithEscapedSpaces stopChars
 
 pair :: Parser (String, String)
 pair = do
@@ -101,13 +102,13 @@ pair = do
     value <- singleValue ""
     return (key, value)
 
-pairs :: Parser Pairs
-pairs = pair `sepBy1` spaces1
+pairsList :: Parser Pairs
+pairsList = pair `sepBy1` spaces1
 
 label :: Parser Instruction
 label = do
     reserved "LABEL"
-    p <- envPairs
+    p <- pairs
     return $ Label p
 
 arg :: Parser Instruction
@@ -119,11 +120,11 @@ arg = do
 env :: Parser Instruction
 env = do
     reserved "ENV"
-    p <- envPairs
+    p <- pairs
     return $ Env p
 
-envPairs :: Parser Pairs
-envPairs = try pairs <|> singlePair
+pairs :: Parser Pairs
+pairs = try pairsList <|> singlePair
 
 singlePair :: Parser Pairs
 singlePair = do
