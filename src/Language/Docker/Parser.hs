@@ -91,14 +91,14 @@ doubleQuotedValue = between (char '"') (char '"') (many1 $ noneOf "\n\"")
 singleQuotedValue :: Parser String
 singleQuotedValue = between (void $ char '\'') (void $ char '\'') (many $ noneOf "\n'")
 
-singleValue :: Parser String
-singleValue = try doubleQuotedValue <|> try singleQuotedValue <|> charsWithEscapedSpaces
+singleValue :: String -> Parser String
+singleValue stopChars = try doubleQuotedValue <|> try singleQuotedValue <|> charsWithEscapedSpaces stopChars
 
 pair :: Parser (String, String)
 pair = do
-    key <- many (noneOf "\t\n= ")
+    key <- singleValue "="
     void $ char '='
-    value <- singleValue
+    value <- singleValue ""
     return (key, value)
 
 pairs :: Parser Pairs
@@ -107,7 +107,7 @@ pairs = pair `sepBy1` spaces1
 label :: Parser Instruction
 label = do
     reserved "LABEL"
-    p <- pairs
+    p <- envPairs
     return $ Label p
 
 arg :: Parser Instruction
