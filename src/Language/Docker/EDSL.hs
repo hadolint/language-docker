@@ -125,7 +125,7 @@ udpPort = flip Syntax.Port Syntax.UDP
 variablePort :: String -> Syntax.Port
 variablePort varName = Syntax.PortStr ('$' : varName)
 
-portRange :: Syntax.Port -> Syntax.Port -> Syntax.Ports
+portRange :: Integer -> Integer -> Syntax.Port
 portRange = Syntax.PortRange
 
 run :: MonadFree EInstruction m => String -> m ()

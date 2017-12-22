@@ -38,7 +38,7 @@ spec = do
             let r = prettyPrint $ toDockerfile (do
                         from "scratch"
                         expose $ ports [variablePort "PORT", tcpPort 80, udpPort 51]
-                        expose $ portRange (tcpPort 90) (tcpPort 100))
+                        expose $ ports [portRange 90 100])
             r `shouldBe` unlines [ "FROM scratch"
                                  , "EXPOSE $PORT 80/tcp 51/udp"
                                  , "EXPOSE 90-100"
