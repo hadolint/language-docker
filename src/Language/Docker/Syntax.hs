@@ -17,8 +17,9 @@ data Port
     | PortStr String
     deriving (Show, Eq, Ord)
 
-newtype Ports =
-    Ports [Port]
+data Ports =
+     Ports [Port]
+    | PortRange Port Port
     deriving (Show, Eq, Ord)
 
 type Directory = String

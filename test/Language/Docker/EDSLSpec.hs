@@ -37,9 +37,11 @@ spec = do
         it "print expose instructions correctly" $ do
             let r = prettyPrint $ toDockerfile (do
                         from "scratch"
-                        expose $ ports [variablePort "PORT", tcpPort 80, udpPort 51])
+                        expose $ ports [variablePort "PORT", tcpPort 80, udpPort 51]
+                        expose $ portRange (tcpPort 90) (tcpPort 100))
             r `shouldBe` unlines [ "FROM scratch"
                                  , "EXPOSE $PORT 80/tcp 51/udp"
+                                 , "EXPOSE 90-100"
                                  ]
 
         it "onBuild let's us nest statements" $ do

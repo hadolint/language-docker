@@ -90,6 +90,10 @@ prettyPrintInstruction i =
         Expose (Ports ps) -> do
             text "EXPOSE"
             hsep (map prettyPrintPort ps)
+        Expose (PortRange (Port start TCP) (Port finish TCP)) -> do
+            text "EXPOSE"
+            integer start <> text "-" <> integer finish
+        Expose range@(PortRange _ _) -> error $ "Not a valid Port Range " ++ show range
         Volume dir -> do
             text "VOLUME"
             text dir
