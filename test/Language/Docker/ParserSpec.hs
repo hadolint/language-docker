@@ -100,7 +100,12 @@ spec = do
                                 ]
                           ]
                 in assertAst dockerfile ast
-
+            it "parses many env with backslashes" $
+                let dockerfile = unlines [ "ENV JAVA_HOME=C:\\\\jdk1.8.0_112"
+                                         ]
+                    ast = [ Env [("JAVA_HOME", "C:\\\\jdk1.8.0_112")]
+                          ]
+                in assertAst dockerfile ast
 
         describe "parse RUN" $
             it "escaped with space before" $

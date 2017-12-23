@@ -286,7 +286,7 @@ dockerfile =
     many $ do
         pos <- getPosition
         i <- parseInstruction
-        void (many1 eol) <|> eof
+        void (many1 eol) <|> eof <?> "the next instruction, or the end of file"
         return $ InstructionPos i (sourceName pos) (sourceLine pos)
 
 parseString :: String -> Either ParseError Dockerfile
