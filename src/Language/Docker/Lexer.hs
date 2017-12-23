@@ -48,8 +48,13 @@ caseInsensitiveString s = mapM caseInsensitiveChar s <?> "\"" ++ s ++ "\""
 charsWithEscapedSpaces :: String -> Parser String
 charsWithEscapedSpaces stopChars = do
     buf <- many1 $ noneOf ("\n\t\\ " ++ stopChars)
-    try (jumpEscapeSequence buf) <|> return buf
+    try (jumpEscapeSequence buf) <|> try (backslashFollowedByChars buf) <|> return buf
   where
+    backslashFollowedByChars buf = do
+        backslashes <- many1 (char '\\')
+        notFollowedBy (char ' ')
+        rest <- charsWithEscapedSpaces stopChars
+        return $ buf ++ backslashes ++ rest
     jumpEscapeSequence buf = do
         void $ string "\\ "
         rest <- charsWithEscapedSpaces stopChars
