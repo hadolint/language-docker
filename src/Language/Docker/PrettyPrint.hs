@@ -66,6 +66,7 @@ prettyPrintJSON as = brackets $ hsep $ intersperse comma $ map (doubleQuotes . t
 
 prettyPrintPort :: Port -> Doc
 prettyPrintPort (PortStr str) = text str
+prettyPrintPort (PortRange start stop) = integer start <> text "-" <> integer stop
 prettyPrintPort (Port num TCP) = integer num <> char '/' <> text "tcp"
 prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
 
@@ -90,10 +91,6 @@ prettyPrintInstruction i =
         Expose (Ports ps) -> do
             text "EXPOSE"
             hsep (map prettyPrintPort ps)
-        Expose (PortRange (Port start TCP) (Port finish TCP)) -> do
-            text "EXPOSE"
-            integer start <> text "-" <> integer finish
-        Expose range@(PortRange _ _) -> error $ "Not a valid Port Range " ++ show range
         Volume dir -> do
             text "VOLUME"
             text dir

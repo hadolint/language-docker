@@ -15,11 +15,12 @@ data Port
     = Port Integer
            Protocol
     | PortStr String
+    | PortRange Integer
+                Integer
     deriving (Show, Eq, Ord)
 
-data Ports =
-     Ports [Port]
-    | PortRange Port Port
+newtype Ports =
+    Ports [Port]
     deriving (Show, Eq, Ord)
 
 type Directory = String

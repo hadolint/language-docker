@@ -150,20 +150,20 @@ add = do
 expose :: Parser Instruction
 expose = do
     reserved "EXPOSE"
-    ps <- try portRange <|> ports
+    ps <- ports
     return $ Expose ps
 
 port :: Parser Port
-port = portVariable <|> try portWithProtocol <|> portInt
+port = portVariable <|> try portRange <|> try portWithProtocol <|> portInt
 
 ports :: Parser Ports
 ports = Ports <$> port `sepEndBy1` space
 
-portRange :: Parser Ports
+portRange :: Parser Port
 portRange = do
-    start <- portInt
+    start <- natural
     void $ char '-'
-    finish <- portInt
+    finish <- natural
     return $ PortRange start finish
 
 portInt :: Parser Port
