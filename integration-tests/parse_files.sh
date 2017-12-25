@@ -5,7 +5,9 @@ set -o nounset
 
 readonly CWD="$PWD"
 readonly TESTS_DIR="integration-tests/Dockerfiles"
-readonly BLACKLIST="./Dockerfiles/dockerfiles/nylas/sync-engine/Dockerfile"
+BLACKLIST="./Dockerfiles/dockerfiles/nylas/sync-engine/Dockerfile"
+BLACKLIST=$BLACKLIST" ./Dockerfiles/docker-images/OracleWebLogic/samples/12212-domain/Dockerfile"
+BLACKLIST=$BLACKLIST" ./Dockerfiles/docker-images/OracleWebLogic/samples/12213-domain/Dockerfile"
 
 function git_clone() {
     local git_url="$1"
@@ -104,7 +106,7 @@ function parse_dockerfiles() {
     stack ghc parseFile.hs --package language-docker
     dockerfiles=$(find . -name 'Dockerfile')
     for dockerfile in $dockerfiles; do
-	if [[ $dockerfile == *"$BLACKLIST"* ]]; then
+	if [[ "$BLACKLIST" == *$dockerfile* ]]; then
 		continue;
 	fi
         if ./parseFile "$dockerfile" | grep -a1 unexpected; then
