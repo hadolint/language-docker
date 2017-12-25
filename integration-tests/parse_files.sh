@@ -5,6 +5,7 @@ set -o nounset
 
 readonly CWD="$PWD"
 readonly TESTS_DIR="integration-tests/Dockerfiles"
+readonly BLACKLIST="./Dockerfiles/dockerfiles/nylas/sync-engine/Dockerfile"
 
 function git_clone() {
     local git_url="$1"
@@ -95,7 +96,6 @@ function clone_repos() {
     git_named_clone https://github.com/Evlos/dockerfile.git evlos-dockerfile &
 
     wait
-    cd "${CWD}/integration-tests/"
 }
 
 function parse_dockerfiles() {
@@ -104,6 +104,9 @@ function parse_dockerfiles() {
     stack ghc parseFile.hs --package language-docker
     dockerfiles=$(find . -name 'Dockerfile')
     for dockerfile in $dockerfiles; do
+	if [[ $dockerfile == *"$BLACKLIST"* ]]; then
+		continue;
+	fi
         if ./parseFile "$dockerfile" | grep -a1 unexpected; then
             result="false"
         fi
@@ -113,6 +116,7 @@ function parse_dockerfiles() {
 
 function main() {
     clone_repos
+    cd "${CWD}/integration-tests/"
     parse_dockerfiles
 }
 

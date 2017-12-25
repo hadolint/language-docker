@@ -14,7 +14,7 @@ trimLines :: [String] -> [String]
 trimLines = map strip
   where
     strip = lstrip . rstrip
-    lstrip = dropWhile (`elem` " \t")
+    lstrip = dropWhile (`elem` " \t\r")
     rstrip = reverse . lstrip . reverse
 
 -- Finds all lines ending with \ and joins them with the next line using
