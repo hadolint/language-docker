@@ -12,7 +12,7 @@ import Language.Docker.Syntax
 comment :: Parser Instruction
 comment = do
     void $ char '#'
-    text <- untilEol
+    text <- many (noneOf "\n")
     return $ Comment text
 
 taggedImage :: Parser BaseImage

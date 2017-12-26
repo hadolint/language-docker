@@ -146,6 +146,10 @@ spec = do
                 in assertAst
                        dockerfile
                        [Run ["apt-get", "update"], Comment " line 1", Comment " line 2"]
+
+            it "empty comment" $
+                let dockerfile = unlines ["#", "# Hello"]
+                in assertAst dockerfile [Comment "", Comment " Hello"]
         describe "normalize lines" $ do
             it "join multiple ENV" $
                 let dockerfile = unlines [ "FROM busybox"
