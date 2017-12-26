@@ -107,10 +107,14 @@ spec = do
                           ]
                 in assertAst dockerfile ast
 
-        describe "parse RUN" $
+        describe "parse RUN" $ do
             it "escaped with space before" $
-            let dockerfile = unlines ["RUN yum install -y \\ ", "imagemagick \\ ", "mysql"]
-            in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"]]
+                let dockerfile = unlines ["RUN yum install -y \\ ", "imagemagick \\ ", "mysql"]
+                in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"]]
+
+            it "does not choke on unmatched brackets" $
+                let dockerfile = unlines ["RUN [foo"]
+                in assertAst dockerfile [Run ["[foo"]]
 
         describe "parse CMD" $ do
             it "one line cmd" $ assertAst "CMD true" [Cmd ["true"]]

@@ -243,9 +243,7 @@ argumentsExec = brackets $ commaSep stringLiteral
 argumentsShell :: Parser Arguments
 argumentsShell = do
     args <- untilEol
-    case args of
-        '[':_ -> unexpected "'['"
-        _ -> return $ words args
+    return $ words args
 
 arguments :: Parser Arguments
 arguments = try argumentsExec <|> try argumentsShell
