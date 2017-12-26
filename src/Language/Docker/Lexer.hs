@@ -8,7 +8,10 @@ import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token
 
 reserved :: String -> Parser ()
-reserved name = void (caseInsensitiveString name >> spaces1)
+reserved name =
+    void $ do
+        _ <- try (caseInsensitiveString name) <?> name
+        spaces1 <?> "at least one space after '" ++ name ++ "' followed by its arguments"
 
 natural :: Parser Integer
 natural = zeroNumber <|> Token.decimal haskell <?> "positive number"
