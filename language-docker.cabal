@@ -1,6 +1,8 @@
--- This file has been generated from package.yaml by hpack version 0.17.1.
+-- This file has been generated from package.yaml by hpack version 0.20.0.
 --
 -- see: https://github.com/sol/hpack
+--
+-- hash: 1f57a126098c830eac5ce99e38c1b35596513d866364beff62006b00662b9668
 
 name:           language-docker
 version:        1.0.0
@@ -35,24 +37,24 @@ library
       src
   ghc-options: -Wall -fno-warn-unused-do-bind -fno-warn-orphans
   build-depends:
-      base >=4.8 && <5
+      Glob
+    , aeson
+    , base >=4.8 && <5
     , bytestring >=0.10
+    , directory
+    , filepath
+    , free
+    , mtl
     , parsec >=3.1
     , pretty
     , split >=0.2
-    , free
-    , mtl
-    , transformers
     , template-haskell
+    , text
     , th-lift
     , th-lift-instances
-    , text
-    , yaml
-    , aeson
-    , Glob
+    , transformers
     , unordered-containers
-    , directory
-    , filepath
+    , yaml
   exposed-modules:
       Language.Docker
       Language.Docker.Parser
@@ -76,36 +78,34 @@ test-suite hspec
   hs-source-dirs:
       test
   build-depends:
-      base >=4.8 && <5
+      Glob
+    , HUnit >=1.2
+    , QuickCheck
+    , aeson
+    , base >=4.8 && <5
     , bytestring >=0.10
+    , directory
+    , filepath
+    , free
+    , hspec
+    , language-docker
+    , mtl
     , parsec >=3.1
     , pretty
+    , process
     , split >=0.2
-    , free
-    , mtl
-    , transformers
     , template-haskell
+    , text
     , th-lift
     , th-lift-instances
-    , text
-    , yaml
-    , aeson
-    , Glob
+    , transformers
     , unordered-containers
-    , directory
-    , filepath
-    , hspec
-    , QuickCheck
-    , language-docker
-    , Glob
-    , directory
-    , filepath
-    , process
-    , HUnit >=1.2
+    , yaml
   other-modules:
       Language.Docker.EDSL.PluginsSpec
       Language.Docker.EDSL.QuasiSpec
       Language.Docker.EDSLSpec
       Language.Docker.ExamplesSpec
       Language.Docker.ParserSpec
+      Paths_language_docker
   default-language: Haskell2010

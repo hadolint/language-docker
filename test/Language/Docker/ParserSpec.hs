@@ -1,9 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Language.Docker.ParserSpec where
 
-import Data.List (find)
-import Data.Maybe (fromMaybe, isJust)
-
 import Language.Docker.Normalize
 import Language.Docker.Parser
 import Language.Docker.Syntax
@@ -211,6 +208,37 @@ spec = do
             it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $ do
                 let content = "from ubuntu"
                 parse dockerfile "" content `shouldBe` Right [InstructionPos (From (UntaggedImage "ubuntu" Nothing)) "" 1]
+
+        describe "ADD" $ do
+            it "simple ADD" $
+                let file = unlines ["ADD . /app", "ADD http://foo.bar/baz ."]
+                in assertAst file [ Add [SourcePath "."] (TargetPath "/app")
+                                  , Add [SourcePath "http://foo.bar/baz"] (TargetPath ".")
+                                  ]
+            it "multifiles ADD" $
+                let file = unlines ["ADD foo bar baz /app"]
+                in assertAst file [ Add (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app")
+                                  ]
+
+            it "list of quoted files" $
+                let file = unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
+                in assertAst file [ Add (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app")
+                                  ]
+        describe "COPY" $ do
+            it "simple COPY" $
+                let file = unlines ["COPY . /app", "COPY baz /some/long/path"]
+                in assertAst file [ Copy [SourcePath "."] (TargetPath "/app")
+                                  , Copy [SourcePath "baz"] (TargetPath "/some/long/path")
+                                  ]
+            it "multifiles COPY" $
+                let file = unlines ["COPY foo bar baz /app"]
+                in assertAst file [ Copy (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app")
+                                  ]
+
+            it "list of quoted files" $
+                let file = unlines ["COPY [\"foo\", \"bar\", \"baz\", \"/app\"]"]
+                in assertAst file [ Copy (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app")
+                                  ]
 
 assertAst s ast =
     case parseString (s ++ "\n") of

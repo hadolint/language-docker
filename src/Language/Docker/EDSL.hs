@@ -89,7 +89,7 @@ toDockerfile e =
 -- main :: IO ()
 -- main = writeFile "something.dockerfile" $ toDockerfileStr $ do
 --     from (tagged "fpco/stack-build" "lts-6.9")
---     add "." "/app/language-docker"
+--     add ["."] "/app/language-docker"
 --     workdir "/app/language-docker"
 --     run (words "stack build --test --only-dependencies")
 --     cmd (words "stack test")

@@ -67,10 +67,19 @@ cmd = do
 copy :: Parser Instruction
 copy = do
     reserved "COPY"
-    src <- many (noneOf " ")
-    spaces1 <?> "a spaced followed by the target file or folder for COPY"
-    dst <- many (noneOf "\n")
-    return $ Copy src dst
+    fileList "COPY" Copy
+
+fileList :: String -> ([SourcePath] -> TargetPath -> Instruction) -> Parser Instruction
+fileList name constr = do
+    paths <-
+        (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]") <|>
+        (try spaceSeparated <?> "a space separated list of file paths")
+    case paths of
+        [_] -> fail $ "At least two arguments are required for " ++ name
+        _ -> return $ constr (SourcePath <$> init paths) (TargetPath $ last paths)
+  where
+    spaceSeparated = many (noneOf "\t\n ") `sepEndBy1` space
+    stringList = brackets $ commaSep stringLiteral
 
 shell :: Parser Instruction
 shell = do
@@ -155,10 +164,7 @@ user = do
 add :: Parser Instruction
 add = do
     reserved "ADD"
-    src <- many (noneOf "\t\n ")
-    spaces1 <?> "a spaced followed by the target file or folder for ADD"
-    dst <- untilEol
-    return $ Add src dst
+    fileList "ADD" Add
 
 expose :: Parser Instruction
 expose = do

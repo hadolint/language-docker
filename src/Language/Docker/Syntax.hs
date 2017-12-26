@@ -1,6 +1,10 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies #-}
+
 module Language.Docker.Syntax where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.String (IsString)
+import GHC.Exts (IsList(..))
 
 type Image = String
 
@@ -23,11 +27,16 @@ newtype Ports =
     Ports [Port]
     deriving (Show, Eq, Ord)
 
+instance IsList Ports where
+    type Item Ports = Port
+    fromList = Ports
+    toList (Ports ps) = ps
+
 type Directory = String
 
 newtype ImageAlias =
     ImageAlias String
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, IsString)
 
 data BaseImage
     = UntaggedImage Image
@@ -43,9 +52,13 @@ data BaseImage
 -- | Type of the Dockerfile AST
 type Dockerfile = [InstructionPos]
 
-type Source = String
+newtype SourcePath =
+    SourcePath String
+    deriving (Show, Eq, Ord, IsString)
 
-type Destination = String
+newtype TargetPath =
+    TargetPath String
+    deriving (Show, Eq, Ord, IsString)
 
 type Arguments = [String]
 
@@ -54,13 +67,13 @@ type Pairs = [(String, String)]
 -- | All commands available in Dockerfiles
 data Instruction
     = From BaseImage
-    | Add Source
-          Destination
+    | Add [SourcePath]
+          TargetPath
     | User String
     | Label Pairs
     | Stopsignal String
-    | Copy Source
-           Destination
+    | Copy [SourcePath]
+           TargetPath
     | Run Arguments
     | Cmd Arguments
     | Shell Arguments

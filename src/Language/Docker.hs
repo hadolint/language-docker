@@ -60,8 +60,8 @@ module Language.Docker
     , Language.Docker.Syntax.Tag
     , Language.Docker.Syntax.Ports
     , Language.Docker.Syntax.Directory
-    , Language.Docker.Syntax.Source
-    , Language.Docker.Syntax.Destination
+    , Language.Docker.Syntax.SourcePath
+    , Language.Docker.Syntax.TargetPath
     , Language.Docker.Syntax.Arguments
     , Language.Docker.Syntax.Pairs
     , Language.Docker.Syntax.Filename

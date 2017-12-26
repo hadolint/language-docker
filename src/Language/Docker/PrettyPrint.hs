@@ -70,6 +70,10 @@ prettyPrintPort (PortRange start stop) = integer start <> text "-" <> integer st
 prettyPrintPort (Port num TCP) = integer num <> char '/' <> text "tcp"
 prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
 
+prettyPrintFileList :: [SourcePath] -> TargetPath -> Doc
+prettyPrintFileList sources (TargetPath dest) =
+    hsep $ [text s | SourcePath s <- sources] ++ [text dest]
+
 prettyPrintInstruction :: Instruction -> Doc
 prettyPrintInstruction i =
     case i of
@@ -97,7 +101,9 @@ prettyPrintInstruction i =
         Run c -> do
             text "RUN"
             prettyPrintArguments c
-        Copy s d -> hsep [text "COPY", text s, text d]
+        Copy s d -> do
+            text "COPY"
+            prettyPrintFileList s d
         Cmd c -> do
             text "CMD"
             prettyPrintArguments c
@@ -121,8 +127,7 @@ prettyPrintInstruction i =
             prettyPrintBaseImage b
         Add s d -> do
             text "ADD"
-            text s
-            text d
+            prettyPrintFileList s d
         Shell args -> do
             text "SHELL"
             prettyPrintJSON args

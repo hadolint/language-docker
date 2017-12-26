@@ -21,6 +21,7 @@ import qualified System.FilePath.Glob as Glob
 
 import Language.Docker
 import Language.Docker.EDSL.Types
+import Language.Docker.Syntax
 
 appendLnIfMissing :: FilePath -> Text -> IO ()
 appendLnIfMissing fp cts = do
@@ -32,7 +33,7 @@ appendLnIfMissing fp cts = do
 dockerIgnore :: Text -> IO ()
 dockerIgnore = appendLnIfMissing ".dockerignore"
 
-addGlob :: (MonadIO m, MonadFree EInstruction m) => String -> Destination -> m ()
+addGlob :: (MonadIO m, MonadFree EInstruction m) => String -> TargetPath -> m ()
 addGlob pattern dest = do
     fs <-
         liftIO $ do
@@ -43,11 +44,11 @@ addGlob pattern dest = do
                 isdir <- doesDirectoryExist f
                 return $
                     if isdir
-                        then (f <> "/", dest <> takeBaseName f)
-                        else (f, dest <> takeBaseName f)
-    forM_ fs (uncurry add)
+                        then (SourcePath $ f <> "/")
+                        else (SourcePath f)
+    add fs dest
 
-copyGlob :: (MonadIO m, MonadFree EInstruction m) => String -> Destination -> m ()
+copyGlob :: (MonadIO m, MonadFree EInstruction m) => String -> TargetPath -> m ()
 copyGlob = addGlob
 
 stackBuild :: (Monad m, MonadIO m, MonadFree EInstruction m) => m ()
@@ -76,12 +77,12 @@ stackBuild' tag extra = do
     liftIO $ dockerIgnore ".cabal-sandbox"
     from ("fpco" `tagged` tag)
     extra
-    add "./package.yaml" "/app/package.yaml"
+    add ["./package.yaml"] "/app/package.yaml"
     addGlob "./*.cabal" "/app/"
-    add "./stack.yaml" "/app/stack.yaml"
+    add ["./stack.yaml"] "/app/stack.yaml"
     workdir "/app/"
     run "stack build --only-dependencies"
-    add "." "/app/stack.yaml"
+    add ["."] "/app/stack.yaml"
     run "stack build"
 
 nodejs :: (Monad m, MonadIO m, MonadFree EInstruction m) => m ()
@@ -93,8 +94,8 @@ nodejs' tag extra = do
     liftIO $ dockerIgnore "bower_components"
     from ("node" `tagged` tag)
     extra
-    add "./package.json" "/app/package.json"
+    add ["./package.json"] "/app/package.json"
     workdir "/app/"
     run "npm install"
-    add "." "/app/"
+    add ["."] "/app/"
     cmd "npm start"

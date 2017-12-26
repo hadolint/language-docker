@@ -23,8 +23,8 @@ instance IsString EBaseImage where
 data EInstruction next
     = From EBaseImage
            next
-    | Add Syntax.Source
-          Syntax.Destination
+    | Add [Syntax.SourcePath]
+          Syntax.TargetPath
           next
     | User String
            next
@@ -32,8 +32,8 @@ data EInstruction next
             next
     | StopSignal String
                  next
-    | Copy Syntax.Source
-           Syntax.Destination
+    | Copy [Syntax.SourcePath]
+           Syntax.TargetPath
            next
     | RunArgs Syntax.Arguments
               next
