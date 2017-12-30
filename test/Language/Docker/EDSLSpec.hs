@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 module Language.Docker.EDSLSpec where
 
 import           Control.Monad.IO.Class

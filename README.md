@@ -77,6 +77,7 @@ main = putStr $ toDockerfileStr $ do
 ```haskell
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 import Control.Monad
 import Language.Docker
 import Data.String (fromString)
@@ -104,6 +105,7 @@ support more features like file globbing:
 
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 import           Language.Docker
 import qualified System.Directory     as Directory
 import qualified System.FilePath      as FilePath

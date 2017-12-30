@@ -1,8 +1,10 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies,
+  DuplicateRecordFields #-}
 
 module Language.Docker.Syntax where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.List.NonEmpty (NonEmpty)
 import Data.String (IsString)
 import GHC.Exts (IsList(..))
 
@@ -23,9 +25,9 @@ data Port
                 Integer
     deriving (Show, Eq, Ord)
 
-newtype Ports =
-    Ports [Port]
-    deriving (Show, Eq, Ord)
+newtype Ports = Ports
+    { unPorts :: [Port]
+    } deriving (Show, Eq, Ord)
 
 instance IsList Ports where
     type Item Ports = Port
@@ -34,9 +36,9 @@ instance IsList Ports where
 
 type Directory = String
 
-newtype ImageAlias =
-    ImageAlias String
-    deriving (Show, Eq, Ord, IsString)
+newtype ImageAlias = ImageAlias
+    { unImageAlias :: String
+    } deriving (Show, Eq, Ord, IsString)
 
 data BaseImage
     = UntaggedImage Image
@@ -52,13 +54,13 @@ data BaseImage
 -- | Type of the Dockerfile AST
 type Dockerfile = [InstructionPos]
 
-newtype SourcePath =
-    SourcePath String
-    deriving (Show, Eq, Ord, IsString)
+newtype SourcePath = SourcePath
+    { unSourcePath :: String
+    } deriving (Show, Eq, Ord, IsString)
 
-newtype TargetPath =
-    TargetPath String
-    deriving (Show, Eq, Ord, IsString)
+newtype TargetPath = TargetPath
+    { unTargetPath :: String
+    } deriving (Show, Eq, Ord, IsString)
 
 data Chown
     = Chown String
@@ -70,6 +72,19 @@ data CopySource
     | NoSource
     deriving (Show, Eq, Ord)
 
+data CopyArgs = CopyArgs
+    { sourcePaths :: NonEmpty SourcePath
+    , targetPath :: TargetPath
+    , chownFlag :: Chown
+    , sourceFlag :: CopySource
+    } deriving (Show, Eq, Ord)
+
+data AddArgs = AddArgs
+    { sourcePaths :: NonEmpty SourcePath
+    , targetPath :: TargetPath
+    , chownFlag :: Chown
+    } deriving (Show, Eq, Ord)
+
 type Arguments = [String]
 
 type Pairs = [(String, String)]
@@ -77,16 +92,11 @@ type Pairs = [(String, String)]
 -- | All commands available in Dockerfiles
 data Instruction
     = From BaseImage
-    | Add [SourcePath]
-          TargetPath
-          Chown
+    | Add AddArgs
     | User String
     | Label Pairs
     | Stopsignal String
-    | Copy [SourcePath]
-           TargetPath
-           Chown
-           CopySource
+    | Copy CopyArgs
     | Run Arguments
     | Cmd Arguments
     | Shell Arguments

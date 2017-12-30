@@ -43,6 +43,7 @@ dependencies:
   - unordered-containers
   - directory
   - filepath
+  - semigroups
 
 library:
   source-dirs: src

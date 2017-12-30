@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 
 module Language.Docker.Predef where
 
@@ -9,6 +10,7 @@ import Control.Monad.Free.Class
 import Control.Monad.IO.Class
 import Data.Aeson (Value(..))
 import qualified Data.HashMap.Strict as HashMap
+import Data.List.NonEmpty (fromList)
 import Data.Maybe
 import Data.Monoid
 import Data.Text (Text)
@@ -45,7 +47,9 @@ addGlob pattern dest = do
                     if isdir
                         then (SourcePath $ f <> "/")
                         else (SourcePath f)
-    add fs dest
+    case fs of
+      [] -> return ()
+      _ -> add (fromList fs) dest
 
 copyGlob :: (MonadIO m, MonadFree EInstruction m) => String -> TargetPath -> m ()
 copyGlob = addGlob

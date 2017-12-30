@@ -1,9 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 module Language.Docker.ParserSpec where
 
 import Language.Docker.Normalize
 import Language.Docker.Parser
 import Language.Docker.Syntax
+
 
 import Test.HUnit hiding (Label)
 import Test.Hspec
@@ -176,7 +178,7 @@ spec = do
                             ]
                     longEscapedCmdExpected =
                         concat
-                            [ "RUN wget https://download.com/${version}.tar.gz -O /tmp/logstash.tar.gz &&  "
+                            ([ "RUN wget https://download.com/${version}.tar.gz -O /tmp/logstash.tar.gz &&  "
                             , "(cd /tmp && tar zxf logstash.tar.gz && mv logstash-${version} /opt/logstash &&  "
                             , "rm logstash.tar.gz) &&  "
                             , "(cd /opt/logstash &&  "
@@ -185,7 +187,7 @@ spec = do
                             , "\n"
                             , "\n"
                             , "\n"
-                            ]
+                            ] :: [String])
                 in normalizeEscapedLines longEscapedCmd `shouldBe` longEscapedCmdExpected
         describe "expose" $ do
             it "should handle number ports" $ do
@@ -212,32 +214,32 @@ spec = do
         describe "ADD" $ do
             it "simple ADD" $
                 let file = unlines ["ADD . /app", "ADD http://foo.bar/baz ."]
-                in assertAst file [ Add [SourcePath "."] (TargetPath "/app") NoChown
-                                  , Add [SourcePath "http://foo.bar/baz"] (TargetPath ".") NoChown
+                in assertAst file [ Add $ AddArgs [SourcePath "."] (TargetPath "/app") NoChown
+                                  , Add $ AddArgs [SourcePath "http://foo.bar/baz"] (TargetPath ".") NoChown
                                   ]
             it "multifiles ADD" $
                 let file = unlines ["ADD foo bar baz /app"]
-                in assertAst file [ Add (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
+                in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
                                   ]
 
             it "list of quoted files" $
                 let file = unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
-                in assertAst file [ Add (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
+                in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
                                   ]
         describe "COPY" $ do
             it "simple COPY" $
                 let file = unlines ["COPY . /app", "COPY baz /some/long/path"]
-                in assertAst file [ Copy [SourcePath "."] (TargetPath "/app") NoChown NoSource
-                                  , Copy [SourcePath "baz"] (TargetPath "/some/long/path") NoChown NoSource
+                in assertAst file [ Copy $ CopyArgs [SourcePath "."] (TargetPath "/app") NoChown NoSource
+                                  , Copy $ CopyArgs [SourcePath "baz"] (TargetPath "/some/long/path") NoChown NoSource
                                   ]
             it "multifiles COPY" $
                 let file = unlines ["COPY foo bar baz /app"]
-                in assertAst file [ Copy (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
+                in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
                                   ]
 
             it "list of quoted files" $
                 let file = unlines ["COPY [\"foo\", \"bar\", \"baz\", \"/app\"]"]
-                in assertAst file [ Copy (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
+                in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
                                   ]
 
 assertAst s ast =

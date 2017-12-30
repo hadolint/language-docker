@@ -2,6 +2,7 @@ module Language.Docker.Parser where
 
 import Control.Monad (void)
 import Data.ByteString.Char8 (pack)
+import Data.List.NonEmpty (NonEmpty, fromList)
 import Text.Parsec hiding (label, space, spaces)
 import Text.Parsec.String (Parser)
 
@@ -90,7 +91,7 @@ copy = do
                     case sourceFlags of
                         [] -> NoSource
                         f:_ -> f
-            fileList "COPY" (\src dest -> Copy src dest ch fr)
+            fileList "COPY" (\src dest -> Copy (CopyArgs src dest ch fr))
 
 copyFlag :: Parser CopyFlag
 copyFlag =
@@ -117,14 +118,14 @@ anyFlag = do
     name <- many $ noneOf "\t\n= "
     return $ "--" ++ name
 
-fileList :: String -> ([SourcePath] -> TargetPath -> Instruction) -> Parser Instruction
+fileList :: String -> (NonEmpty SourcePath -> TargetPath -> Instruction) -> Parser Instruction
 fileList name constr = do
     paths <-
         (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]") <|>
         (try spaceSeparated <?> "a space separated list of file paths")
     case paths of
         [_] -> fail $ "at least two arguments are required for " ++ name
-        _ -> return $ constr (SourcePath <$> init paths) (TargetPath $ last paths)
+        _ -> return $ constr (SourcePath <$> fromList (init paths)) (TargetPath $ last paths)
   where
     spaceSeparated = many (noneOf "\t\n ") `sepEndBy1` space
     stringList = brackets $ commaSep stringLiteral
@@ -215,7 +216,7 @@ add = do
     flag <- lexeme copyFlag <|> return (FlagChown NoChown)
     notFollowedBy (string "--") <?> "only the --chown flag or the src and dest paths"
     case flag of
-        FlagChown ch -> fileList "ADD" (\src dest -> Add src dest ch)
+        FlagChown ch -> fileList "ADD" (\src dest -> Add (AddArgs src dest ch))
         FlagSource _ -> unexpected "flag --from"
         FlagInvalid i -> unexpected ("flag " ++ i)
 

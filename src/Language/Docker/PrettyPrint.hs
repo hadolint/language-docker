@@ -1,10 +1,13 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Language.Docker.PrettyPrint where
 
 import qualified Data.ByteString.Char8 as ByteString (unpack)
 import Data.List (foldl', intersperse)
+import Data.List.NonEmpty (NonEmpty, toList)
 import Data.String
 import Language.Docker.Syntax
 import Prelude hiding ((>>), (>>=), return)
@@ -70,9 +73,9 @@ prettyPrintPort (PortRange start stop) = integer start <> text "-" <> integer st
 prettyPrintPort (Port num TCP) = integer num <> char '/' <> text "tcp"
 prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
 
-prettyPrintFileList :: [SourcePath] -> TargetPath -> Doc
+prettyPrintFileList :: NonEmpty SourcePath -> TargetPath -> Doc
 prettyPrintFileList sources (TargetPath dest) =
-    hsep $ [text s | SourcePath s <- sources] ++ [text dest]
+    hsep $ [text s | SourcePath s <- (toList sources)] ++ [text dest]
 
 prettyPrintChown :: Chown -> Doc
 prettyPrintChown chown =
@@ -113,11 +116,11 @@ prettyPrintInstruction i =
         Run c -> do
             text "RUN"
             prettyPrintArguments c
-        Copy s d chown from -> do
+        Copy CopyArgs {sourcePaths, targetPath, chownFlag, sourceFlag} -> do
             text "COPY"
-            prettyPrintChown chown
-            prettyPrintCopySource from
-            prettyPrintFileList s d
+            prettyPrintChown chownFlag
+            prettyPrintCopySource sourceFlag
+            prettyPrintFileList sourcePaths targetPath
         Cmd c -> do
             text "CMD"
             prettyPrintArguments c
@@ -139,10 +142,10 @@ prettyPrintInstruction i =
         From b -> do
             text "FROM"
             prettyPrintBaseImage b
-        Add s d chown -> do
+        Add AddArgs {sourcePaths, targetPath, chownFlag} -> do
             text "ADD"
-            prettyPrintChown chown
-            prettyPrintFileList s d
+            prettyPrintChown chownFlag
+            prettyPrintFileList sourcePaths targetPath
         Shell args -> do
             text "SHELL"
             prettyPrintJSON args

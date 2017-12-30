@@ -1,10 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 
 import Control.Monad
 import Language.Docker
 import Language.Docker.Syntax
 
+tags :: [String]
 tags = ["7.8", "7.10", "8"]
 
 cabalSandboxBuild packageName = do
