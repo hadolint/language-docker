@@ -56,12 +56,14 @@ module Language.Docker
     , Language.Docker.Syntax.Instruction(..)
     , Language.Docker.Syntax.InstructionPos(..)
     , Language.Docker.Syntax.BaseImage(..)
+    , Language.Docker.Syntax.SourcePath(..)
+    , Language.Docker.Syntax.TargetPath(..)
+    , Language.Docker.Syntax.Chown(..)
+    , Language.Docker.Syntax.CopySource(..)
     , Language.Docker.Syntax.Image
     , Language.Docker.Syntax.Tag
     , Language.Docker.Syntax.Ports
     , Language.Docker.Syntax.Directory
-    , Language.Docker.Syntax.SourcePath
-    , Language.Docker.Syntax.TargetPath
     , Language.Docker.Syntax.Arguments
     , Language.Docker.Syntax.Pairs
     , Language.Docker.Syntax.Filename
@@ -69,9 +71,7 @@ module Language.Docker
     -- * Re-exports from @parsec@
     , ParseError
     -- * Instruction and InstructionPos helpers
-    , Language.Docker.Syntax.instruction
     , Language.Docker.EDSL.instructionPos
-    , Language.Docker.Syntax.sourcename
     ) where
 
 import qualified Control.Monad.IO.Class

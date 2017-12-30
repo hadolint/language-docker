@@ -4,7 +4,7 @@
 module Language.Docker.PrettyPrint where
 
 import qualified Data.ByteString.Char8 as ByteString (unpack)
-import Data.List (intersperse)
+import Data.List (foldl', intersperse)
 import Data.String
 import Language.Docker.Syntax
 import Prelude hiding ((>>), (>>=), return)
@@ -15,7 +15,7 @@ prettyPrint :: Dockerfile -> String
 prettyPrint =
     unlines .
     reverse .
-    snd . foldl removeDoubleBlank (False, []) . lines . unlines . map prettyPrintInstructionPos
+    snd . foldl' removeDoubleBlank (False, []) . lines . unlines . map prettyPrintInstructionPos
   where
     removeDoubleBlank (True, m) "" = (True, m)
     removeDoubleBlank (False, m) "" = (True, "" : m)
@@ -74,6 +74,18 @@ prettyPrintFileList :: [SourcePath] -> TargetPath -> Doc
 prettyPrintFileList sources (TargetPath dest) =
     hsep $ [text s | SourcePath s <- sources] ++ [text dest]
 
+prettyPrintChown :: Chown -> Doc
+prettyPrintChown chown =
+    case chown of
+        Chown c -> text "--chown=" <> text c
+        NoChown -> mempty
+
+prettyPrintCopySource :: CopySource -> Doc
+prettyPrintCopySource source =
+    case source of
+        CopySource c -> text "--from=" <> text c
+        NoSource -> mempty
+
 prettyPrintInstruction :: Instruction -> Doc
 prettyPrintInstruction i =
     case i of
@@ -101,8 +113,10 @@ prettyPrintInstruction i =
         Run c -> do
             text "RUN"
             prettyPrintArguments c
-        Copy s d -> do
+        Copy s d chown from -> do
             text "COPY"
+            prettyPrintChown chown
+            prettyPrintCopySource from
             prettyPrintFileList s d
         Cmd c -> do
             text "CMD"
@@ -125,8 +139,9 @@ prettyPrintInstruction i =
         From b -> do
             text "FROM"
             prettyPrintBaseImage b
-        Add s d -> do
+        Add s d chown -> do
             text "ADD"
+            prettyPrintChown chown
             prettyPrintFileList s d
         Shell args -> do
             text "SHELL"

@@ -50,11 +50,11 @@ runD (From bi n) =
         EDigestedImage bi' d alias -> runDef Syntax.From (Syntax.DigestedImage bi' d alias) n
 runD (CmdArgs as n) = runDef Syntax.Cmd as n
 runD (Shell as n) = runDef Syntax.Shell as n
-runD (Add s d n) = runDef2 Syntax.Add s d n
+runD (AddArgs s d c n) = runDef (Syntax.Add s d) c n
 runD (User u n) = runDef Syntax.User u n
 runD (Label ps n) = runDef Syntax.Label ps n
 runD (StopSignal s n) = runDef Syntax.Stopsignal s n
-runD (Copy s d n) = runDef2 Syntax.Copy s d n
+runD (CopyArgs s d c f n) = runDef (Syntax.Copy s d c) f n
 runD (RunArgs as n) = runDef Syntax.Run as n
 runD (Workdir d n) = runDef Syntax.Workdir d n
 runD (Expose ps n) = runDef Syntax.Expose ps n
@@ -136,6 +136,12 @@ entrypoint = entrypointArgs . words
 
 cmd :: MonadFree EInstruction m => String -> m ()
 cmd = cmdArgs . words
+
+copy :: MonadFree EInstruction m => [Syntax.SourcePath] -> Syntax.TargetPath -> m ()
+copy sources dest = copyArgs sources dest Syntax.NoChown Syntax.NoSource
+
+add :: MonadFree EInstruction m => [Syntax.SourcePath] -> Syntax.TargetPath -> m ()
+add sources dest = addArgs sources dest Syntax.NoChown
 
 -- | ONBUILD Dockerfile instruction
 --

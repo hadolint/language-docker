@@ -23,18 +23,21 @@ instance IsString EBaseImage where
 data EInstruction next
     = From EBaseImage
            next
-    | Add [Syntax.SourcePath]
-          Syntax.TargetPath
-          next
+    | AddArgs [Syntax.SourcePath]
+              Syntax.TargetPath
+              Syntax.Chown
+              next
     | User String
            next
     | Label Syntax.Pairs
             next
     | StopSignal String
                  next
-    | Copy [Syntax.SourcePath]
-           Syntax.TargetPath
-           next
+    | CopyArgs [Syntax.SourcePath]
+               Syntax.TargetPath
+               Syntax.Chown
+               Syntax.CopySource
+               next
     | RunArgs Syntax.Arguments
               next
     | CmdArgs Syntax.Arguments

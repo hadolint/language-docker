@@ -21,7 +21,6 @@ import qualified System.FilePath.Glob as Glob
 
 import Language.Docker
 import Language.Docker.EDSL.Types
-import Language.Docker.Syntax
 
 appendLnIfMissing :: FilePath -> Text -> IO ()
 appendLnIfMissing fp cts = do

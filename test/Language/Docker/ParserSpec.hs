@@ -212,32 +212,32 @@ spec = do
         describe "ADD" $ do
             it "simple ADD" $
                 let file = unlines ["ADD . /app", "ADD http://foo.bar/baz ."]
-                in assertAst file [ Add [SourcePath "."] (TargetPath "/app")
-                                  , Add [SourcePath "http://foo.bar/baz"] (TargetPath ".")
+                in assertAst file [ Add [SourcePath "."] (TargetPath "/app") NoChown
+                                  , Add [SourcePath "http://foo.bar/baz"] (TargetPath ".") NoChown
                                   ]
             it "multifiles ADD" $
                 let file = unlines ["ADD foo bar baz /app"]
-                in assertAst file [ Add (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app")
+                in assertAst file [ Add (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
                                   ]
 
             it "list of quoted files" $
                 let file = unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
-                in assertAst file [ Add (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app")
+                in assertAst file [ Add (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
                                   ]
         describe "COPY" $ do
             it "simple COPY" $
                 let file = unlines ["COPY . /app", "COPY baz /some/long/path"]
-                in assertAst file [ Copy [SourcePath "."] (TargetPath "/app")
-                                  , Copy [SourcePath "baz"] (TargetPath "/some/long/path")
+                in assertAst file [ Copy [SourcePath "."] (TargetPath "/app") NoChown NoSource
+                                  , Copy [SourcePath "baz"] (TargetPath "/some/long/path") NoChown NoSource
                                   ]
             it "multifiles COPY" $
                 let file = unlines ["COPY foo bar baz /app"]
-                in assertAst file [ Copy (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app")
+                in assertAst file [ Copy (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
                                   ]
 
             it "list of quoted files" $
                 let file = unlines ["COPY [\"foo\", \"bar\", \"baz\", \"/app\"]"]
-                in assertAst file [ Copy (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app")
+                in assertAst file [ Copy (map SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
                                   ]
 
 assertAst s ast =

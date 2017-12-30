@@ -23,4 +23,9 @@ deriveLift ''Instruction
 deriveLift ''InstructionPos
 
 deriveLift ''SourcePath
+
 deriveLift ''TargetPath
+
+deriveLift ''Chown
+
+deriveLift ''CopySource

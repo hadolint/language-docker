@@ -60,6 +60,16 @@ newtype TargetPath =
     TargetPath String
     deriving (Show, Eq, Ord, IsString)
 
+data Chown
+    = Chown String
+    | NoChown
+    deriving (Show, Eq, Ord)
+
+data CopySource
+    = CopySource String
+    | NoSource
+    deriving (Show, Eq, Ord)
+
 type Arguments = [String]
 
 type Pairs = [(String, String)]
@@ -69,11 +79,14 @@ data Instruction
     = From BaseImage
     | Add [SourcePath]
           TargetPath
+          Chown
     | User String
     | Label Pairs
     | Stopsignal String
     | Copy [SourcePath]
            TargetPath
+           Chown
+           CopySource
     | Run Arguments
     | Cmd Arguments
     | Shell Arguments
@@ -95,14 +108,8 @@ type Linenumber = Int
 
 -- | 'Instruction' with additional location information required for creating
 -- good check messages
-data InstructionPos =
-    InstructionPos Instruction
-                   Filename
-                   Linenumber
-    deriving (Eq, Ord, Show)
-
-instruction :: InstructionPos -> Instruction
-instruction (InstructionPos i _ _) = i
-
-sourcename :: InstructionPos -> Filename
-sourcename (InstructionPos _ fn _) = fn
+data InstructionPos = InstructionPos
+    { instruction :: Instruction
+    , sourcename :: Filename
+    , lineNumber :: Linenumber
+    } deriving (Eq, Ord, Show)
