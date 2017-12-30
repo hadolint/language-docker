@@ -226,6 +226,16 @@ spec = do
                 let file = unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
                 in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
                                   ]
+
+            it "with chown flag" $
+                let file = unlines ["ADD --chown=root:root foo bar"]
+                in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "root:root")
+                                  ]
+
+            it "list of quoted files and chown" $
+                let file = unlines ["ADD --chown=user:group [\"foo\", \"bar\", \"baz\", \"/app\"]"]
+                in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") (Chown "user:group")
+                                  ]
         describe "COPY" $ do
             it "simple COPY" $
                 let file = unlines ["COPY . /app", "COPY baz /some/long/path"]
@@ -242,6 +252,23 @@ spec = do
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
                                   ]
 
+            it "with chown flag" $
+                let file = unlines ["COPY --chown=user:group foo bar"]
+                in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") NoSource
+                                  ]
+
+            it "with from flag" $
+                let file = unlines ["COPY --from=node foo bar"]
+                in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") NoChown (CopySource "node")
+                                  ]
+            it "with both flags" $
+                let file = unlines ["COPY --from=node --chown=user:group foo bar"]
+                in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (CopySource "node")
+                                  ]
+            it "with both flags in different order" $
+                let file = unlines ["COPY --chown=user:group --from=node foo bar"]
+                in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (CopySource "node")
+                                  ]
 assertAst s ast =
     case parseString (s ++ "\n") of
         Left err -> assertFailure $ show err

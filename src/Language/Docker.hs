@@ -60,6 +60,8 @@ module Language.Docker
     , Language.Docker.Syntax.TargetPath(..)
     , Language.Docker.Syntax.Chown(..)
     , Language.Docker.Syntax.CopySource(..)
+    , Language.Docker.Syntax.CopyArgs(..)
+    , Language.Docker.Syntax.AddArgs(..)
     , Language.Docker.Syntax.Image
     , Language.Docker.Syntax.Tag
     , Language.Docker.Syntax.Ports
