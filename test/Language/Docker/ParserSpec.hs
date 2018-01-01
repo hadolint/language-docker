@@ -20,7 +20,7 @@ spec = do
                 assertAst
                     "FROM busybox:5.12-dev"
                     [From (TaggedImage "busybox" "5.12-dev" Nothing)]
-            it "parse diggested image" $
+            it "parse digested image" $
                 assertAst
                     "FROM ubuntu@sha256:0ef2e08ed3fab"
                     [From (DigestedImage "ubuntu" "sha256:0ef2e08ed3fab" Nothing)]

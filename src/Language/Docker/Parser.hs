@@ -17,14 +17,14 @@ import Language.Docker.Syntax
 data CopyFlag
     = FlagChown Chown
     | FlagSource CopySource
-    | FlagInvalid String
+    | FlagInvalid (String, String)
 
 data CheckFlag
     = FlagInterval Duration
     | FlagTimeout Duration
     | FlagStartPeriod Duration
     | FlagRetries Retries
-    | CFlagInvalid String
+    | CFlagInvalid (String, String)
 
 comment :: Parser Instruction
 comment = do
@@ -36,7 +36,7 @@ taggedImage :: Parser BaseImage
 taggedImage = do
     name <- many (noneOf "\t\n: ")
     void $ char ':'
-    tag <- untilOccurrence "\t\n "
+    tag <- many1 (noneOf "\t\n: ")
     maybeAlias <- maybeImageAlias
     return $ TaggedImage name tag maybeAlias
 
@@ -44,17 +44,26 @@ digestedImage :: Parser BaseImage
 digestedImage = do
     name <- many (noneOf "\t\n@ ")
     void $ char '@'
-    notFollowedBy $ oneOf "\t\n "
-    digest <- untilOccurrence "\t\n "
+    digest <- many1 (noneOf "\t\n@ ")
     maybeAlias <- maybeImageAlias
     return $ DigestedImage name (pack digest) maybeAlias
 
 untaggedImage :: Parser BaseImage
 untaggedImage = do
     name <- many (noneOf "\n\t:@ ")
-    notFollowedBy $ oneOf ":@"
+    notInvalidTag name
+    notInvalidDigest name
     maybeAlias <- maybeImageAlias
     return $ UntaggedImage name maybeAlias
+  where
+    notInvalidTag :: String -> Parser ()
+    notInvalidTag name =
+        try (notFollowedBy $ oneOf ":") <?> "no ':' or a valid image tag string (example: " ++
+        name ++ ":valid-tag)"
+    notInvalidDigest :: String -> Parser ()
+    notInvalidDigest name =
+        try (notFollowedBy $ oneOf "@") <?> "no '@' or a valid digest hash (example: " ++
+        name ++ "@a3f42f2de)"
 
 maybeImageAlias :: Parser (Maybe ImageAlias)
 maybeImageAlias = Just <$> try (spaces >> imageAlias) <|> return Nothing
@@ -89,10 +98,10 @@ copy = do
     let sourceFlags = [f | FlagSource f <- flags]
     let invalid = [i | FlagInvalid i <- flags]
     -- Let's do some validation on the flags
-    case (invalid, length chownFlags > 1, length sourceFlags > 1) of
-        (i:_, _, _) -> unexpected ("invalid flag " ++ i)
-        (_, True, _) -> unexpected "duplicate flag: --chown"
-        (_, _, True) -> unexpected "duplicate flag: --from"
+    case (invalid, chownFlags, sourceFlags) of
+        ((k, v):_, _, _) -> unexpectedFlag k v
+        (_, _:_:_, _) -> unexpected "duplicate flag: --chown"
+        (_, _, _:_:_) -> unexpected "duplicate flag: --from"
         _ -> do
             let ch =
                     case chownFlags of
@@ -122,12 +131,13 @@ copySource = do
     src <- many1 (noneOf "\t\n ")
     return $ CopySource src
 
-anyFlag :: Parser String
+anyFlag :: Parser (String, String)
 anyFlag = do
-    void $ lookAhead (string "--")
     void $ string "--"
-    name <- many $ noneOf "\t\n= "
-    return $ "--" ++ name
+    name <- many1 $ noneOf "\t\n= "
+    void $ char '='
+    val <- many $ noneOf "\t\n "
+    return ("--" ++ name, val)
 
 fileList :: String -> (NonEmpty SourcePath -> TargetPath -> Instruction) -> Parser Instruction
 fileList name constr = do
@@ -140,6 +150,10 @@ fileList name constr = do
   where
     spaceSeparated = many (noneOf "\t\n ") `sepEndBy1` space
     stringList = brackets $ commaSep stringLiteral
+
+unexpectedFlag :: String -> String -> Parser a
+unexpectedFlag name "" = unexpected $ "flag " ++ name ++ " with no value"
+unexpectedFlag name _ = unexpected $ "invalid flag " ++ name
 
 shell :: Parser Instruction
 shell = do
@@ -229,7 +243,7 @@ add = do
     case flag of
         FlagChown ch -> fileList "ADD" (\src dest -> Add (AddArgs src dest ch))
         FlagSource _ -> unexpected "flag --from"
-        FlagInvalid i -> unexpected ("flag " ++ i)
+        FlagInvalid (k, v) -> unexpectedFlag k v
 
 expose :: Parser Instruction
 expose = do
@@ -346,7 +360,7 @@ healthcheck = do
         let invalid = [x | CFlagInvalid x <- flags]
       -- Let's do some validation on the flags
         case (invalid, intervals, timeouts, startPeriods, retriesD) of
-            (i:_, _, _, _, _) -> unexpected ("invalid flag " ++ i)
+            ((k, v):_, _, _, _, _) -> unexpectedFlag k v
             (_, _:_:_, _, _, _) -> unexpected "duplicate flag: --interval"
             (_, _, _:_:_, _, _) -> unexpected "duplicate flag: --timeouts"
             (_, _, _, _:_:_, _) -> unexpected "duplicate flag: --start-period"
