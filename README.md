@@ -77,14 +77,17 @@ main = putStr $ toDockerfileStr $ do
 ```haskell
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 import Control.Monad
 import Language.Docker
+import Data.String (fromString)
+
 tags = ["7.8", "7.10", "8"]
 cabalSandboxBuild packageName = do
     let cabalFile = packageName ++ ".cabal"
     run "cabal sandbox init"
     run "cabal update"
-    add cabalFile ("/app/" ++ cabalFile)
+    add [fromString cabalFile] (fromString $ "/app/" ++ cabalFile)
     run "cabal install --only-dep -j"
     add "." "/app/"
     run "cabal build"
@@ -102,10 +105,12 @@ support more features like file globbing:
 
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 import           Language.Docker
 import qualified System.Directory     as Directory
 import qualified System.FilePath      as FilePath
 import qualified System.FilePath.Glob as Glob
+import Data.String (fromString)
 main = do
     str <- toDockerfileStrIO $ do
         fs <- liftIO $ do
@@ -113,7 +118,7 @@ main = do
             fs <- Glob.glob "./test/*.hs"
             return (map (FilePath.makeRelative cwd) fs)
         from "ubuntu"
-        mapM_ (\f -> add f ("/app/" ++ FilePath.takeFileName f)) fs
+	mapM_ (\f -> add [fromString f] (fromString $ "/app/" ++ takeFileName f)) fs
     putStr str
 ```
 

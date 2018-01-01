@@ -3,6 +3,7 @@
 module Language.Docker.EDSL.Types where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.List.NonEmpty (NonEmpty)
 import Data.String
 import qualified Language.Docker.Syntax as Syntax
 
@@ -23,18 +24,21 @@ instance IsString EBaseImage where
 data EInstruction next
     = From EBaseImage
            next
-    | Add Syntax.Source
-          Syntax.Destination
-          next
+    | AddArgs (NonEmpty Syntax.SourcePath)
+              Syntax.TargetPath
+              Syntax.Chown
+              next
     | User String
            next
     | Label Syntax.Pairs
             next
     | StopSignal String
                  next
-    | Copy Syntax.Source
-           Syntax.Destination
-           next
+    | CopyArgs (NonEmpty Syntax.SourcePath)
+               Syntax.TargetPath
+               Syntax.Chown
+               Syntax.CopySource
+               next
     | RunArgs Syntax.Arguments
               next
     | CmdArgs Syntax.Arguments

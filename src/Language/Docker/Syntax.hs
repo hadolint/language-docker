@@ -1,6 +1,12 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies,
+  DuplicateRecordFields #-}
+
 module Language.Docker.Syntax where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.List.NonEmpty (NonEmpty)
+import Data.String (IsString)
+import GHC.Exts (IsList(..))
 
 type Image = String
 
@@ -19,15 +25,20 @@ data Port
                 Integer
     deriving (Show, Eq, Ord)
 
-newtype Ports =
-    Ports [Port]
-    deriving (Show, Eq, Ord)
+newtype Ports = Ports
+    { unPorts :: [Port]
+    } deriving (Show, Eq, Ord)
+
+instance IsList Ports where
+    type Item Ports = Port
+    fromList = Ports
+    toList (Ports ps) = ps
 
 type Directory = String
 
-newtype ImageAlias =
-    ImageAlias String
-    deriving (Show, Eq, Ord)
+newtype ImageAlias = ImageAlias
+    { unImageAlias :: String
+    } deriving (Show, Eq, Ord, IsString)
 
 data BaseImage
     = UntaggedImage Image
@@ -43,9 +54,36 @@ data BaseImage
 -- | Type of the Dockerfile AST
 type Dockerfile = [InstructionPos]
 
-type Source = String
+newtype SourcePath = SourcePath
+    { unSourcePath :: String
+    } deriving (Show, Eq, Ord, IsString)
 
-type Destination = String
+newtype TargetPath = TargetPath
+    { unTargetPath :: String
+    } deriving (Show, Eq, Ord, IsString)
+
+data Chown
+    = Chown String
+    | NoChown
+    deriving (Show, Eq, Ord)
+
+data CopySource
+    = CopySource String
+    | NoSource
+    deriving (Show, Eq, Ord)
+
+data CopyArgs = CopyArgs
+    { sourcePaths :: NonEmpty SourcePath
+    , targetPath :: TargetPath
+    , chownFlag :: Chown
+    , sourceFlag :: CopySource
+    } deriving (Show, Eq, Ord)
+
+data AddArgs = AddArgs
+    { sourcePaths :: NonEmpty SourcePath
+    , targetPath :: TargetPath
+    , chownFlag :: Chown
+    } deriving (Show, Eq, Ord)
 
 type Arguments = [String]
 
@@ -54,13 +92,11 @@ type Pairs = [(String, String)]
 -- | All commands available in Dockerfiles
 data Instruction
     = From BaseImage
-    | Add Source
-          Destination
+    | Add AddArgs
     | User String
     | Label Pairs
     | Stopsignal String
-    | Copy Source
-           Destination
+    | Copy CopyArgs
     | Run Arguments
     | Cmd Arguments
     | Shell Arguments
@@ -82,14 +118,8 @@ type Linenumber = Int
 
 -- | 'Instruction' with additional location information required for creating
 -- good check messages
-data InstructionPos =
-    InstructionPos Instruction
-                   Filename
-                   Linenumber
-    deriving (Eq, Ord, Show)
-
-instruction :: InstructionPos -> Instruction
-instruction (InstructionPos i _ _) = i
-
-sourcename :: InstructionPos -> Filename
-sourcename (InstructionPos _ fn _) = fn
+data InstructionPos = InstructionPos
+    { instruction :: Instruction
+    , sourcename :: Filename
+    , lineNumber :: Linenumber
+    } deriving (Eq, Ord, Show)

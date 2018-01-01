@@ -2,7 +2,7 @@ module Language.Docker.Lexer where
 
 import Control.Monad (void)
 import Data.Char
-import Text.Parsec hiding (space, spaces)
+import Text.Parsec hiding (spaces)
 import Text.Parsec.Language (haskell)
 import Text.Parsec.String (Parser)
 import qualified Text.Parsec.Token as Token

@@ -17,7 +17,7 @@ matrix:
   # variable, such as using --stack-yaml to point to a different file.
   - env: ARGS="--resolver lts"
 
-  - env: ARGS="--resolver lts-9.13"
+  - env: ARGS=""
 
   # Nightly builds are allowed to fail
   - env: ARGS="--resolver nightly"
@@ -26,7 +26,7 @@ matrix:
   - env: ARGS="--resolver lts"
     os: osx
 
-  - env: ARGS="--resolver lts-9.13"
+  - env: ARGS=""
     os: osx
 
   - env: ARGS="--resolver nightly"
@@ -34,7 +34,7 @@ matrix:
 
   - env:
       - PURPOSE="Integration tests"
-      - ARGS="--resolver lts-9.13"
+      - ARGS=""
     script: make tests
 
   allow_failures:

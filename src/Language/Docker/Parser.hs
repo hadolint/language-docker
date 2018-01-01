@@ -2,12 +2,18 @@ module Language.Docker.Parser where
 
 import Control.Monad (void)
 import Data.ByteString.Char8 (pack)
+import Data.List.NonEmpty (NonEmpty, fromList)
 import Text.Parsec hiding (label, space, spaces)
 import Text.Parsec.String (Parser)
 
 import Language.Docker.Lexer
 import Language.Docker.Normalize
 import Language.Docker.Syntax
+
+data CopyFlag
+    = FlagChown Chown
+    | FlagSource CopySource
+    | FlagInvalid String
 
 comment :: Parser Instruction
 comment = do
@@ -67,10 +73,62 @@ cmd = do
 copy :: Parser Instruction
 copy = do
     reserved "COPY"
-    src <- many (noneOf " ")
-    spaces1 <?> "a spaced followed by the target file or folder for COPY"
-    dst <- many (noneOf "\n")
-    return $ Copy src dst
+    flags <- (copyFlag `sepEndBy1` space) <|> return []
+    let chownFlags = [c | FlagChown c <- flags]
+    let sourceFlags = [f | FlagSource f <- flags]
+    let invalid = [i | FlagInvalid i <- flags]
+    -- Let's do some validation on the flags
+    case (invalid, length chownFlags > 1, length sourceFlags > 1) of
+        (i:_, _, _) -> unexpected ("invalid flag " ++ i)
+        (_, True, _) -> unexpected "duplicate flag: --chown"
+        (_, _, True) -> unexpected "duplicate flag: --from"
+        _ -> do
+            let ch =
+                    case chownFlags of
+                        [] -> NoChown
+                        c:_ -> c
+            let fr =
+                    case sourceFlags of
+                        [] -> NoSource
+                        f:_ -> f
+            fileList "COPY" (\src dest -> Copy (CopyArgs src dest ch fr))
+
+copyFlag :: Parser CopyFlag
+copyFlag =
+    (FlagChown <$> try chown <?> "only one --chown") <|>
+    (FlagSource <$> try copySource <?> "only one --from") <|>
+    (FlagInvalid <$> try anyFlag <?> "no other flags")
+
+chown :: Parser Chown
+chown = do
+    void $ string "--chown="
+    ch <- many1 (noneOf "\t\n ")
+    return $ Chown ch
+
+copySource :: Parser CopySource
+copySource = do
+    void $ string "--from="
+    src <- many1 (noneOf "\t\n ")
+    return $ CopySource src
+
+anyFlag :: Parser String
+anyFlag = do
+    void $ lookAhead (string "--")
+    void $ string "--"
+    name <- many $ noneOf "\t\n= "
+    return $ "--" ++ name
+
+fileList :: String -> (NonEmpty SourcePath -> TargetPath -> Instruction) -> Parser Instruction
+fileList name constr = do
+    paths <-
+        (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]") <|>
+        (try spaceSeparated <?> "a space separated list of file paths")
+    case paths of
+        [_] -> fail $ "at least two arguments are required for " ++ name
+        _ -> return $ constr (SourcePath <$> fromList (init paths)) (TargetPath $ last paths)
+  where
+    spaceSeparated = many (noneOf "\t\n ") `sepEndBy1` space
+    stringList = brackets $ commaSep stringLiteral
 
 shell :: Parser Instruction
 shell = do
@@ -155,10 +213,12 @@ user = do
 add :: Parser Instruction
 add = do
     reserved "ADD"
-    src <- many (noneOf "\t\n ")
-    spaces1 <?> "a spaced followed by the target file or folder for ADD"
-    dst <- untilEol
-    return $ Add src dst
+    flag <- lexeme copyFlag <|> return (FlagChown NoChown)
+    notFollowedBy (string "--") <?> "only the --chown flag or the src and dest paths"
+    case flag of
+        FlagChown ch -> fileList "ADD" (\src dest -> Add (AddArgs src dest ch))
+        FlagSource _ -> unexpected "flag --from"
+        FlagInvalid i -> unexpected ("flag " ++ i)
 
 expose :: Parser Instruction
 expose = do

@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 module Language.Docker.EDSLSpec where
 
 import           Control.Monad.IO.Class
@@ -74,7 +75,7 @@ spec = do
                     fs <- glob "./test/Language/Docker/*.hs"
                     return (map (makeRelative cwd) (sort fs))
                 from "ubuntu"
-                mapM_ (\f -> add f ("/app/" ++ takeFileName f)) fs
+                mapM_ (\f -> add [Syntax.SourcePath f] (Syntax.TargetPath $ "/app/" ++ takeFileName f)) fs
             str `shouldBe` unlines [ "FROM ubuntu"
                                    , "ADD ./test/Language/Docker/EDSLSpec.hs /app/EDSLSpec.hs"
                                    , "ADD ./test/Language/Docker/ExamplesSpec.hs /app/ExamplesSpec.hs"
