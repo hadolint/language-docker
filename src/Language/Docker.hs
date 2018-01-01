@@ -29,6 +29,12 @@ module Language.Docker
     , Language.Docker.EDSL.runArgs
     , Language.Docker.EDSL.cmd
     , Language.Docker.EDSL.cmdArgs
+    , Language.Docker.EDSL.healthcheck
+    , Language.Docker.EDSL.check
+    , Language.Docker.EDSL.interval
+    , Language.Docker.EDSL.timeout
+    , Language.Docker.EDSL.startPeriod
+    , Language.Docker.EDSL.retries
     , Language.Docker.EDSL.workdir
     , Language.Docker.EDSL.expose
     , Language.Docker.EDSL.ports
@@ -62,6 +68,8 @@ module Language.Docker
     , Language.Docker.Syntax.CopySource(..)
     , Language.Docker.Syntax.CopyArgs(..)
     , Language.Docker.Syntax.AddArgs(..)
+    , Language.Docker.Syntax.Check(..)
+    , Language.Docker.Syntax.CheckArgs(..)
     , Language.Docker.Syntax.Image
     , Language.Docker.Syntax.Tag
     , Language.Docker.Syntax.Ports
