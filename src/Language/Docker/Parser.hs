@@ -93,7 +93,7 @@ cmd = do
 copy :: Parser Instruction
 copy = do
     reserved "COPY"
-    flags <- (copyFlag `sepEndBy1` space) <|> return []
+    flags <- copyFlag `sepEndBy` spaces1
     let chownFlags = [c | FlagChown c <- flags]
     let sourceFlags = [f | FlagSource f <- flags]
     let invalid = [i | FlagInvalid i <- flags]
@@ -145,10 +145,10 @@ fileList name constr = do
         (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]") <|>
         (try spaceSeparated <?> "a space separated list of file paths")
     case paths of
-        [_] -> fail $ "at least two arguments are required for " ++ name
+        [_] -> unexpected $ "end of line. At least two arguments are required for " ++ name
         _ -> return $ constr (SourcePath <$> fromList (init paths)) (TargetPath $ last paths)
   where
-    spaceSeparated = many (noneOf "\t\n ") `sepEndBy1` space
+    spaceSeparated = many (noneOf "\t\n ") `sepBy1` (try spaces1 <?> "at least another file path")
     stringList = brackets $ commaSep stringLiteral
 
 unexpectedFlag :: String -> String -> Parser a
@@ -351,8 +351,20 @@ healthcheck = do
     Healthcheck <$> (fullCheck <|> noCheck)
   where
     noCheck = string "NONE" >> return NoCheck
+    allFlags = do
+        flags <- someFlags <|> return []
+        spaces1 <?> "another flag"
+        return flags
+    someFlags = do
+        x <- checkFlag
+        cont <- try (spaces1 >> lookAhead (string "--") >> return True) <|> return False
+        if cont
+            then do
+                xs <- someFlags
+                return (x : xs)
+            else return [x]
     fullCheck = do
-        flags <- (checkFlag `sepEndBy1` space) <|> return []
+        flags <- allFlags
         let intervals = [x | FlagInterval x <- flags]
         let timeouts = [x | FlagTimeout x <- flags]
         let startPeriods = [x | FlagStartPeriod x <- flags]
@@ -366,7 +378,6 @@ healthcheck = do
             (_, _, _, _:_:_, _) -> unexpected "duplicate flag: --start-period"
             (_, _, _, _, _:_:_) -> unexpected "duplicate flag: --retries"
             _ -> do
-                spaces
                 Cmd checkCommand <- cmd
                 let interval = listToMaybe intervals
                 let timeout = listToMaybe timeouts
