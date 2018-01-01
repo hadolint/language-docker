@@ -29,11 +29,11 @@ spec = do
                         from "node"
                         shell ["cmd", "/S"]
                         cmdArgs ["node", "-e", "'console.log(\'hey\')'"]
-                        healthcheck "--interval=5m CMD curl -f http://localhost/ || exit 1")
+                        healthcheck $ check "curl -f http://localhost/ || exit 1" `interval` 300)
             r `shouldBe` unlines [ "FROM node"
                                  , "SHELL [\"cmd\" , \"/S\"]"
                                  , "CMD node -e 'console.log(\'hey\')'"
-                                 , "HEALTHCHECK --interval=5m CMD curl -f http://localhost/ || exit 1"
+                                 , "HEALTHCHECK --interval=300s CMD curl -f http://localhost/ || exit 1"
                                  ]
         it "print expose instructions correctly" $ do
             let r = prettyPrint $ toDockerfile (do

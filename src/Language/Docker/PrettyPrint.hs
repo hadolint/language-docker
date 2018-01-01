@@ -2,6 +2,7 @@
 {-# LANGUAGE RebindableSyntax #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE RecordWildCards #-}
 
 module Language.Docker.PrettyPrint where
 
@@ -75,7 +76,7 @@ prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
 
 prettyPrintFileList :: NonEmpty SourcePath -> TargetPath -> Doc
 prettyPrintFileList sources (TargetPath dest) =
-    hsep $ [text s | SourcePath s <- (toList sources)] ++ [text dest]
+    hsep $ [text s | SourcePath s <- toList sources] ++ [text dest]
 
 prettyPrintChown :: Chown -> Doc
 prettyPrintChown chown =
@@ -88,6 +89,16 @@ prettyPrintCopySource source =
     case source of
         CopySource c -> text "--from=" <> text c
         NoSource -> mempty
+
+prettyPrintDuration :: String -> Maybe Duration -> Doc
+prettyPrintDuration flagName = maybe mempty pp
+  where
+    pp (Duration d) = text flagName <> text (show d)
+
+prettyPrintRetries :: Maybe Retries -> Doc
+prettyPrintRetries = maybe mempty pp
+  where
+    pp (Retries r) = text "--retries=" <> int r
 
 prettyPrintInstruction :: Instruction -> Doc
 prettyPrintInstruction i =
@@ -149,9 +160,15 @@ prettyPrintInstruction i =
         Shell args -> do
             text "SHELL"
             prettyPrintJSON args
-        Healthcheck c -> do
+        Healthcheck NoCheck -> text "HEALTHCHECK NONE"
+        Healthcheck (Check CheckArgs {..}) -> do
             text "HEALTHCHECK"
-            text c
+            prettyPrintDuration "--interval=" interval
+            prettyPrintDuration "--timeout=" timeout
+            prettyPrintDuration "--start-period=" startPeriod
+            prettyPrintRetries retries
+            text "CMD"
+            prettyPrintArguments checkCommand
   where
     (>>) = (<+>)
     return = (mempty <>)

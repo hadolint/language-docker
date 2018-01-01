@@ -6,6 +6,7 @@ module Language.Docker.Syntax where
 import Data.ByteString.Char8 (ByteString)
 import Data.List.NonEmpty (NonEmpty)
 import Data.String (IsString)
+import Data.Time.Clock (DiffTime)
 import GHC.Exts (IsList(..))
 
 type Image = String
@@ -72,6 +73,14 @@ data CopySource
     | NoSource
     deriving (Show, Eq, Ord)
 
+newtype Duration = Duration
+    { durationTime :: DiffTime
+    } deriving (Show, Eq, Ord, Num)
+
+newtype Retries = Retries
+    { times :: Int
+    } deriving (Show, Eq, Ord, Num)
+
 data CopyArgs = CopyArgs
     { sourcePaths :: NonEmpty SourcePath
     , targetPath :: TargetPath
@@ -83,6 +92,19 @@ data AddArgs = AddArgs
     { sourcePaths :: NonEmpty SourcePath
     , targetPath :: TargetPath
     , chownFlag :: Chown
+    } deriving (Show, Eq, Ord)
+
+data Check
+    = Check CheckArgs
+    | NoCheck
+    deriving (Show, Eq, Ord)
+
+data CheckArgs = CheckArgs
+    { checkCommand :: Arguments
+    , interval :: Maybe Duration
+    , timeout :: Maybe Duration
+    , startPeriod :: Maybe Duration
+    , retries :: Maybe Retries
     } deriving (Show, Eq, Ord)
 
 type Arguments = [String]
@@ -107,7 +129,7 @@ data Instruction
     | Maintainer String
     | Env Pairs
     | Arg String
-    | Healthcheck String
+    | Healthcheck Check
     | Comment String
     | OnBuild Instruction
     deriving (Eq, Ord, Show)

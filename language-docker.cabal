@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 840b34b7801f56b6e0a9cb1f9116186f97afb8a726f03b640822d638a71132e4
+-- hash: 06f7f98e1efe8879439712bfe1774640c9d40eb413579d49b687ad3402a639e1
 
 name:           language-docker
 version:        1.0.0
@@ -53,6 +53,7 @@ library
     , text
     , th-lift
     , th-lift-instances
+    , time
     , transformers
     , unordered-containers
     , yaml
@@ -100,6 +101,7 @@ test-suite hspec
     , text
     , th-lift
     , th-lift-instances
+    , time
     , transformers
     , unordered-containers
     , yaml

@@ -44,6 +44,7 @@ dependencies:
   - directory
   - filepath
   - semigroups
+  - time
 
 library:
   source-dirs: src

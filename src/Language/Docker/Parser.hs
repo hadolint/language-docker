@@ -1,8 +1,12 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Language.Docker.Parser where
 
 import Control.Monad (void)
 import Data.ByteString.Char8 (pack)
 import Data.List.NonEmpty (NonEmpty, fromList)
+import Data.Maybe (listToMaybe)
+import Data.Time.Clock (secondsToDiffTime)
 import Text.Parsec hiding (label, space, spaces)
 import Text.Parsec.String (Parser)
 
@@ -14,6 +18,13 @@ data CopyFlag
     = FlagChown Chown
     | FlagSource CopySource
     | FlagInvalid String
+
+data CheckFlag
+    = FlagInterval Duration
+    | FlagTimeout Duration
+    | FlagStartPeriod Duration
+    | FlagRetries Retries
+    | CFlagInvalid String
 
 comment :: Parser Instruction
 comment = do
@@ -323,8 +334,55 @@ onbuild = do
 healthcheck :: Parser Instruction
 healthcheck = do
     reserved "HEALTHCHECK"
-    args <- untilEol
-    return $ Healthcheck args
+    Healthcheck <$> (fullCheck <|> noCheck)
+  where
+    noCheck = string "NONE" >> return NoCheck
+    fullCheck = do
+        flags <- (checkFlag `sepEndBy1` space) <|> return []
+        let intervals = [x | FlagInterval x <- flags]
+        let timeouts = [x | FlagTimeout x <- flags]
+        let startPeriods = [x | FlagStartPeriod x <- flags]
+        let retriesD = [x | FlagRetries x <- flags]
+        let invalid = [x | CFlagInvalid x <- flags]
+      -- Let's do some validation on the flags
+        case (invalid, intervals, timeouts, startPeriods, retriesD) of
+            (i:_, _, _, _, _) -> unexpected ("invalid flag " ++ i)
+            (_, _:_:_, _, _, _) -> unexpected "duplicate flag: --interval"
+            (_, _, _:_:_, _, _) -> unexpected "duplicate flag: --timeouts"
+            (_, _, _, _:_:_, _) -> unexpected "duplicate flag: --start-period"
+            (_, _, _, _, _:_:_) -> unexpected "duplicate flag: --retries"
+            _ -> do
+                spaces
+                Cmd checkCommand <- cmd
+                let interval = listToMaybe intervals
+                let timeout = listToMaybe timeouts
+                let startPeriod = listToMaybe startPeriods
+                let retries = listToMaybe retriesD
+                return $ Check CheckArgs {..}
+
+checkFlag :: Parser CheckFlag
+checkFlag =
+    (FlagInterval <$> try (durationFlag "--interval=") <?> "only one --interval") <|>
+    (FlagTimeout <$> try (durationFlag "--timeout=") <?> "only one --timeout") <|>
+    (FlagStartPeriod <$> try (durationFlag "--start-period=") <?> "only one --start-period") <|>
+    (FlagRetries <$> try retriesFlag <?> "only one --timeout") <|>
+    (CFlagInvalid <$> try anyFlag <?> "no other flags")
+
+durationFlag :: String -> Parser Duration
+durationFlag flagName = do
+    void $ string flagName
+    scale <- natural
+    unit <- char 's' <|> char 'm' <|> char 'h'
+    case unit of
+        's' -> return $ Duration (secondsToDiffTime scale)
+        'm' -> return $ Duration (secondsToDiffTime (scale * 60))
+        _ -> return $ Duration (secondsToDiffTime (scale * 60 * 60))
+
+retriesFlag :: Parser Retries
+retriesFlag = do
+    void $ string "--retries="
+    n <- try natural <?> "the number of retries"
+    return $ Retries (fromIntegral n)
 
 parseInstruction :: Parser Instruction
 parseInstruction =

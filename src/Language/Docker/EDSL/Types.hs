@@ -61,7 +61,7 @@ data EInstruction next
           next
     | Comment String
               next
-    | Healthcheck String
+    | Healthcheck Syntax.Check
                   next
     | OnBuildRaw Syntax.Instruction
                  next
