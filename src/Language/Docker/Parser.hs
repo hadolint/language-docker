@@ -210,8 +210,13 @@ label = do
 arg :: Parser Instruction
 arg = do
     reserved "ARG"
-    p <- untilEol
-    return $ Arg p
+    (try nameWithDefault <?> "the arg name") <|> Arg <$> untilEol <*> pure Nothing
+  where
+    nameWithDefault = do
+        name <- many1 $ noneOf "\t\n= "
+        void $ char '='
+        def <- untilEol
+        return $ Arg name (Just def)
 
 env :: Parser Instruction
 env = do

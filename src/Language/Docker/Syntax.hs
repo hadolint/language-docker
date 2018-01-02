@@ -129,6 +129,7 @@ data Instruction
     | Maintainer String
     | Env Pairs
     | Arg String
+          (Maybe String)
     | Healthcheck Check
     | Comment String
     | OnBuild Instruction

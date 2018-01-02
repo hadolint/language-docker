@@ -13,6 +13,12 @@ import Text.Parsec
 
 spec :: Spec
 spec = do
+        describe "parse ARG" $ do
+            it "no default" $
+                assertAst "ARG FOO" [Arg "FOO" Nothing]
+            it "with default" $
+                assertAst "ARG FOO=bar" [Arg "FOO" (Just "bar")]
+
         describe "parse FROM" $ do
             it "parse untagged image" $
                 assertAst "FROM busybox" [From (UntaggedImage "busybox" Nothing)]

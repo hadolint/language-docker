@@ -57,7 +57,7 @@ data EInstruction next
                  next
     | Env Syntax.Pairs
           next
-    | Arg String
+    | Arg String (Maybe String)
           next
     | Comment String
               next
