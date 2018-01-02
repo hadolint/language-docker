@@ -1,8 +1,12 @@
+{-# LANGUAGE RecordWildCards #-}
+
 module Language.Docker.Parser where
 
 import Control.Monad (void)
 import Data.ByteString.Char8 (pack)
 import Data.List.NonEmpty (NonEmpty, fromList)
+import Data.Maybe (listToMaybe)
+import Data.Time.Clock (secondsToDiffTime)
 import Text.Parsec hiding (label, space, spaces)
 import Text.Parsec.String (Parser)
 
@@ -13,7 +17,14 @@ import Language.Docker.Syntax
 data CopyFlag
     = FlagChown Chown
     | FlagSource CopySource
-    | FlagInvalid String
+    | FlagInvalid (String, String)
+
+data CheckFlag
+    = FlagInterval Duration
+    | FlagTimeout Duration
+    | FlagStartPeriod Duration
+    | FlagRetries Retries
+    | CFlagInvalid (String, String)
 
 comment :: Parser Instruction
 comment = do
@@ -25,7 +36,7 @@ taggedImage :: Parser BaseImage
 taggedImage = do
     name <- many (noneOf "\t\n: ")
     void $ char ':'
-    tag <- untilOccurrence "\t\n "
+    tag <- many1 (noneOf "\t\n: ")
     maybeAlias <- maybeImageAlias
     return $ TaggedImage name tag maybeAlias
 
@@ -33,17 +44,26 @@ digestedImage :: Parser BaseImage
 digestedImage = do
     name <- many (noneOf "\t\n@ ")
     void $ char '@'
-    notFollowedBy $ oneOf "\t\n "
-    digest <- untilOccurrence "\t\n "
+    digest <- many1 (noneOf "\t\n@ ")
     maybeAlias <- maybeImageAlias
     return $ DigestedImage name (pack digest) maybeAlias
 
 untaggedImage :: Parser BaseImage
 untaggedImage = do
     name <- many (noneOf "\n\t:@ ")
-    notFollowedBy $ oneOf ":@"
+    notInvalidTag name
+    notInvalidDigest name
     maybeAlias <- maybeImageAlias
     return $ UntaggedImage name maybeAlias
+  where
+    notInvalidTag :: String -> Parser ()
+    notInvalidTag name =
+        try (notFollowedBy $ oneOf ":") <?> "no ':' or a valid image tag string (example: " ++
+        name ++ ":valid-tag)"
+    notInvalidDigest :: String -> Parser ()
+    notInvalidDigest name =
+        try (notFollowedBy $ oneOf "@") <?> "no '@' or a valid digest hash (example: " ++
+        name ++ "@a3f42f2de)"
 
 maybeImageAlias :: Parser (Maybe ImageAlias)
 maybeImageAlias = Just <$> try (spaces >> imageAlias) <|> return Nothing
@@ -73,15 +93,15 @@ cmd = do
 copy :: Parser Instruction
 copy = do
     reserved "COPY"
-    flags <- (copyFlag `sepEndBy1` space) <|> return []
+    flags <- copyFlag `sepEndBy` spaces1
     let chownFlags = [c | FlagChown c <- flags]
     let sourceFlags = [f | FlagSource f <- flags]
     let invalid = [i | FlagInvalid i <- flags]
     -- Let's do some validation on the flags
-    case (invalid, length chownFlags > 1, length sourceFlags > 1) of
-        (i:_, _, _) -> unexpected ("invalid flag " ++ i)
-        (_, True, _) -> unexpected "duplicate flag: --chown"
-        (_, _, True) -> unexpected "duplicate flag: --from"
+    case (invalid, chownFlags, sourceFlags) of
+        ((k, v):_, _, _) -> unexpectedFlag k v
+        (_, _:_:_, _) -> unexpected "duplicate flag: --chown"
+        (_, _, _:_:_) -> unexpected "duplicate flag: --from"
         _ -> do
             let ch =
                     case chownFlags of
@@ -111,12 +131,13 @@ copySource = do
     src <- many1 (noneOf "\t\n ")
     return $ CopySource src
 
-anyFlag :: Parser String
+anyFlag :: Parser (String, String)
 anyFlag = do
-    void $ lookAhead (string "--")
     void $ string "--"
-    name <- many $ noneOf "\t\n= "
-    return $ "--" ++ name
+    name <- many1 $ noneOf "\t\n= "
+    void $ char '='
+    val <- many $ noneOf "\t\n "
+    return ("--" ++ name, val)
 
 fileList :: String -> (NonEmpty SourcePath -> TargetPath -> Instruction) -> Parser Instruction
 fileList name constr = do
@@ -124,11 +145,15 @@ fileList name constr = do
         (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]") <|>
         (try spaceSeparated <?> "a space separated list of file paths")
     case paths of
-        [_] -> fail $ "at least two arguments are required for " ++ name
+        [_] -> unexpected $ "end of line. At least two arguments are required for " ++ name
         _ -> return $ constr (SourcePath <$> fromList (init paths)) (TargetPath $ last paths)
   where
-    spaceSeparated = many (noneOf "\t\n ") `sepEndBy1` space
+    spaceSeparated = many (noneOf "\t\n ") `sepBy1` (try spaces1 <?> "at least another file path")
     stringList = brackets $ commaSep stringLiteral
+
+unexpectedFlag :: String -> String -> Parser a
+unexpectedFlag name "" = unexpected $ "flag " ++ name ++ " with no value"
+unexpectedFlag name _ = unexpected $ "invalid flag " ++ name
 
 shell :: Parser Instruction
 shell = do
@@ -218,7 +243,7 @@ add = do
     case flag of
         FlagChown ch -> fileList "ADD" (\src dest -> Add (AddArgs src dest ch))
         FlagSource _ -> unexpected "flag --from"
-        FlagInvalid i -> unexpected ("flag " ++ i)
+        FlagInvalid (k, v) -> unexpectedFlag k v
 
 expose :: Parser Instruction
 expose = do
@@ -323,8 +348,66 @@ onbuild = do
 healthcheck :: Parser Instruction
 healthcheck = do
     reserved "HEALTHCHECK"
-    args <- untilEol
-    return $ Healthcheck args
+    Healthcheck <$> (fullCheck <|> noCheck)
+  where
+    noCheck = string "NONE" >> return NoCheck
+    allFlags = do
+        flags <- someFlags
+        spaces1 <?> "another flag"
+        return flags
+    someFlags = do
+        x <- checkFlag
+        cont <- try (spaces1 >> lookAhead (string "--") >> return True) <|> return False
+        if cont
+            then do
+                xs <- someFlags
+                return (x : xs)
+            else return [x]
+    fullCheck = do
+        flags <- allFlags <|> return []
+        let intervals = [x | FlagInterval x <- flags]
+        let timeouts = [x | FlagTimeout x <- flags]
+        let startPeriods = [x | FlagStartPeriod x <- flags]
+        let retriesD = [x | FlagRetries x <- flags]
+        let invalid = [x | CFlagInvalid x <- flags]
+      -- Let's do some validation on the flags
+        case (invalid, intervals, timeouts, startPeriods, retriesD) of
+            ((k, v):_, _, _, _, _) -> unexpectedFlag k v
+            (_, _:_:_, _, _, _) -> unexpected "duplicate flag: --interval"
+            (_, _, _:_:_, _, _) -> unexpected "duplicate flag: --timeout"
+            (_, _, _, _:_:_, _) -> unexpected "duplicate flag: --start-period"
+            (_, _, _, _, _:_:_) -> unexpected "duplicate flag: --retries"
+            _ -> do
+                Cmd checkCommand <- cmd
+                let interval = listToMaybe intervals
+                let timeout = listToMaybe timeouts
+                let startPeriod = listToMaybe startPeriods
+                let retries = listToMaybe retriesD
+                return $ Check CheckArgs {..}
+
+checkFlag :: Parser CheckFlag
+checkFlag =
+    (FlagInterval <$> durationFlag "--interval=" <?> "--interval") <|>
+    (FlagTimeout <$> durationFlag "--timeout=" <?> "--timeout") <|>
+    (FlagStartPeriod <$> durationFlag "--start-period=" <?> "--start-period") <|>
+    (FlagRetries <$> retriesFlag <?> "--retries") <|>
+    (CFlagInvalid <$> anyFlag <?> "no flags")
+
+durationFlag :: String -> Parser Duration
+durationFlag flagName = do
+    void $ try (string flagName)
+    scale <- natural
+    unit <- char 's' <|> char 'm' <|> char 'h' <?> "either 's', 'm' or 'h' as the unit"
+    case unit of
+        's' -> return $ Duration (secondsToDiffTime scale)
+        'm' -> return $ Duration (secondsToDiffTime (scale * 60))
+        _ -> return $ Duration (secondsToDiffTime (scale * 60 * 60))
+
+retriesFlag :: Parser Retries
+retriesFlag = do
+    void $ try (string "--retries=")
+    n <- try natural <?> "the number of retries"
+    return $ Retries (fromIntegral n)
 
 parseInstruction :: Parser Instruction
 parseInstruction =

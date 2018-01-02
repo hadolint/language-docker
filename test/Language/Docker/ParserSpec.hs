@@ -20,7 +20,7 @@ spec = do
                 assertAst
                     "FROM busybox:5.12-dev"
                     [From (TaggedImage "busybox" "5.12-dev" Nothing)]
-            it "parse diggested image" $
+            it "parse digested image" $
                 assertAst
                     "FROM ubuntu@sha256:0ef2e08ed3fab"
                     [From (DigestedImage "ubuntu" "sha256:0ef2e08ed3fab" Nothing)]
@@ -125,9 +125,59 @@ spec = do
             it "quoted shell params" $
                 assertAst "SHELL [\"/bin/bash\",  \"-c\"]" [Shell ["/bin/bash", "-c"]]
 
-        describe "parse HEALTHCHECK" $
-            it "parse healthcheck without args" $
-              assertAst "HEALTHCHECK --interval=5m \\nCMD curl -f http://localhost/" [Healthcheck "--interval=5m \\nCMD curl -f http://localhost/"]
+        describe "parse HEALTHCHECK" $ do
+            it "parse healthcheck with interval" $
+              assertAst
+                "HEALTHCHECK --interval=5m \\\nCMD curl -f http://localhost/"
+                [Healthcheck $
+                    Check $
+                      CheckArgs (words "curl -f http://localhost/") (Just $ fromInteger 300) Nothing Nothing Nothing
+                ]
+
+            it "parse healthcheck with retries" $
+              assertAst
+                "HEALTHCHECK --retries=10 CMD curl -f http://localhost/"
+                [Healthcheck $
+                    Check $
+                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing Nothing (Just $ Retries 10)
+                ]
+
+            it "parse healthcheck with timeout" $
+              assertAst
+                "HEALTHCHECK --timeout=10s CMD curl -f http://localhost/"
+                [Healthcheck $
+                    Check $
+                      CheckArgs (words "curl -f http://localhost/") Nothing (Just $ fromInteger 10) Nothing Nothing
+                ]
+
+            it "parse healthcheck with start-period" $
+              assertAst
+                "HEALTHCHECK --start-period=2m CMD curl -f http://localhost/"
+                [Healthcheck $
+                    Check $
+                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing (Just $ fromInteger 120) Nothing
+                ]
+
+            it "parse healthcheck with all flags" $
+              assertAst
+                "HEALTHCHECK --start-period=2s --timeout=1m --retries=3 --interval=5s    CMD curl -f http://localhost/"
+                [Healthcheck $
+                    Check $
+                      CheckArgs
+                        (words "curl -f http://localhost/")
+                        (Just $ fromInteger 5)
+                        (Just $ fromInteger 60)
+                        (Just $ fromInteger 2)
+                        (Just $ Retries 3)
+                ]
+
+            it "parse healthcheck with no flags" $
+              assertAst
+                "HEALTHCHECK CMD curl -f http://localhost/"
+                [Healthcheck $
+                    Check $
+                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing Nothing Nothing
+                ]
 
         describe "parse MAINTAINER" $ do
             it "maintainer of untagged scratch image" $

@@ -8,8 +8,8 @@ import Control.Monad.Free
 import Control.Monad.Free.TH
 import Control.Monad.Trans.Free (FreeT, iterTM)
 import Control.Monad.Writer
-import Data.List.NonEmpty (NonEmpty)
 import Data.ByteString (ByteString)
+import Data.List.NonEmpty (NonEmpty)
 
 import qualified Language.Docker.PrettyPrint as PrettyPrint
 import qualified Language.Docker.Syntax as Syntax
@@ -143,6 +143,44 @@ copy sources dest = copyArgs sources dest Syntax.NoChown Syntax.NoSource
 
 add :: MonadFree EInstruction m => NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> m ()
 add sources dest = addArgs sources dest Syntax.NoChown
+
+check :: String -> Syntax.Check
+check command =
+    Syntax.Check
+        Syntax.CheckArgs
+        { Syntax.checkCommand = words command
+        , Syntax.interval = Nothing
+        , Syntax.timeout = Nothing
+        , Syntax.startPeriod = Nothing
+        , Syntax.retries = Nothing
+        }
+
+interval :: Syntax.Check -> Integer -> Syntax.Check
+interval ch secs =
+    case ch of
+        Syntax.NoCheck -> Syntax.NoCheck
+        Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.interval = Just $ fromInteger secs}
+
+timeout :: Syntax.Check -> Integer -> Syntax.Check
+timeout ch secs =
+    case ch of
+        Syntax.NoCheck -> Syntax.NoCheck
+        Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.timeout = Just $ fromInteger secs}
+
+startPeriod :: Syntax.Check -> Integer -> Syntax.Check
+startPeriod ch secs =
+    case ch of
+        Syntax.NoCheck -> Syntax.NoCheck
+        Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.startPeriod = Just $ fromInteger secs}
+
+retries :: Syntax.Check -> Integer -> Syntax.Check
+retries ch tries =
+    case ch of
+        Syntax.NoCheck -> Syntax.NoCheck
+        Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.retries = Just $ fromInteger tries}
+
+noCheck :: Syntax.Check
+noCheck = Syntax.NoCheck
 
 -- | ONBUILD Dockerfile instruction
 --
