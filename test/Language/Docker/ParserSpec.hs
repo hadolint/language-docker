@@ -126,7 +126,7 @@ spec = do
                 assertAst "SHELL [\"/bin/bash\",  \"-c\"]" [Shell ["/bin/bash", "-c"]]
 
         describe "parse HEALTHCHECK" $ do
-            it "parse healthcheck with timeout" $
+            it "parse healthcheck with interval" $
               assertAst
                 "HEALTHCHECK --interval=5m \\\nCMD curl -f http://localhost/"
                 [Healthcheck $
@@ -169,6 +169,14 @@ spec = do
                         (Just $ fromInteger 60)
                         (Just $ fromInteger 2)
                         (Just $ Retries 3)
+                ]
+
+            it "parse healthcheck with no flags" $
+              assertAst
+                "HEALTHCHECK CMD curl -f http://localhost/"
+                [Healthcheck $
+                    Check $
+                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing Nothing Nothing
                 ]
 
         describe "parse MAINTAINER" $ do

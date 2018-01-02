@@ -352,7 +352,7 @@ healthcheck = do
   where
     noCheck = string "NONE" >> return NoCheck
     allFlags = do
-        flags <- someFlags <|> return []
+        flags <- someFlags
         spaces1 <?> "another flag"
         return flags
     someFlags = do
@@ -364,7 +364,7 @@ healthcheck = do
                 return (x : xs)
             else return [x]
     fullCheck = do
-        flags <- allFlags
+        flags <- allFlags <|> return []
         let intervals = [x | FlagInterval x <- flags]
         let timeouts = [x | FlagTimeout x <- flags]
         let startPeriods = [x | FlagStartPeriod x <- flags]
@@ -374,7 +374,7 @@ healthcheck = do
         case (invalid, intervals, timeouts, startPeriods, retriesD) of
             ((k, v):_, _, _, _, _) -> unexpectedFlag k v
             (_, _:_:_, _, _, _) -> unexpected "duplicate flag: --interval"
-            (_, _, _:_:_, _, _) -> unexpected "duplicate flag: --timeouts"
+            (_, _, _:_:_, _, _) -> unexpected "duplicate flag: --timeout"
             (_, _, _, _:_:_, _) -> unexpected "duplicate flag: --start-period"
             (_, _, _, _, _:_:_) -> unexpected "duplicate flag: --retries"
             _ -> do
@@ -387,17 +387,17 @@ healthcheck = do
 
 checkFlag :: Parser CheckFlag
 checkFlag =
-    (FlagInterval <$> try (durationFlag "--interval=") <?> "only one --interval") <|>
-    (FlagTimeout <$> try (durationFlag "--timeout=") <?> "only one --timeout") <|>
-    (FlagStartPeriod <$> try (durationFlag "--start-period=") <?> "only one --start-period") <|>
-    (FlagRetries <$> try retriesFlag <?> "only one --timeout") <|>
-    (CFlagInvalid <$> try anyFlag <?> "no other flags")
+    (FlagInterval <$> durationFlag "--interval=" <?> "--interval") <|>
+    (FlagTimeout <$> durationFlag "--timeout=" <?> "--timeout") <|>
+    (FlagStartPeriod <$> durationFlag "--start-period=" <?> "--start-period") <|>
+    (FlagRetries <$> retriesFlag <?> "--retries") <|>
+    (CFlagInvalid <$> anyFlag <?> "no flags")
 
 durationFlag :: String -> Parser Duration
 durationFlag flagName = do
-    void $ string flagName
+    void $ try (string flagName)
     scale <- natural
-    unit <- char 's' <|> char 'm' <|> char 'h'
+    unit <- char 's' <|> char 'm' <|> char 'h' <?> "either 's', 'm' or 'h' as the unit"
     case unit of
         's' -> return $ Duration (secondsToDiffTime scale)
         'm' -> return $ Duration (secondsToDiffTime (scale * 60))
@@ -405,7 +405,7 @@ durationFlag flagName = do
 
 retriesFlag :: Parser Retries
 retriesFlag = do
-    void $ string "--retries="
+    void $ try (string "--retries=")
     n <- try natural <?> "the number of retries"
     return $ Retries (fromIntegral n)
 
