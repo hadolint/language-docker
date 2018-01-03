@@ -106,9 +106,12 @@ prettyPrintInstruction i =
         Maintainer m -> do
             text "MAINTAINER"
             text m
-        Arg a -> do
+        Arg a Nothing -> do
             text "ARG"
             text a
+        Arg k (Just v) -> do
+            text "ARG"
+            text k <> text "=" <> text v
         Entrypoint e -> do
             text "ENTRYPOINT"
             prettyPrintArguments e
