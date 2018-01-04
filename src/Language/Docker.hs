@@ -71,6 +71,7 @@ module Language.Docker
     , Language.Docker.Syntax.Check(..)
     , Language.Docker.Syntax.CheckArgs(..)
     , Language.Docker.Syntax.Image
+    , Language.Docker.Syntax.ImageAlias(..)
     , Language.Docker.Syntax.Tag
     , Language.Docker.Syntax.Ports
     , Language.Docker.Syntax.Directory
