@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 36a6870b23b3361a5461b7bc8d6898e79dbe2fbba21bd305461ca8433e1dda3d
+-- hash: fb162f741f166683adaef8b45dca1eb857c508babbbb8de4977c9634b0e85e8f
 
 name:           language-docker
-version:        2.0.0
+version:        2.0.1
 synopsis:       Dockerfile parser, pretty-printer and embedded DSL
 description:    All functions for parsing, printing and writting Dockerfiles are exported through @Language.Docker@. For more fine-grained operations look for specific modules that implement a certain functionality.
                 See the <https://github.com/hadolint/language-docker GitHub project> for the source-code and examples.
