@@ -23,6 +23,10 @@ deriveLift ''Port
 
 deriveLift ''Ports
 
+deriveLift ''Registry
+
+deriveLift ''Image
+
 deriveLift ''ImageAlias
 
 deriveLift ''BaseImage

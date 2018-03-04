@@ -70,7 +70,8 @@ module Language.Docker
     , Language.Docker.Syntax.AddArgs(..)
     , Language.Docker.Syntax.Check(..)
     , Language.Docker.Syntax.CheckArgs(..)
-    , Language.Docker.Syntax.Image
+    , Language.Docker.Syntax.Image(..)
+    , Language.Docker.Syntax.Registry(..)
     , Language.Docker.Syntax.ImageAlias(..)
     , Language.Docker.Syntax.Tag
     , Language.Docker.Syntax.Ports

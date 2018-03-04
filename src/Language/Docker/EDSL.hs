@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Language.Docker.EDSL where
@@ -10,6 +11,7 @@ import Control.Monad.Trans.Free (FreeT, iterTM)
 import Control.Monad.Writer
 import Data.ByteString (ByteString)
 import Data.List.NonEmpty (NonEmpty)
+import Data.String (fromString)
 
 import qualified Language.Docker.PrettyPrint as PrettyPrint
 import qualified Language.Docker.Syntax as Syntax
@@ -99,13 +101,13 @@ toDockerfileStr :: EDockerfileM a -> String
 toDockerfileStr = PrettyPrint.prettyPrint . toDockerfile
 
 untagged :: String -> EBaseImage
-untagged = flip EUntaggedImage Nothing
+untagged = flip EUntaggedImage Nothing . fromString
 
 tagged :: String -> String -> EBaseImage
-tagged imageName tag = ETaggedImage imageName tag Nothing
+tagged imageName tag = ETaggedImage (fromString imageName) tag Nothing
 
 digested :: String -> ByteString -> EBaseImage
-digested imageName hash = EDigestedImage imageName hash Nothing
+digested imageName hash = EDigestedImage (fromString imageName) hash Nothing
 
 aliased :: EBaseImage -> String -> EBaseImage
 aliased image alias =
