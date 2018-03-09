@@ -4,12 +4,30 @@
 module Language.Docker.Syntax where
 
 import Data.ByteString.Char8 (ByteString)
+import Data.List (intercalate, isInfixOf)
 import Data.List.NonEmpty (NonEmpty)
-import Data.String (IsString)
+import Data.List.Split (endBy)
+import Data.String (IsString(..))
 import Data.Time.Clock (DiffTime)
 import GHC.Exts (IsList(..))
 
-type Image = String
+data Image = Image
+    { registryName :: Maybe Registry
+    , imageName :: String
+    } deriving (Show, Eq, Ord)
+
+instance IsString Image where
+    fromString img =
+        if "/" `isInfixOf` img
+            then let parts = endBy "/" img
+                 in case parts of
+                        registry:rest -> Image (Just (Registry registry)) (intercalate "/" rest)
+                        _ -> Image Nothing img
+            else Image Nothing img
+
+newtype Registry =
+    Registry String
+    deriving (Show, Eq, Ord, IsString)
 
 type Tag = String
 

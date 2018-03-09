@@ -29,19 +29,23 @@ prettyPrint =
 prettyPrintInstructionPos :: InstructionPos -> String
 prettyPrintInstructionPos (InstructionPos i _ _) = render (prettyPrintInstruction i)
 
+prettyPrintImage :: Image -> Doc
+prettyPrintImage (Image Nothing name) = text name
+prettyPrintImage (Image (Just (Registry reg)) name) = text reg <> char '/' <> text name
+
 prettyPrintBaseImage :: BaseImage -> Doc
 prettyPrintBaseImage b =
     case b of
-        DigestedImage name digest alias -> do
-            text name
+        DigestedImage img digest alias -> do
+            prettyPrintImage img
             char '@'
             text (ByteString.unpack digest)
             prettyAlias alias
-        UntaggedImage name alias -> do
+        UntaggedImage (Image _ name) alias -> do
             text name
             prettyAlias alias
-        TaggedImage name tag alias -> do
-            text name
+        TaggedImage img tag alias -> do
+            prettyPrintImage img
             char ':'
             text tag
             prettyAlias alias

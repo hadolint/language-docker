@@ -8,18 +8,18 @@ import Data.String
 import qualified Language.Docker.Syntax as Syntax
 
 data EBaseImage
-    = EUntaggedImage String
+    = EUntaggedImage Syntax.Image
                      (Maybe Syntax.ImageAlias)
-    | ETaggedImage String
+    | ETaggedImage Syntax.Image
                    String
                    (Maybe Syntax.ImageAlias)
-    | EDigestedImage String
+    | EDigestedImage Syntax.Image
                      ByteString
                      (Maybe Syntax.ImageAlias)
     deriving (Show, Eq, Ord)
 
 instance IsString EBaseImage where
-    fromString = flip EUntaggedImage Nothing
+    fromString = flip EUntaggedImage Nothing . fromString
 
 data EInstruction next
     = From EBaseImage
@@ -57,7 +57,8 @@ data EInstruction next
                  next
     | Env Syntax.Pairs
           next
-    | Arg String (Maybe String)
+    | Arg String
+          (Maybe String)
           next
     | Comment String
               next

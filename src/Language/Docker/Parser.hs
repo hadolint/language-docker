@@ -32,13 +32,20 @@ comment = do
     text <- many (noneOf "\n")
     return $ Comment text
 
+registry :: Parser Registry
+registry = do
+    name <- many1 (noneOf "\t\n /")
+    void $ char '/'
+    return $ Registry name
+
 taggedImage :: Parser BaseImage
 taggedImage = do
+    registryName <- (Just <$> try registry) <|> return Nothing
     name <- many (noneOf "\t\n: ")
     void $ char ':'
     tag <- many1 (noneOf "\t\n: ")
     maybeAlias <- maybeImageAlias
-    return $ TaggedImage name tag maybeAlias
+    return $ TaggedImage (Image registryName name) tag maybeAlias
 
 digestedImage :: Parser BaseImage
 digestedImage = do
@@ -46,15 +53,16 @@ digestedImage = do
     void $ char '@'
     digest <- many1 (noneOf "\t\n@ ")
     maybeAlias <- maybeImageAlias
-    return $ DigestedImage name (pack digest) maybeAlias
+    return $ DigestedImage (Image Nothing name) (pack digest) maybeAlias
 
 untaggedImage :: Parser BaseImage
 untaggedImage = do
+    registryName <- (Just <$> try registry) <|> return Nothing
     name <- many (noneOf "\n\t:@ ")
     notInvalidTag name
     notInvalidDigest name
     maybeAlias <- maybeImageAlias
-    return $ UntaggedImage name maybeAlias
+    return $ UntaggedImage (Image registryName name) maybeAlias
   where
     notInvalidTag :: String -> Parser ()
     notInvalidTag name =

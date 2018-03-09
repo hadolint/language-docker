@@ -39,6 +39,14 @@ spec = do
             it "parse diggested image" $
                 assertAst "FROM ubuntu@sha256:0ef2e08ed3fab AS foo" [From (DigestedImage "ubuntu" "sha256:0ef2e08ed3fab" (Just $ ImageAlias "foo"))]
 
+        describe "parse FROM with registry" $ do
+            it "registry without port" $
+                assertAst "FROM foo.com/node" [From (UntaggedImage (Image (Just "foo.com") "node") Nothing)]
+            it "parse with port and tag" $
+                assertAst
+                "FROM myregistry.com:5000/imagename:5.12-dev"
+                [From (TaggedImage (Image (Just "myregistry.com:5000") "imagename") "5.12-dev" Nothing)]
+
         describe "parse LABEL" $ do
             it "parse label" $ assertAst "LABEL foo=bar" [Label[("foo", "bar")]]
             it "parse space separated label" $ assertAst "LABEL foo bar baz" [Label[("foo", "bar baz")]]
@@ -137,7 +145,7 @@ spec = do
                 "HEALTHCHECK --interval=5m \\\nCMD curl -f http://localhost/"
                 [Healthcheck $
                     Check $
-                      CheckArgs (words "curl -f http://localhost/") (Just $ fromInteger 300) Nothing Nothing Nothing
+                      CheckArgs (words "curl -f http://localhost/") (Just 300) Nothing Nothing Nothing
                 ]
 
             it "parse healthcheck with retries" $
@@ -153,7 +161,7 @@ spec = do
                 "HEALTHCHECK --timeout=10s CMD curl -f http://localhost/"
                 [Healthcheck $
                     Check $
-                      CheckArgs (words "curl -f http://localhost/") Nothing (Just $ fromInteger 10) Nothing Nothing
+                      CheckArgs (words "curl -f http://localhost/") Nothing (Just 10) Nothing Nothing
                 ]
 
             it "parse healthcheck with start-period" $
@@ -161,7 +169,7 @@ spec = do
                 "HEALTHCHECK --start-period=2m CMD curl -f http://localhost/"
                 [Healthcheck $
                     Check $
-                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing (Just $ fromInteger 120) Nothing
+                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing (Just 120) Nothing
                 ]
 
             it "parse healthcheck with all flags" $
@@ -171,9 +179,9 @@ spec = do
                     Check $
                       CheckArgs
                         (words "curl -f http://localhost/")
-                        (Just $ fromInteger 5)
-                        (Just $ fromInteger 60)
-                        (Just $ fromInteger 2)
+                        (Just 5)
+                        (Just 60)
+                        (Just 2)
                         (Just $ Retries 3)
                 ]
 
