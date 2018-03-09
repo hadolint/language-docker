@@ -4,7 +4,7 @@
 module Language.Docker.Syntax where
 
 import Data.ByteString.Char8 (ByteString)
-import Data.List (intercalate)
+import Data.List (intercalate, isInfixOf)
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.Split (endBy)
 import Data.String (IsString(..))
@@ -18,10 +18,12 @@ data Image = Image
 
 instance IsString Image where
     fromString img =
-        let parts = endBy "/" img
-        in case parts of
-               registry:rest -> Image (Just (Registry registry)) (intercalate "/" rest)
-               _ -> Image Nothing img
+        if "/" `isInfixOf` img
+            then let parts = endBy "/" img
+                 in case parts of
+                        registry:rest -> Image (Just (Registry registry)) (intercalate "/" rest)
+                        _ -> Image Nothing img
+            else Image Nothing img
 
 newtype Registry =
     Registry String
