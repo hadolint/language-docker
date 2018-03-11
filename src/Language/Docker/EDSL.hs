@@ -105,11 +105,11 @@ toDockerfileStr = PrettyPrint.prettyPrint . toDockerfile
 untagged :: String -> EBaseImage
 untagged = flip EUntaggedImage Nothing . fromString
 
-tagged :: String -> String -> EBaseImage
-tagged imageName tag = ETaggedImage (fromString imageName) tag Nothing
+tagged :: Syntax.Image -> String -> EBaseImage
+tagged imageName tag = ETaggedImage imageName tag Nothing
 
-digested :: String -> ByteString -> EBaseImage
-digested imageName hash = EDigestedImage (fromString imageName) hash Nothing
+digested :: Syntax.Image -> ByteString -> EBaseImage
+digested imageName hash = EDigestedImage imageName hash Nothing
 
 aliased :: EBaseImage -> String -> EBaseImage
 aliased image alias =
@@ -155,6 +155,12 @@ copyFromStage stage source dest = copy $ Syntax.CopyArgs source dest Syntax.NoCh
 
 add :: MonadFree EInstruction m => NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> m ()
 add sources dest = addArgs sources dest Syntax.NoChown
+
+toSources :: NonEmpty String -> NonEmpty Syntax.SourcePath
+toSources = fmap Syntax.SourcePath
+
+toTarget :: String -> Syntax.TargetPath
+toTarget = Syntax.TargetPath
 
 fromStage :: Syntax.CopyArgs -> Syntax.CopySource -> Syntax.CopyArgs
 fromStage args src = args {Syntax.sourceFlag = src}

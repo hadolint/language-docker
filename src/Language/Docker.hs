@@ -29,6 +29,8 @@ module Language.Docker
     , Language.Docker.EDSL.to
     , Language.Docker.EDSL.fromStage
     , Language.Docker.EDSL.ownedBy
+    , Language.Docker.EDSL.toSources
+    , Language.Docker.EDSL.toTarget
     , Language.Docker.EDSL.run
     , Language.Docker.EDSL.runArgs
     , Language.Docker.EDSL.cmd
