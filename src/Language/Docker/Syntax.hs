@@ -86,10 +86,22 @@ data Chown
     | NoChown
     deriving (Show, Eq, Ord)
 
+instance IsString Chown where
+    fromString ch =
+        case ch of
+            "" -> NoChown
+            _ -> Chown ch
+
 data CopySource
     = CopySource String
     | NoSource
     deriving (Show, Eq, Ord)
+
+instance IsString CopySource where
+    fromString src =
+        case src of
+            "" -> NoSource
+            _ -> CopySource src
 
 newtype Duration = Duration
     { durationTime :: DiffTime
@@ -117,6 +129,13 @@ data Check
     | NoCheck
     deriving (Show, Eq, Ord)
 
+newtype Arguments =
+    Arguments [String]
+    deriving (Show, Eq, Ord)
+
+instance IsString Arguments where
+  fromString = Arguments . words
+
 data CheckArgs = CheckArgs
     { checkCommand :: Arguments
     , interval :: Maybe Duration
@@ -125,7 +144,10 @@ data CheckArgs = CheckArgs
     , retries :: Maybe Retries
     } deriving (Show, Eq, Ord)
 
-type Arguments = [String]
+instance IsList Arguments where
+    type Item Arguments = String
+    fromList = Arguments
+    toList (Arguments ps) = ps
 
 type Pairs = [(String, String)]
 

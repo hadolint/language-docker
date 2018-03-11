@@ -31,6 +31,8 @@ deriveLift ''ImageAlias
 
 deriveLift ''BaseImage
 
+deriveLift ''Arguments
+
 deriveLift ''Instruction
 
 deriveLift ''InstructionPos

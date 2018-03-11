@@ -25,6 +25,10 @@ module Language.Docker
     , Language.Docker.EDSL.label
     , Language.Docker.EDSL.stopSignal
     , Language.Docker.EDSL.copy
+    , Language.Docker.EDSL.copyFromStage
+    , Language.Docker.EDSL.to
+    , Language.Docker.EDSL.fromStage
+    , Language.Docker.EDSL.ownedBy
     , Language.Docker.EDSL.run
     , Language.Docker.EDSL.runArgs
     , Language.Docker.EDSL.cmd

@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Language.Docker.EDSL where
@@ -87,15 +89,15 @@ toDockerfile e =
 -- 'Language.Docker.PrettyPrint'
 --
 -- @
--- import           Language.Docker
+-- import Language.Docker
 --
 -- main :: IO ()
 -- main = writeFile "something.dockerfile" $ toDockerfileStr $ do
 --     from (tagged "fpco/stack-build" "lts-6.9")
 --     add ["."] "/app/language-docker"
 --     workdir "/app/language-docker"
---     run (words "stack build --test --only-dependencies")
---     cmd (words "stack test")
+--     run "stack build --test --only-dependencies"
+--     cmd "stack test"
 -- @
 toDockerfileStr :: EDockerfileM a -> String
 toDockerfileStr = PrettyPrint.prettyPrint . toDockerfile
@@ -131,26 +133,43 @@ variablePort varName = Syntax.PortStr ('$' : varName)
 portRange :: Integer -> Integer -> Syntax.Port
 portRange = Syntax.PortRange
 
-run :: MonadFree EInstruction m => String -> m ()
-run = runArgs . words
+run :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+run = runArgs
 
-entrypoint :: MonadFree EInstruction m => String -> m ()
-entrypoint = entrypointArgs . words
+entrypoint :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+entrypoint = entrypointArgs
 
-cmd :: MonadFree EInstruction m => String -> m ()
-cmd = cmdArgs . words
+cmd :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+cmd = cmdArgs
 
-copy :: MonadFree EInstruction m => NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> m ()
-copy sources dest = copyArgs sources dest Syntax.NoChown Syntax.NoSource
+copy :: MonadFree EInstruction m => Syntax.CopyArgs -> m ()
+copy (Syntax.CopyArgs sources dest ch src) = copyArgs sources dest ch src
+
+copyFromStage ::
+       MonadFree EInstruction m
+    => Syntax.CopySource
+    -> NonEmpty Syntax.SourcePath
+    -> Syntax.TargetPath
+    -> m ()
+copyFromStage stage source dest = copy $ Syntax.CopyArgs source dest Syntax.NoChown stage
 
 add :: MonadFree EInstruction m => NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> m ()
 add sources dest = addArgs sources dest Syntax.NoChown
 
-check :: String -> Syntax.Check
+fromStage :: Syntax.CopyArgs -> Syntax.CopySource -> Syntax.CopyArgs
+fromStage args src = args {Syntax.sourceFlag = src}
+
+ownedBy :: Syntax.CopyArgs -> Syntax.Chown -> Syntax.CopyArgs
+ownedBy args owner = args {Syntax.chownFlag = owner}
+
+to :: NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> Syntax.CopyArgs
+to sources dest = Syntax.CopyArgs sources dest Syntax.NoChown Syntax.NoSource
+
+check :: Syntax.Arguments -> Syntax.Check
 check command =
     Syntax.Check
         Syntax.CheckArgs
-        { Syntax.checkCommand = words command
+        { Syntax.checkCommand = command
         , Syntax.interval = Nothing
         , Syntax.timeout = Nothing
         , Syntax.startPeriod = Nothing

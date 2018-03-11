@@ -335,13 +335,15 @@ maintainer = do
 
 -- Parse arguments of a command in the exec form
 argumentsExec :: Parser Arguments
-argumentsExec = brackets $ commaSep stringLiteral
+argumentsExec = do
+  args <- brackets $ commaSep stringLiteral
+  return $ Arguments args
 
 -- Parse arguments of a command in the shell form
 argumentsShell :: Parser Arguments
 argumentsShell = do
     args <- untilEol
-    return $ words args
+    return $ Arguments (words args)
 
 arguments :: Parser Arguments
 arguments = try argumentsExec <|> try argumentsShell
