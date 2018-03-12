@@ -136,6 +136,11 @@ newtype Arguments =
 instance IsString Arguments where
   fromString = Arguments . words
 
+instance IsList Arguments where
+    type Item Arguments = String
+    fromList = Arguments
+    toList (Arguments ps) = ps
+
 data CheckArgs = CheckArgs
     { checkCommand :: Arguments
     , interval :: Maybe Duration
@@ -144,10 +149,6 @@ data CheckArgs = CheckArgs
     , retries :: Maybe Retries
     } deriving (Show, Eq, Ord)
 
-instance IsList Arguments where
-    type Item Arguments = String
-    fromList = Arguments
-    toList (Arguments ps) = ps
 
 type Pairs = [(String, String)]
 
