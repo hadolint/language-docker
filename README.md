@@ -110,15 +110,17 @@ import           Language.Docker
 import qualified System.Directory     as Directory
 import qualified System.FilePath      as FilePath
 import qualified System.FilePath.Glob as Glob
-import Data.String (fromString)
+import Data.List.NonEmpty (fromList)
+
 main = do
     str <- toDockerfileStrIO $ do
         fs <- liftIO $ do
             cwd <- Directory.getCurrentDirectory
             fs <- Glob.glob "./test/*.hs"
-            return (map (FilePath.makeRelative cwd) fs)
+	    let relativeFiles = map (FilePath.makeRelative cwd) fs
+            return (fromList relativeFiles)
         from "ubuntu"
-	mapM_ (\f -> add [fromString f] (fromString $ "/app/" ++ takeFileName f)) fs
+	copy $ (toSources fs) `to` "/app/"
     putStr str
 ```
 

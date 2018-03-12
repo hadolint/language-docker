@@ -145,7 +145,7 @@ spec = do
                 "HEALTHCHECK --interval=5m \\\nCMD curl -f http://localhost/"
                 [Healthcheck $
                     Check $
-                      CheckArgs (words "curl -f http://localhost/") (Just 300) Nothing Nothing Nothing
+                      CheckArgs "curl -f http://localhost/" (Just 300) Nothing Nothing Nothing
                 ]
 
             it "parse healthcheck with retries" $
@@ -153,7 +153,7 @@ spec = do
                 "HEALTHCHECK --retries=10 CMD curl -f http://localhost/"
                 [Healthcheck $
                     Check $
-                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing Nothing (Just $ Retries 10)
+                      CheckArgs "curl -f http://localhost/" Nothing Nothing Nothing (Just $ Retries 10)
                 ]
 
             it "parse healthcheck with timeout" $
@@ -161,7 +161,7 @@ spec = do
                 "HEALTHCHECK --timeout=10s CMD curl -f http://localhost/"
                 [Healthcheck $
                     Check $
-                      CheckArgs (words "curl -f http://localhost/") Nothing (Just 10) Nothing Nothing
+                      CheckArgs "curl -f http://localhost/" Nothing (Just 10) Nothing Nothing
                 ]
 
             it "parse healthcheck with start-period" $
@@ -169,7 +169,7 @@ spec = do
                 "HEALTHCHECK --start-period=2m CMD curl -f http://localhost/"
                 [Healthcheck $
                     Check $
-                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing (Just 120) Nothing
+                      CheckArgs "curl -f http://localhost/" Nothing Nothing (Just 120) Nothing
                 ]
 
             it "parse healthcheck with all flags" $
@@ -178,7 +178,7 @@ spec = do
                 [Healthcheck $
                     Check $
                       CheckArgs
-                        (words "curl -f http://localhost/")
+                        "curl -f http://localhost/"
                         (Just 5)
                         (Just 60)
                         (Just 2)
@@ -190,7 +190,7 @@ spec = do
                 "HEALTHCHECK CMD curl -f http://localhost/"
                 [Healthcheck $
                     Check $
-                      CheckArgs (words "curl -f http://localhost/") Nothing Nothing Nothing Nothing
+                      CheckArgs "curl -f http://localhost/" Nothing Nothing Nothing Nothing
                 ]
 
         describe "parse MAINTAINER" $ do

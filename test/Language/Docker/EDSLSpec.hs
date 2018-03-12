@@ -60,10 +60,26 @@ spec = do
 
         it "parses and prints from aliases correctly" $ do
             let r = prettyPrint $ toDockerfile $ do
-                        from ("node" `tagged` "10.1" `aliased` "node-build")
+                        from $ "node" `tagged` "10.1" `aliased` "node-build"
                         run "echo foo"
             r `shouldBe` unlines [ "FROM node:10.1 AS node-build"
                                  , "RUN echo foo"
+                                 ]
+
+        it "parses and prints copy instructions" $ do
+            let r = prettyPrint $ toDockerfile $ do
+                        from "scratch"
+                        copy $ ["foo.js"] `to` "bar.js"
+                        copy $ ["foo.js", "bar.js"] `to` "."
+                        copy $ ["foo.js", "bar.js"] `to` "baz/"
+                        copy $ ["something"] `to` "crazy" `fromStage` "builder"
+                        copy $ ["this"] `to` "that" `fromStage` "builder" `ownedBy` "www-data"
+            r `shouldBe` unlines [ "FROM scratch"
+                                 , "COPY foo.js bar.js"
+                                 , "COPY foo.js bar.js ./"
+                                 , "COPY foo.js bar.js baz/"
+                                 , "COPY --from=builder something crazy"
+                                 , "COPY --chown=www-data --from=builder this that"
                                  ]
 
     describe "toDockerfileStrIO" $

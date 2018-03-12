@@ -1,6 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Language.Docker.EDSL where
@@ -87,34 +89,171 @@ toDockerfile e =
 -- 'Language.Docker.PrettyPrint'
 --
 -- @
--- import           Language.Docker
+-- import Language.Docker
 --
 -- main :: IO ()
 -- main = writeFile "something.dockerfile" $ toDockerfileStr $ do
 --     from (tagged "fpco/stack-build" "lts-6.9")
 --     add ["."] "/app/language-docker"
 --     workdir "/app/language-docker"
---     run (words "stack build --test --only-dependencies")
---     cmd (words "stack test")
+--     run "stack build --test --only-dependencies"
+--     cmd "stack test"
 -- @
 toDockerfileStr :: EDockerfileM a -> String
 toDockerfileStr = PrettyPrint.prettyPrint . toDockerfile
 
+-- | Use a docker image in a FROM instruction without a tag
+--
+-- The following two examples are equivalent
+--
+-- @
+-- from $ untagged "fpco/stack-build"
+-- @
+--
+-- Is equivalent to, when having OverloadedStrings:
+--
+-- @
+-- from "fpco/stack-build"
+-- @
 untagged :: String -> EBaseImage
 untagged = flip EUntaggedImage Nothing . fromString
 
-tagged :: String -> String -> EBaseImage
-tagged imageName tag = ETaggedImage (fromString imageName) tag Nothing
+-- | Use a specific tag for a docker image. This function is meant
+-- to be used as an infix operator.
+--
+-- @
+-- from $ "fpco/stack-build" `tagged` "lts-10.3"
+-- @
+tagged :: Syntax.Image -> String -> EBaseImage
+tagged imageName tag = ETaggedImage imageName tag Nothing
 
-digested :: String -> ByteString -> EBaseImage
-digested imageName hash = EDigestedImage (fromString imageName) hash Nothing
+digested :: Syntax.Image -> ByteString -> EBaseImage
+digested imageName hash = EDigestedImage imageName hash Nothing
 
+-- | Alias a FROM instruction to be used as a build stage.
+-- This function is meant to be used as an infix operator.
+--
+-- @
+-- from $ "fpco/stack-build" `aliased` "builder"
+-- @
 aliased :: EBaseImage -> String -> EBaseImage
 aliased image alias =
     case image of
         EUntaggedImage n _ -> EUntaggedImage n (Just $ Syntax.ImageAlias alias)
         ETaggedImage n t _ -> ETaggedImage n t (Just $ Syntax.ImageAlias alias)
         EDigestedImage n h _ -> EDigestedImage n h (Just $ Syntax.ImageAlias alias)
+
+-- | Create a RUN instruction with the given arguments.
+--
+-- @
+-- run "apt-get install wget"
+-- @
+run :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+run = runArgs
+
+-- | Create an ENTRYPOINT instruction with the given arguments.
+--
+-- @
+-- entrypoint "/usr/local/bin/program --some-flag"
+-- @
+entrypoint :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+entrypoint = entrypointArgs
+
+-- | Create a CMD instruction with the given arguments.
+--
+-- @
+-- cmd "my-program --some-flag"
+-- @
+cmd :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+cmd = cmdArgs
+
+-- | Create a COPY instruction. This function is meant to be
+-- used with the compinators 'to', 'fromStage' and 'ownedBy'
+--
+-- @
+-- copy $ ["foo.js", "bar.js"] `to` "."
+-- copy $ ["some_file"] `to` "/some/path" `fromStage` "builder"
+-- @
+copy :: MonadFree EInstruction m => Syntax.CopyArgs -> m ()
+copy (Syntax.CopyArgs sources dest ch src) = copyArgs sources dest ch src
+
+-- | Create a COPY instruction from a given build stage.
+-- This is a shorthand version of using 'copy' with combinators.
+--
+-- @
+-- copyFromStage "builder" ["foo.js", "bar.js"] "."
+-- @
+copyFromStage ::
+       MonadFree EInstruction m
+    => Syntax.CopySource
+    -> NonEmpty Syntax.SourcePath
+    -> Syntax.TargetPath
+    -> m ()
+copyFromStage stage source dest = copy $ Syntax.CopyArgs source dest Syntax.NoChown stage
+
+-- | Create an ADD instruction. This is often used as a shorthand version
+-- of copy when no extra options are needed. Currently there is no way to
+-- pass extra options to ADD, so you are encouraged to use 'copy' instead.
+--
+-- @
+-- add ["foo.js", "bar.js"] "."
+-- @
+add :: MonadFree EInstruction m => NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> m ()
+add sources dest = addArgs sources dest Syntax.NoChown
+
+-- | Converts a NonEmpty list of strings to a NonEmpty list of 'Syntax.SourcePath'
+--
+-- This is a convenience function when you need to pass a non-static list of
+-- strings that you build somewhere as an argument for 'copy' or 'add'
+--
+-- @
+-- someFiles <- glob "*.js"
+-- copy $ (toSources someFiles) `to` "."
+-- @
+toSources :: NonEmpty String -> NonEmpty Syntax.SourcePath
+toSources = fmap Syntax.SourcePath
+
+-- | Converts a String into a 'Syntax.TargetPath'
+--
+-- This is a convenience function when you need to pass a string variable
+-- as an argument for 'copy' or 'add'
+--
+-- @
+-- let destination = buildSomePath pwd
+-- add ["foo.js"] (toTarget destination)
+-- @
+toTarget :: String -> Syntax.TargetPath
+toTarget = Syntax.TargetPath
+
+-- | Adds the --from= option to a COPY instruction.
+--
+-- This function is meant to be used as an infix operator:
+--
+-- @
+-- copy $ ["foo.js"] `to` "." `fromStage` "builder"
+-- @
+fromStage :: Syntax.CopyArgs -> Syntax.CopySource -> Syntax.CopyArgs
+fromStage args src = args {Syntax.sourceFlag = src}
+
+-- | Adds the --chown= option to a COPY instruction.
+--
+-- This function is meant to be used as an infix operator:
+--
+-- @
+-- copy $ ["foo.js"] `to` "." `ownedBy` "www-data:www-data"
+-- @
+ownedBy :: Syntax.CopyArgs -> Syntax.Chown -> Syntax.CopyArgs
+ownedBy args owner = args {Syntax.chownFlag = owner}
+
+-- | Usedto join source paths with atarget path as an arguments for 'copy'
+--
+-- This function is meant to be used as an infix operator:
+--
+-- @
+-- copy $ ["foo.js"] `to` "." `ownedBy`
+-- @
+to :: NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> Syntax.CopyArgs
+to sources dest = Syntax.CopyArgs sources dest Syntax.NoChown Syntax.NoSource
 
 ports :: [Syntax.Port] -> Syntax.Ports
 ports = Syntax.Ports
@@ -131,26 +270,11 @@ variablePort varName = Syntax.PortStr ('$' : varName)
 portRange :: Integer -> Integer -> Syntax.Port
 portRange = Syntax.PortRange
 
-run :: MonadFree EInstruction m => String -> m ()
-run = runArgs . words
-
-entrypoint :: MonadFree EInstruction m => String -> m ()
-entrypoint = entrypointArgs . words
-
-cmd :: MonadFree EInstruction m => String -> m ()
-cmd = cmdArgs . words
-
-copy :: MonadFree EInstruction m => NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> m ()
-copy sources dest = copyArgs sources dest Syntax.NoChown Syntax.NoSource
-
-add :: MonadFree EInstruction m => NonEmpty Syntax.SourcePath -> Syntax.TargetPath -> m ()
-add sources dest = addArgs sources dest Syntax.NoChown
-
-check :: String -> Syntax.Check
+check :: Syntax.Arguments -> Syntax.Check
 check command =
     Syntax.Check
         Syntax.CheckArgs
-        { Syntax.checkCommand = words command
+        { Syntax.checkCommand = command
         , Syntax.interval = Nothing
         , Syntax.timeout = Nothing
         , Syntax.startPeriod = Nothing

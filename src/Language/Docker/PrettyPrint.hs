@@ -8,7 +8,7 @@ module Language.Docker.PrettyPrint where
 
 import qualified Data.ByteString.Char8 as ByteString (unpack)
 import Data.List (foldl', intersperse)
-import Data.List.NonEmpty (NonEmpty, toList)
+import Data.List.NonEmpty as NonEmpty (NonEmpty(..), toList)
 import Data.String
 import Language.Docker.Syntax
 import Prelude hiding ((>>), (>>=), return)
@@ -64,13 +64,13 @@ prettyPrintPair :: (String, String) -> Doc
 prettyPrintPair (k, v) = text k <> char '=' <> text (show v)
 
 prettyPrintArguments :: Arguments -> Doc
-prettyPrintArguments as = text (unwords (map helper as))
+prettyPrintArguments (Arguments as) = text (unwords (map helper as))
   where
     helper "&&" = "\\\n &&"
     helper a = a
 
 prettyPrintJSON :: Arguments -> Doc
-prettyPrintJSON as = brackets $ hsep $ intersperse comma $ map (doubleQuotes . text) as
+prettyPrintJSON (Arguments as) = brackets $ hsep $ intersperse comma $ map (doubleQuotes . text) as
 
 prettyPrintPort :: Port -> Doc
 prettyPrintPort (PortStr str) = text str
@@ -80,7 +80,12 @@ prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
 
 prettyPrintFileList :: NonEmpty SourcePath -> TargetPath -> Doc
 prettyPrintFileList sources (TargetPath dest) =
-    hsep $ [text s | SourcePath s <- toList sources] ++ [text dest]
+    let ending =
+            case (reverse dest, sources) of
+                ('/':_, _) -> "" -- If the target ends with / then no extra ending is needed
+                (_, _fst :| _snd:_) -> "/" -- More than one source means that the target should end in /
+                _ -> ""
+    in hsep $ [text s | SourcePath s <- toList sources] ++ [text dest <> text ending]
 
 prettyPrintChown :: Chown -> Doc
 prettyPrintChown chown =
