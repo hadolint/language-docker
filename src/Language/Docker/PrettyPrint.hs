@@ -3,6 +3,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NoImplicitPrelude #-}
 
 module Language.Docker.PrettyPrint where
 
@@ -11,7 +12,9 @@ import Data.List (foldl', intersperse)
 import Data.List.NonEmpty as NonEmpty (NonEmpty(..), toList)
 import Data.String
 import Language.Docker.Syntax
-import Prelude hiding ((>>), (>>=), return)
+import Prelude
+       (Bool(..), Maybe(..), ($), (++), (.), map, maybe, mempty, reverse,
+        show, snd)
 import Text.PrettyPrint
 
 -- | Pretty print a 'Dockerfile' to a 'String'
