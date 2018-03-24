@@ -32,16 +32,10 @@ dependencies:
   - split >=0.2
   - free
   - mtl
-  - transformers
   - template-haskell
   - th-lift
   - th-lift-instances
   - text
-  - yaml
-  - aeson
-  - Glob
-  - unordered-containers
-  - directory
   - filepath
   - semigroups
   - time
@@ -55,7 +49,6 @@ library:
   exposed-modules:
   - Language.Docker
   - Language.Docker.Parser
-  - Language.Docker.Predef
   - Language.Docker.PrettyPrint
   - Language.Docker.Normalize
   - Language.Docker.Syntax
