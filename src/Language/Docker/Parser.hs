@@ -267,9 +267,8 @@ expose = do
 port :: Parser Port
 port =
     (try portVariable <?> "a variable") <|> -- There a many valid representations of ports
-    (try portRange <?> "a port range") <|>
+    (try portRange <?> "a port range optionally followed by the protocol (udp/tcp)") <|>
     (try portWithProtocol <?> "a port with its protocol (udp/tcp)") <|>
-    (try portRangeWithProtocol <?> "a port range with its protocol (udp/tcp)") <|>
     (try portInt <?> "a valid port number")
 
 ports :: Parser Ports
@@ -280,8 +279,16 @@ portRange = do
     start <- natural
     void $ char '-'
     finish <- try natural
-    notFollowedBy (oneOf "/")
-    return $ PortRange start finish TCP
+    proto <- try protocol <|> return TCP
+    return $ PortRange start finish proto
+
+protocol :: Parser Protocol
+protocol = do
+    void (char '/')
+    tcp <|> udp
+  where
+    tcp = caseInsensitiveString "tcp" >> return TCP
+    udp = caseInsensitiveString "udp" >> return UDP
 
 portInt :: Parser Port
 portInt = do
@@ -292,22 +299,8 @@ portInt = do
 portWithProtocol :: Parser Port
 portWithProtocol = do
     portNumber <- natural
-    void (char '/')
-    proto <-
-        (caseInsensitiveString "tcp" >> return TCP) <|> -- Either tcp or udp
-        (caseInsensitiveString "udp" >> return UDP)
+    proto <- protocol
     return $ Port portNumber proto
-
-portRangeWithProtocol :: Parser Port
-portRangeWithProtocol = do
-    start <- natural
-    void $ char '-'
-    finish <- try natural
-    void (char '/')
-    proto <-
-        (caseInsensitiveString "tcp" >> return TCP) <|> -- Either tcp or udp
-        (caseInsensitiveString "udp" >> return UDP)
-    return $ PortRange start finish proto
 
 portVariable :: Parser Port
 portVariable = do
@@ -349,8 +342,8 @@ maintainer = do
 -- Parse arguments of a command in the exec form
 argumentsExec :: Parser Arguments
 argumentsExec = do
-  args <- brackets $ commaSep stringLiteral
-  return $ Arguments args
+    args <- brackets $ commaSep stringLiteral
+    return $ Arguments args
 
 -- Parse arguments of a command in the shell form
 argumentsShell :: Parser Arguments

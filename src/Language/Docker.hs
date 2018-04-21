@@ -47,6 +47,8 @@ module Language.Docker
     , Language.Docker.EDSL.tcpPort
     , Language.Docker.EDSL.udpPort
     , Language.Docker.EDSL.variablePort
+    , Language.Docker.EDSL.portRange
+    , Language.Docker.EDSL.udpPortRange
     , Language.Docker.EDSL.volume
     , Language.Docker.EDSL.entrypoint
     , Language.Docker.EDSL.entrypointArgs
