@@ -77,7 +77,8 @@ prettyPrintJSON (Arguments as) = brackets $ hsep $ intersperse comma $ map (doub
 
 prettyPrintPort :: Port -> Doc
 prettyPrintPort (PortStr str) = text str
-prettyPrintPort (PortRange start stop) = integer start <> text "-" <> integer stop
+prettyPrintPort (PortRange start stop TCP) = integer start <> text "-" <> integer stop
+prettyPrintPort (PortRange start stop UDP) = integer start <> text "-" <> integer stop <> char '/' <> text "udp"
 prettyPrintPort (Port num TCP) = integer num <> char '/' <> text "tcp"
 prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
 

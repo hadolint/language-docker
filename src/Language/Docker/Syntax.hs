@@ -42,6 +42,7 @@ data Port
     | PortStr String
     | PortRange Integer
                 Integer
+                Protocol
     deriving (Show, Eq, Ord)
 
 newtype Ports = Ports

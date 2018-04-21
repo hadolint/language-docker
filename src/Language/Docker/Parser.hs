@@ -269,6 +269,7 @@ port =
     (try portVariable <?> "a variable") <|> -- There a many valid representations of ports
     (try portRange <?> "a port range") <|>
     (try portWithProtocol <?> "a port with its protocol (udp/tcp)") <|>
+    (try portRangeWithProtocol <?> "a port range with its protocol (udp/tcp)") <|>
     (try portInt <?> "a valid port number")
 
 ports :: Parser Ports
@@ -279,7 +280,8 @@ portRange = do
     start <- natural
     void $ char '-'
     finish <- try natural
-    return $ PortRange start finish
+    notFollowedBy (oneOf "/")
+    return $ PortRange start finish TCP
 
 portInt :: Parser Port
 portInt = do
@@ -295,6 +297,17 @@ portWithProtocol = do
         (caseInsensitiveString "tcp" >> return TCP) <|> -- Either tcp or udp
         (caseInsensitiveString "udp" >> return UDP)
     return $ Port portNumber proto
+
+portRangeWithProtocol :: Parser Port
+portRangeWithProtocol = do
+    start <- natural
+    void $ char '-'
+    finish <- try natural
+    void (char '/')
+    proto <-
+        (caseInsensitiveString "tcp" >> return TCP) <|> -- Either tcp or udp
+        (caseInsensitiveString "udp" >> return UDP)
+    return $ PortRange start finish proto
 
 portVariable :: Parser Port
 portVariable = do

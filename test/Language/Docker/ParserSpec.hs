@@ -268,7 +268,10 @@ spec = do
                 parse expose "" content `shouldBe` Right (Expose (Ports [PortStr "$PORT", Port 8080 TCP, Port 8081 UDP]))
             it "should handle port ranges" $ do
                 let content = "EXPOSE 80 81 8080-8085"
-                parse expose "" content `shouldBe` Right (Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085]))
+                parse expose "" content `shouldBe` Right (Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 TCP]))
+            it "should handle udp port ranges" $ do
+                let content = "EXPOSE 80 81 8080-8085/udp"
+                parse expose "" content `shouldBe` Right (Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 UDP]))
 
         describe "syntax" $ do
             it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $ do
