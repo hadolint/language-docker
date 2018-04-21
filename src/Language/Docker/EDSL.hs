@@ -268,7 +268,10 @@ variablePort :: String -> Syntax.Port
 variablePort varName = Syntax.PortStr ('$' : varName)
 
 portRange :: Integer -> Integer -> Syntax.Port
-portRange = Syntax.PortRange
+portRange a b = Syntax.PortRange a b Syntax.TCP
+
+udpPortRange :: Integer -> Integer -> Syntax.Port
+udpPortRange a b = Syntax.PortRange a b Syntax.UDP
 
 check :: Syntax.Arguments -> Syntax.Check
 check command =
