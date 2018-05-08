@@ -36,7 +36,7 @@ runDockerWriter :: (MonadWriter [Syntax.Instruction] m) => EDockerfileM a -> m a
 runDockerWriter = iterM runD
 
 runDockerWriterIO ::
-       (Monad m, MonadTrans t, Monad (t m), MonadWriter [Syntax.Instruction] (t m), MonadIO (t m))
+       (Monad m, MonadTrans t, MonadWriter [Syntax.Instruction] (t m))
     => EDockerfileTM m a
     -> t m a
 runDockerWriterIO = iterTM runD

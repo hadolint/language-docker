@@ -28,11 +28,13 @@ spec = do
             let r = prettyPrint $ toDockerfile (do
                         from "node"
                         shell ["cmd", "/S"]
+                        entrypoint ["/tini", "--"]
                         cmdArgs ["node", "-e", "'console.log(\'hey\')'"]
                         healthcheck $ check "curl -f http://localhost/ || exit 1" `interval` 300)
             r `shouldBe` unlines [ "FROM node"
-                                 , "SHELL [\"cmd\" , \"/S\"]"
-                                 , "CMD node -e 'console.log(\'hey\')'"
+                                 , "SHELL [\"cmd\", \"/S\"]"
+                                 , "ENTRYPOINT [\"/tini\", \"--\"]"
+                                 , "CMD [\"node\", \"-e\", \"'console.log(\'hey\')'\"]"
                                  , "HEALTHCHECK --interval=300s CMD curl -f http://localhost/ || exit 1"
                                  ]
         it "print expose instructions correctly" $ do
@@ -55,7 +57,7 @@ spec = do
                             run "echo \"hello world\""
                             run "echo \"hello world2\""
             r `shouldBe` unlines [ "FROM node"
-                                 , "CMD node -e 'console.log(\'hey\')'"
+                                 , "CMD [\"node\", \"-e\", \"'console.log(\'hey\')'\"]"
                                  , "ONBUILD RUN echo \"hello world\""
                                  , "ONBUILD RUN echo \"hello world2\""
                                  ]

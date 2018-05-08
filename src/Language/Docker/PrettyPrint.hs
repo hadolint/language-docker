@@ -73,12 +73,13 @@ prettyPrintArguments (Arguments as) = text (unwords (map helper as))
     helper a = a
 
 prettyPrintJSON :: Arguments -> Doc
-prettyPrintJSON (Arguments as) = brackets $ hsep $ intersperse comma $ map (doubleQuotes . text) as
+prettyPrintJSON (Arguments as) = brackets $ hcat $ intersperse (comma <> space) $ map (doubleQuotes . text) as
 
 prettyPrintPort :: Port -> Doc
 prettyPrintPort (PortStr str) = text str
 prettyPrintPort (PortRange start stop TCP) = integer start <> text "-" <> integer stop
-prettyPrintPort (PortRange start stop UDP) = integer start <> text "-" <> integer stop <> char '/' <> text "udp"
+prettyPrintPort (PortRange start stop UDP) =
+    integer start <> text "-" <> integer stop <> char '/' <> text "udp"
 prettyPrintPort (Port num TCP) = integer num <> char '/' <> text "tcp"
 prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
 
@@ -127,7 +128,7 @@ prettyPrintInstruction i =
             text k <> text "=" <> text v
         Entrypoint e -> do
             text "ENTRYPOINT"
-            prettyPrintArguments e
+            prettyPrintJSON e
         Stopsignal s -> do
             text "STOPSIGNAL"
             text s
@@ -150,7 +151,7 @@ prettyPrintInstruction i =
             prettyPrintFileList sourcePaths targetPath
         Cmd c -> do
             text "CMD"
-            prettyPrintArguments c
+            prettyPrintJSON c
         Label l -> do
             text "LABEL"
             prettyPrintPairs l
