@@ -27,7 +27,7 @@ dependencies:
   - base >=4.8 && <5
   - bytestring >=0.10
   - parsec >=3.1
-  - pretty
+  - prettyprinter
   - split >=0.2
   - free
   - mtl

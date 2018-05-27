@@ -1,7 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
+
 import Language.Docker
-main = do
-    putStr $ toDockerfileStr $ do
+
+main =
+    putDockerfileStrLn $ do
         from "node"
         run "apt-get update"
         -- ...

@@ -12,8 +12,14 @@ import Control.Monad.Free.TH
 import Control.Monad.Trans.Free (FreeT, iterTM)
 import Control.Monad.Writer
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy.Char8 as B8
 import Data.List.NonEmpty (NonEmpty)
 import Data.String (fromString)
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as L
+import qualified Data.Text.Lazy.Encoding as E
 
 import qualified Language.Docker.PrettyPrint as PrettyPrint
 import qualified Language.Docker.Syntax as Syntax
@@ -36,9 +42,7 @@ runDockerWriter :: (MonadWriter [Syntax.Instruction] m) => EDockerfileM a -> m a
 runDockerWriter = iterM runD
 
 runDockerWriterIO ::
-       (Monad m, MonadTrans t, MonadWriter [Syntax.Instruction] (t m))
-    => EDockerfileTM m a
-    -> t m a
+       (Monad m, MonadTrans t, MonadWriter [Syntax.Instruction] (t m)) => EDockerfileTM m a -> t m a
 runDockerWriterIO = iterTM runD
 
 runDef :: MonadWriter [t] m => (t1 -> t) -> t1 -> m b -> m b
@@ -85,22 +89,55 @@ toDockerfile e =
     let (_, w) = runWriter (runDockerWriter e)
     in map instructionPos w
 
--- | runs the Dockerfile EDSL and returns a 'String' using
+-- | runs the Dockerfile EDSL and returns a 'Data.Text.Lazy' using
 -- 'Language.Docker.PrettyPrint'
 --
 -- @
 -- import Language.Docker
 --
 -- main :: IO ()
--- main = writeFile "something.dockerfile" $ toDockerfileStr $ do
+-- main = print $ toDockerfileText $ do
 --     from (tagged "fpco/stack-build" "lts-6.9")
 --     add ["."] "/app/language-docker"
 --     workdir "/app/language-docker"
 --     run "stack build --test --only-dependencies"
 --     cmd "stack test"
 -- @
-toDockerfileStr :: EDockerfileM a -> String
-toDockerfileStr = PrettyPrint.prettyPrint . toDockerfile
+toDockerfileText :: EDockerfileM a -> L.Text
+toDockerfileText = PrettyPrint.prettyPrint . toDockerfile
+
+-- | Writes the dockerfile to the given file path after pretty-printing it
+--
+-- @
+-- import Language.Docker
+--
+-- main :: IO ()
+-- main = writeDockerFile "build.Dockerfile" $ toDockerfile $ do
+--     from (tagged "fpco/stack-build" "lts-6.9")
+--     add ["."] "/app/language-docker"
+--     workdir "/app/language-docker"
+--     run "stack build --test --only-dependencies"
+--     cmd "stack test"
+-- @
+writeDockerFile :: Text -> Syntax.Dockerfile -> IO ()
+writeDockerFile filename =
+    BL.writeFile (Text.unpack filename) . E.encodeUtf8 . PrettyPrint.prettyPrint
+
+-- | Prints the dockerfile to stdout. Mainly used for debugging purposes
+--
+-- @
+-- import Language.Docker
+--
+-- main :: IO ()
+-- main = putDockerfileStr $ do
+--     from (tagged "fpco/stack-build" "lts-6.9")
+--     add ["."] "/app/language-docker"
+--     workdir "/app/language-docker"
+--     run "stack build --test --only-dependencies"
+--     cmd "stack test"
+-- @
+putDockerfileStrLn :: EDockerfileM a -> IO ()
+putDockerfileStrLn = B8.putStrLn . E.encodeUtf8 . PrettyPrint.prettyPrint . toDockerfile
 
 -- | Use a docker image in a FROM instruction without a tag
 --
@@ -115,8 +152,8 @@ toDockerfileStr = PrettyPrint.prettyPrint . toDockerfile
 -- @
 -- from "fpco/stack-build"
 -- @
-untagged :: String -> EBaseImage
-untagged = flip EUntaggedImage Nothing . fromString
+untagged :: Text -> EBaseImage
+untagged = flip EUntaggedImage Nothing . fromString . Text.unpack
 
 -- | Use a specific tag for a docker image. This function is meant
 -- to be used as an infix operator.
@@ -124,7 +161,7 @@ untagged = flip EUntaggedImage Nothing . fromString
 -- @
 -- from $ "fpco/stack-build" `tagged` "lts-10.3"
 -- @
-tagged :: Syntax.Image -> String -> EBaseImage
+tagged :: Syntax.Image -> Syntax.Tag -> EBaseImage
 tagged imageName tag = ETaggedImage imageName tag Nothing
 
 digested :: Syntax.Image -> ByteString -> EBaseImage
@@ -136,7 +173,7 @@ digested imageName hash = EDigestedImage imageName hash Nothing
 -- @
 -- from $ "fpco/stack-build" `aliased` "builder"
 -- @
-aliased :: EBaseImage -> String -> EBaseImage
+aliased :: EBaseImage -> Text -> EBaseImage
 aliased image alias =
     case image of
         EUntaggedImage n _ -> EUntaggedImage n (Just $ Syntax.ImageAlias alias)
@@ -210,10 +247,10 @@ add sources dest = addArgs sources dest Syntax.NoChown
 -- someFiles <- glob "*.js"
 -- copy $ (toSources someFiles) `to` "."
 -- @
-toSources :: NonEmpty String -> NonEmpty Syntax.SourcePath
+toSources :: NonEmpty Text -> NonEmpty Syntax.SourcePath
 toSources = fmap Syntax.SourcePath
 
--- | Converts a String into a 'Syntax.TargetPath'
+-- | Converts a Text into a 'Syntax.TargetPath'
 --
 -- This is a convenience function when you need to pass a string variable
 -- as an argument for 'copy' or 'add'
@@ -222,7 +259,7 @@ toSources = fmap Syntax.SourcePath
 -- let destination = buildSomePath pwd
 -- add ["foo.js"] (toTarget destination)
 -- @
-toTarget :: String -> Syntax.TargetPath
+toTarget :: Text -> Syntax.TargetPath
 toTarget = Syntax.TargetPath
 
 -- | Adds the --from= option to a COPY instruction.
@@ -258,19 +295,19 @@ to sources dest = Syntax.CopyArgs sources dest Syntax.NoChown Syntax.NoSource
 ports :: [Syntax.Port] -> Syntax.Ports
 ports = Syntax.Ports
 
-tcpPort :: Integer -> Syntax.Port
+tcpPort :: Int -> Syntax.Port
 tcpPort = flip Syntax.Port Syntax.TCP
 
-udpPort :: Integer -> Syntax.Port
+udpPort :: Int -> Syntax.Port
 udpPort = flip Syntax.Port Syntax.UDP
 
-variablePort :: String -> Syntax.Port
-variablePort varName = Syntax.PortStr ('$' : varName)
+variablePort :: Text -> Syntax.Port
+variablePort varName = Syntax.PortStr ("$" <> varName)
 
-portRange :: Integer -> Integer -> Syntax.Port
+portRange :: Int -> Int -> Syntax.Port
 portRange a b = Syntax.PortRange a b Syntax.TCP
 
-udpPortRange :: Integer -> Integer -> Syntax.Port
+udpPortRange :: Int -> Int -> Syntax.Port
 udpPortRange a b = Syntax.PortRange a b Syntax.UDP
 
 check :: Syntax.Arguments -> Syntax.Check
@@ -330,9 +367,9 @@ onBuild b = mapM_ (onBuildRaw . Syntax.instruction) (toDockerfile b)
 toDockerfileIO :: MonadIO m => EDockerfileTM m t -> m Syntax.Dockerfile
 toDockerfileIO e = fmap snd (runDockerfileIO e)
 
--- | A version of 'toDockerfileStr' which allows IO actions
-toDockerfileStrIO :: MonadIO m => EDockerfileTM m t -> m String
-toDockerfileStrIO e = fmap snd (runDockerfileStrIO e)
+-- | A version of 'toDockerfileText' which allows IO actions
+toDockerfileTextIO :: MonadIO m => EDockerfileTM m t -> m L.Text
+toDockerfileTextIO e = fmap snd (runDockerfileTextIO e)
 
 -- | Just runs the EDSL's writer monad
 runDockerfileIO :: MonadIO m => EDockerfileTM m t -> m (t, Syntax.Dockerfile)
@@ -341,7 +378,7 @@ runDockerfileIO e = do
     return (r, map instructionPos w)
 
 -- | Runs the EDSL's writer monad and pretty-prints the result
-runDockerfileStrIO :: MonadIO m => EDockerfileTM m t -> m (t, String)
-runDockerfileStrIO e = do
+runDockerfileTextIO :: MonadIO m => EDockerfileTM m t -> m (t, L.Text)
+runDockerfileTextIO e = do
     (r, w) <- runDockerfileIO e
     return (r, PrettyPrint.prettyPrint w)

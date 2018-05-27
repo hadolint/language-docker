@@ -1,4 +1,6 @@
+import qualified Data.Text.Lazy.IO as L
 import Language.Docker
+
 main = do
     Right d <- parseFile "./Dockerfile"
-    putStr (prettyPrint d)
+    L.putStr (prettyPrint d)

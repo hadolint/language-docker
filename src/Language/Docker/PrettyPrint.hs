@@ -4,53 +4,57 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE MultiWayIf #-}
 
 module Language.Docker.PrettyPrint where
 
 import qualified Data.ByteString.Char8 as ByteString (unpack)
-import Data.List (foldl', intersperse)
 import Data.List.NonEmpty as NonEmpty (NonEmpty(..), toList)
-import Data.String
+import Data.String (fromString)
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as L
+import Data.Text.Prettyprint.Doc
+import Data.Text.Prettyprint.Doc.Internal (Doc(Empty))
+import Data.Text.Prettyprint.Doc.Render.Text (renderLazy)
 import Language.Docker.Syntax
 import Prelude
-       (Bool(..), Maybe(..), ($), (++), (.), map, maybe, mempty, reverse,
-        show, snd)
-import Text.PrettyPrint
+       (Bool(..), Maybe(..), ($), (++), (.), (==), fmap, maybe, mempty,
+        show)
 
--- | Pretty print a 'Dockerfile' to a 'String'
-prettyPrint :: Dockerfile -> String
-prettyPrint =
-    unlines .
-    reverse .
-    snd . foldl' removeDoubleBlank (False, []) . lines . unlines . map prettyPrintInstructionPos
+-- | Pretty print a 'Dockerfile' to a 'Text'
+prettyPrint :: Dockerfile -> L.Text
+prettyPrint = renderLazy . layoutPretty opts . prettyPrintDockerfile
   where
-    removeDoubleBlank (True, m) "" = (True, m)
-    removeDoubleBlank (False, m) "" = (True, "" : m)
-    removeDoubleBlank (_, m) s = (False, s : m)
+    opts = LayoutOptions Unbounded
 
--- | Pretty print a 'InstructionPos' to a 'String'
-prettyPrintInstructionPos :: InstructionPos -> String
-prettyPrintInstructionPos (InstructionPos i _ _) = render (prettyPrintInstruction i)
+prettyPrintDockerfile :: Dockerfile -> Doc ann
+prettyPrintDockerfile = vsep . fmap prettyPrintInstructionPos
 
-prettyPrintImage :: Image -> Doc
-prettyPrintImage (Image Nothing name) = text name
-prettyPrintImage (Image (Just (Registry reg)) name) = text reg <> char '/' <> text name
+-- | Pretty print a 'InstructionPos' to a 'Doc'
+prettyPrintInstructionPos :: InstructionPos -> Doc ann
+prettyPrintInstructionPos (InstructionPos i _ _) = prettyPrintInstruction i
 
-prettyPrintBaseImage :: BaseImage -> Doc
+prettyPrintImage :: Image -> Doc ann
+prettyPrintImage (Image Nothing name) = pretty name
+prettyPrintImage (Image (Just (Registry reg)) name) = pretty reg <> pretty '/' <> pretty name
+
+prettyPrintBaseImage :: BaseImage -> Doc ann
 prettyPrintBaseImage b =
     case b of
         DigestedImage img digest alias -> do
             prettyPrintImage img
-            char '@'
-            text (ByteString.unpack digest)
+            pretty '@'
+            pretty (ByteString.unpack digest)
             prettyAlias alias
         UntaggedImage (Image _ name) alias -> do
-            text name
+            pretty name
             prettyAlias alias
-        TaggedImage img tag alias -> do
+        TaggedImage img (Tag tag) alias -> do
             prettyPrintImage img
-            char ':'
-            text tag
+            pretty ':'
+            pretty tag
             prettyAlias alias
   where
     (>>) = (<>)
@@ -58,134 +62,140 @@ prettyPrintBaseImage b =
     prettyAlias maybeAlias =
         case maybeAlias of
             Nothing -> mempty
-            Just (ImageAlias alias) -> text " AS " <> text alias
+            Just (ImageAlias alias) -> " AS " <> pretty alias
 
-prettyPrintPairs :: Pairs -> Doc
-prettyPrintPairs ps = hsep $ map prettyPrintPair ps
+prettyPrintPairs :: Pairs -> Doc ann
+prettyPrintPairs ps = hsep $ fmap prettyPrintPair ps
 
-prettyPrintPair :: (String, String) -> Doc
-prettyPrintPair (k, v) = text k <> char '=' <> text (show v)
+prettyPrintPair :: (Text, Text) -> Doc ann
+prettyPrintPair (k, v) = pretty k <> pretty '=' <> pretty v
 
-prettyPrintArguments :: Arguments -> Doc
-prettyPrintArguments (Arguments as) = text (unwords (map helper as))
+prettyPrintArguments :: Arguments -> Doc ann
+prettyPrintArguments (Arguments as) = hsep (fmap helper as)
   where
     helper "&&" = "\\\n &&"
-    helper a = a
+    helper a = pretty a
 
-prettyPrintJSON :: Arguments -> Doc
-prettyPrintJSON (Arguments as) = brackets $ hcat $ intersperse (comma <> space) $ map (doubleQuotes . text) as
+prettyPrintJSON :: Arguments -> Doc ann
+prettyPrintJSON (Arguments as) = list (fmap doubleQoute as)
+  where
+    doubleQoute w = enclose dquote dquote (pretty w)
 
-prettyPrintPort :: Port -> Doc
-prettyPrintPort (PortStr str) = text str
-prettyPrintPort (PortRange start stop TCP) = integer start <> text "-" <> integer stop
-prettyPrintPort (PortRange start stop UDP) =
-    integer start <> text "-" <> integer stop <> char '/' <> text "udp"
-prettyPrintPort (Port num TCP) = integer num <> char '/' <> text "tcp"
-prettyPrintPort (Port num UDP) = integer num <> char '/' <> text "udp"
+prettyPrintPort :: Port -> Doc ann
+prettyPrintPort (PortStr str) = pretty str
+prettyPrintPort (PortRange start stop TCP) = pretty start <> "-" <> pretty stop
+prettyPrintPort (PortRange start stop UDP) = pretty start <> "-" <> pretty stop <> "/udp"
+prettyPrintPort (Port num TCP) = pretty num <> "/tcp"
+prettyPrintPort (Port num UDP) = pretty num <> "/udp"
 
-prettyPrintFileList :: NonEmpty SourcePath -> TargetPath -> Doc
+prettyPrintFileList :: NonEmpty SourcePath -> TargetPath -> Doc ann
 prettyPrintFileList sources (TargetPath dest) =
     let ending =
-            case (reverse dest, sources) of
-                ('/':_, _) -> "" -- If the target ends with / then no extra ending is needed
+            case (Text.isSuffixOf "/" dest, sources) of
+                (True, _) -> "" -- If the target ends with / then no extra ending is needed
                 (_, _fst :| _snd:_) -> "/" -- More than one source means that the target should end in /
                 _ -> ""
-    in hsep $ [text s | SourcePath s <- toList sources] ++ [text dest <> text ending]
+    in hsep $ [pretty s | SourcePath s <- toList sources] ++ [pretty dest <> ending]
 
-prettyPrintChown :: Chown -> Doc
+prettyPrintChown :: Chown -> Doc ann
 prettyPrintChown chown =
     case chown of
-        Chown c -> text "--chown=" <> text c
+        Chown c -> "--chown=" <> pretty c
         NoChown -> mempty
 
-prettyPrintCopySource :: CopySource -> Doc
+prettyPrintCopySource :: CopySource -> Doc ann
 prettyPrintCopySource source =
     case source of
-        CopySource c -> text "--from=" <> text c
+        CopySource c -> "--from=" <> pretty c
         NoSource -> mempty
 
-prettyPrintDuration :: String -> Maybe Duration -> Doc
+prettyPrintDuration :: Text -> Maybe Duration -> Doc ann
 prettyPrintDuration flagName = maybe mempty pp
   where
-    pp (Duration d) = text flagName <> text (show d)
+    pp (Duration d) = pretty flagName <> pretty (show d)
 
-prettyPrintRetries :: Maybe Retries -> Doc
+prettyPrintRetries :: Maybe Retries -> Doc ann
 prettyPrintRetries = maybe mempty pp
   where
-    pp (Retries r) = text "--retries=" <> int r
+    pp (Retries r) = "--retries=" <> pretty r
 
-prettyPrintInstruction :: Instruction -> Doc
+prettyPrintInstruction :: Instruction -> Doc ann
 prettyPrintInstruction i =
     case i of
         Maintainer m -> do
-            text "MAINTAINER"
-            text m
+            "MAINTAINER"
+            pretty m
         Arg a Nothing -> do
-            text "ARG"
-            text a
+            "ARG"
+            pretty a
         Arg k (Just v) -> do
-            text "ARG"
-            text k <> text "=" <> text v
+            "ARG"
+            pretty k <> "=" <> pretty v
         Entrypoint e -> do
-            text "ENTRYPOINT"
+            "ENTRYPOINT"
             prettyPrintJSON e
         Stopsignal s -> do
-            text "STOPSIGNAL"
-            text s
+            "STOPSIGNAL"
+            pretty s
         Workdir w -> do
-            text "WORKDIR"
-            text w
+            "WORKDIR"
+            pretty w
         Expose (Ports ps) -> do
-            text "EXPOSE"
-            hsep (map prettyPrintPort ps)
+            "EXPOSE"
+            hsep (fmap prettyPrintPort ps)
         Volume dir -> do
-            text "VOLUME"
-            text dir
+            "VOLUME"
+            pretty dir
         Run c -> do
-            text "RUN"
+            "RUN"
             prettyPrintArguments c
         Copy CopyArgs {sourcePaths, targetPath, chownFlag, sourceFlag} -> do
-            text "COPY"
+            "COPY"
             prettyPrintChown chownFlag
             prettyPrintCopySource sourceFlag
             prettyPrintFileList sourcePaths targetPath
         Cmd c -> do
-            text "CMD"
+            "CMD"
             prettyPrintJSON c
         Label l -> do
-            text "LABEL"
+            "LABEL"
             prettyPrintPairs l
         Env ps -> do
-            text "ENV"
+            "ENV"
             prettyPrintPairs ps
         User u -> do
-            text "USER"
-            text u
+            "USER"
+            pretty u
         Comment s -> do
-            char '#'
-            text s
+            pretty '#'
+            pretty s
         OnBuild i' -> do
-            text "ONBUILD"
+            "ONBUILD"
             prettyPrintInstruction i'
         From b -> do
-            text "FROM"
+            "FROM"
             prettyPrintBaseImage b
         Add AddArgs {sourcePaths, targetPath, chownFlag} -> do
-            text "ADD"
+            "ADD"
             prettyPrintChown chownFlag
             prettyPrintFileList sourcePaths targetPath
         Shell args -> do
-            text "SHELL"
+            "SHELL"
             prettyPrintJSON args
-        Healthcheck NoCheck -> text "HEALTHCHECK NONE"
+        Healthcheck NoCheck -> "HEALTHCHECK NONE"
         Healthcheck (Check CheckArgs {..}) -> do
-            text "HEALTHCHECK"
+            "HEALTHCHECK"
             prettyPrintDuration "--interval=" interval
             prettyPrintDuration "--timeout=" timeout
             prettyPrintDuration "--start-period=" startPeriod
             prettyPrintRetries retries
-            text "CMD"
+            "CMD"
             prettyPrintArguments checkCommand
   where
-    (>>) = (<+>)
-    return = (mempty <>)
+    (>>) = spaceCat
+    return a = a
+
+spaceCat :: Doc ann -> Doc ann -> Doc ann
+spaceCat a Empty = a
+spaceCat Empty b = b
+spaceCat a b = a <+> b

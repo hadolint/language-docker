@@ -11,6 +11,12 @@ import           System.Directory
 import           System.FilePath
 import           System.FilePath.Glob
 import           Test.Hspec
+import qualified Data.Text.Lazy as L
+import qualified Data.Text as Text
+import           Data.Semigroup ((<>))
+
+printed :: [L.Text] -> L.Text
+printed = L.dropEnd 1 . L.unlines
 
 spec :: Spec
 spec = do
@@ -19,7 +25,9 @@ spec = do
             let r = map Syntax.instruction $ toDockerfile (do
                         from "node"
                         cmdArgs ["node", "-e", "'console.log(\'hey\')'"])
-            r `shouldBe` [ Syntax.From $ (Syntax.UntaggedImage "node") Nothing
+            r `shouldBe` [ Syntax.From $
+                             Syntax.UntaggedImage "node"
+                             Nothing
                          , Syntax.Cmd ["node", "-e", "'console.log(\'hey\')'"]
                          ]
 
@@ -31,7 +39,7 @@ spec = do
                         entrypoint ["/tini", "--"]
                         cmdArgs ["node", "-e", "'console.log(\'hey\')'"]
                         healthcheck $ check "curl -f http://localhost/ || exit 1" `interval` 300)
-            r `shouldBe` unlines [ "FROM node"
+            r `shouldBe` printed [ "FROM node"
                                  , "SHELL [\"cmd\", \"/S\"]"
                                  , "ENTRYPOINT [\"/tini\", \"--\"]"
                                  , "CMD [\"node\", \"-e\", \"'console.log(\'hey\')'\"]"
@@ -43,7 +51,7 @@ spec = do
                         expose $ ports [variablePort "PORT", tcpPort 80, udpPort 51]
                         expose $ ports [portRange 90 100]
                         expose $ ports [udpPortRange 190 200])
-            r `shouldBe` unlines [ "FROM scratch"
+            r `shouldBe` printed [ "FROM scratch"
                                  , "EXPOSE $PORT 80/tcp 51/udp"
                                  , "EXPOSE 90-100"
                                  , "EXPOSE 190-200/udp"
@@ -56,7 +64,7 @@ spec = do
                         onBuild $ do
                             run "echo \"hello world\""
                             run "echo \"hello world2\""
-            r `shouldBe` unlines [ "FROM node"
+            r `shouldBe` printed [ "FROM node"
                                  , "CMD [\"node\", \"-e\", \"'console.log(\'hey\')'\"]"
                                  , "ONBUILD RUN echo \"hello world\""
                                  , "ONBUILD RUN echo \"hello world2\""
@@ -66,7 +74,7 @@ spec = do
             let r = prettyPrint $ toDockerfile $ do
                         from $ "node" `tagged` "10.1" `aliased` "node-build"
                         run "echo foo"
-            r `shouldBe` unlines [ "FROM node:10.1 AS node-build"
+            r `shouldBe` printed [ "FROM node:10.1 AS node-build"
                                  , "RUN echo foo"
                                  ]
 
@@ -78,7 +86,7 @@ spec = do
                         copy $ ["foo.js", "bar.js"] `to` "baz/"
                         copy $ ["something"] `to` "crazy" `fromStage` "builder"
                         copy $ ["this"] `to` "that" `fromStage` "builder" `ownedBy` "www-data"
-            r `shouldBe` unlines [ "FROM scratch"
+            r `shouldBe` printed [ "FROM scratch"
                                  , "COPY foo.js bar.js"
                                  , "COPY foo.js bar.js ./"
                                  , "COPY foo.js bar.js baz/"
@@ -86,17 +94,18 @@ spec = do
                                  , "COPY --chown=www-data --from=builder this that"
                                  ]
 
-    describe "toDockerfileStrIO" $
+    describe "toDockerfileTextIO" $
         it "let's us run in the IO monad" $ do
             -- TODO - "glob" is a really useful combinator
-            str <- toDockerfileStrIO $ do
+            str <- toDockerfileTextIO $ do
                 fs <- liftIO $ do
                     cwd <- getCurrentDirectory
                     fs <- glob "./test/Language/Docker/*.hs"
                     return (map (makeRelative cwd) (sort fs))
                 from "ubuntu"
-                mapM_ (\f -> add [Syntax.SourcePath f] (Syntax.TargetPath $ "/app/" ++ takeFileName f)) fs
-            str `shouldBe` unlines [ "FROM ubuntu"
+                let file = Text.pack . takeFileName
+                mapM_ (\f -> add [Syntax.SourcePath (Text.pack f)] (Syntax.TargetPath $ "/app/" <> file f)) fs
+            str `shouldBe` printed [ "FROM ubuntu"
                                    , "ADD ./test/Language/Docker/EDSLSpec.hs /app/EDSLSpec.hs"
                                    , "ADD ./test/Language/Docker/ExamplesSpec.hs /app/ExamplesSpec.hs"
                                    , "ADD ./test/Language/Docker/ParserSpec.hs /app/ParserSpec.hs"

@@ -6,12 +6,14 @@ module Language.Docker
     , prettyPrint
     , prettyPrintInstructionPos
       -- * Writting Dockerfiles (@Language.Docker.EDSL@)
-    , Language.Docker.EDSL.toDockerfileStr
+    , Language.Docker.EDSL.toDockerfileText
     , Language.Docker.EDSL.toDockerfile
-    , Language.Docker.EDSL.toDockerfileStrIO
+    , Language.Docker.EDSL.putDockerfileStrLn
+    , Language.Docker.EDSL.writeDockerFile
+    , Language.Docker.EDSL.toDockerfileTextIO
     , Language.Docker.EDSL.toDockerfileIO
     , Language.Docker.EDSL.runDockerfileIO
-    , Language.Docker.EDSL.runDockerfileStrIO
+    , Language.Docker.EDSL.runDockerfileTextIO
     , Control.Monad.IO.Class.liftIO
     , Language.Docker.EDSL.from
       -- ** Constructing base images

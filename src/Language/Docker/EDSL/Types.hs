@@ -5,13 +5,14 @@ module Language.Docker.EDSL.Types where
 import Data.ByteString.Char8 (ByteString)
 import Data.List.NonEmpty (NonEmpty)
 import Data.String
+import Data.Text (Text)
 import qualified Language.Docker.Syntax as Syntax
 
 data EBaseImage
     = EUntaggedImage Syntax.Image
                      (Maybe Syntax.ImageAlias)
     | ETaggedImage Syntax.Image
-                   String
+                   Syntax.Tag
                    (Maybe Syntax.ImageAlias)
     | EDigestedImage Syntax.Image
                      ByteString
@@ -28,11 +29,11 @@ data EInstruction next
               Syntax.TargetPath
               Syntax.Chown
               next
-    | User String
+    | User Text
            next
     | Label Syntax.Pairs
             next
-    | StopSignal String
+    | StopSignal Text
                  next
     | CopyArgs (NonEmpty Syntax.SourcePath)
                Syntax.TargetPath
@@ -49,18 +50,18 @@ data EInstruction next
               next
     | Expose Syntax.Ports
              next
-    | Volume String
+    | Volume Text
              next
     | EntrypointArgs Syntax.Arguments
                      next
-    | Maintainer String
+    | Maintainer Text
                  next
     | Env Syntax.Pairs
           next
-    | Arg String
-          (Maybe String)
+    | Arg Text
+          (Maybe Text)
           next
-    | Comment String
+    | Comment Text
               next
     | Healthcheck Syntax.Check
                   next
