@@ -1,92 +1,108 @@
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Language.Docker.Parser where
 
 import Control.Monad (void)
-import qualified Data.ByteString.Char8 as B
 import Data.List.NonEmpty (NonEmpty, fromList)
 import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time.Clock (secondsToDiffTime)
-import Text.Parsec hiding (label, space, spaces)
-import Text.Parsec.String (Parser)
+import Text.Megaparsec hiding (Label, label)
+import Text.Megaparsec.Char hiding (eol, space)
 
 import Language.Docker.Lexer
 import Language.Docker.Normalize
 import Language.Docker.Syntax
 
+type Error = ParseError Char DockerfileError
+
 data CopyFlag
     = FlagChown Chown
     | FlagSource CopySource
-    | FlagInvalid (String, String)
+    | FlagInvalid (Text, Text)
 
 data CheckFlag
     = FlagInterval Duration
     | FlagTimeout Duration
     | FlagStartPeriod Duration
     | FlagRetries Retries
-    | CFlagInvalid (String, String)
+    | CFlagInvalid (Text, Text)
+
+isNl :: Char -> Bool
+isNl c = c == '\n'
+
+isSpaceNl :: Char -> Bool
+isSpaceNl c = c == ' ' || c == '\t' || c == '\n'
+
+anyUnless :: (Char -> Bool) -> Parser Text
+anyUnless predicate = takeWhileP Nothing (\c -> not (isSpaceNl c || predicate c))
+
+someUnless :: String -> (Char -> Bool) -> Parser Text
+someUnless name predicate = takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c))
 
 comment :: Parser Instruction
 comment = do
     void $ char '#'
-    text <- many (noneOf "\n")
-    return $ Comment (T.pack text)
+    text <- takeWhileP Nothing (not . isNl)
+    return $ Comment text
 
 parseRegistry :: Parser Registry
 parseRegistry = do
-    name <- many1 (noneOf "\t\n /")
+    name <- someUnless "a registry name" (== '/')
     void $ char '/'
-    return $ Registry (T.pack name)
+    return $ Registry name
 
 taggedImage :: Parser BaseImage
 taggedImage = do
     registryName <- (Just <$> try parseRegistry) <|> return Nothing
-    name <- many (noneOf "\t\n: ")
+    name <- someUnless "the image name with a tag" (\c -> c == '@' || c == ':')
     void $ char ':'
-    tag <- many1 (noneOf "\t\n: ")
+    tag <- someUnless "the image tag" (== ':')
     maybeAlias <- maybeImageAlias
-    return $ TaggedImage (Image registryName (T.pack name)) (Tag (T.pack tag)) maybeAlias
+    return $ TaggedImage (Image registryName name) (Tag tag) maybeAlias
 
 digestedImage :: Parser BaseImage
 digestedImage = do
-    name <- many (noneOf "\t\n@ ")
+    name <- someUnless "the image name with a digest" (\c -> c == '@' || c == ':')
     void $ char '@'
-    digest <- many1 (noneOf "\t\n@ ")
+    digest <- someUnless "the image digest" (== '@')
     maybeAlias <- maybeImageAlias
-    return $ DigestedImage (Image Nothing (T.pack name)) (B.pack digest) maybeAlias
+    return $ DigestedImage (Image Nothing name) digest maybeAlias
 
 untaggedImage :: Parser BaseImage
 untaggedImage = do
     registryName <- (Just <$> try parseRegistry) <|> return Nothing
-    name <- many (noneOf "\n\t:@ ")
+    name <- someUnless "just the image name" (\c -> c == '@' || c == ':')
     notInvalidTag name
     notInvalidDigest name
     maybeAlias <- maybeImageAlias
-    return $ UntaggedImage (Image registryName (T.pack name)) maybeAlias
+    return $ UntaggedImage (Image registryName name) maybeAlias
   where
-    notInvalidTag :: String -> Parser ()
+    notInvalidTag :: Text -> Parser ()
     notInvalidTag name =
-        try (notFollowedBy $ oneOf ":") <?> "no ':' or a valid image tag string (example: " ++
-        name ++ ":valid-tag)"
-    notInvalidDigest :: String -> Parser ()
+        try (notFollowedBy $ string ":") <?> "no ':' or a valid image tag string (example: " ++
+        T.unpack name ++ ":valid-tag)"
+    notInvalidDigest :: Text -> Parser ()
     notInvalidDigest name =
-        try (notFollowedBy $ oneOf "@") <?> "no '@' or a valid digest hash (example: " ++
-        name ++ "@a3f42f2de)"
+        try (notFollowedBy $ string "@") <?> "no '@' or a valid digest hash (example: " ++
+        T.unpack name ++ "@a3f42f2de)"
 
 maybeImageAlias :: Parser (Maybe ImageAlias)
-maybeImageAlias = Just <$> try (spaces >> imageAlias) <|> return Nothing
+maybeImageAlias = Just <$> (spaces1 >> imageAlias) <|> return Nothing
 
 imageAlias :: Parser ImageAlias
 imageAlias = do
-    void $ caseInsensitiveString "AS"
-    spaces1 <?> "a space followed by the image alias"
-    alias <- untilOccurrence "\t\n "
-    return $ ImageAlias (T.pack alias)
+    void (try (reserved "AS") <?> "AS followed by the image alias")
+    alias <- someUnless "the image alias" (== '\n')
+    return $ ImageAlias alias
 
 baseImage :: Parser BaseImage
-baseImage = try digestedImage <|> try taggedImage <|> untaggedImage
+baseImage =
+    try digestedImage <|> -- Let's try each version
+    try taggedImage <|>
+    untaggedImage
 
 from :: Parser Instruction
 from = do
@@ -110,8 +126,8 @@ copy = do
     -- Let's do some validation on the flags
     case (invalid, chownFlags, sourceFlags) of
         ((k, v):_, _, _) -> unexpectedFlag k v
-        (_, _:_:_, _) -> unexpected "duplicate flag: --chown"
-        (_, _, _:_:_) -> unexpected "duplicate flag: --from"
+        (_, _:_:_, _) -> customError $ DuplicateFlagError "--chown"
+        (_, _, _:_:_) -> customError $ DuplicateFlagError "--from"
         _ -> do
             let ch =
                     case chownFlags of
@@ -132,39 +148,38 @@ copyFlag =
 chown :: Parser Chown
 chown = do
     void $ string "--chown="
-    ch <- many1 (noneOf "\t\n ")
-    return $ Chown (T.pack ch)
+    ch <- someUnless "the user and group for chown" (== ' ')
+    return $ Chown ch
 
 copySource :: Parser CopySource
 copySource = do
     void $ string "--from="
-    src <- many1 (noneOf "\t\n ")
-    return $ CopySource (T.pack src)
+    src <- someUnless "the copy source path" isNl
+    return $ CopySource src
 
-anyFlag :: Parser (String, String)
+anyFlag :: Parser (Text, Text)
 anyFlag = do
     void $ string "--"
-    name <- many1 $ noneOf "\t\n= "
+    name <- someUnless "the flag value" (== '=')
     void $ char '='
-    val <- many $ noneOf "\t\n "
-    return ("--" ++ name, val)
+    val <- anyUnless (== ' ')
+    return (T.append "--" name, val)
 
-fileList :: String -> (NonEmpty SourcePath -> TargetPath -> Instruction) -> Parser Instruction
+fileList :: Text -> (NonEmpty SourcePath -> TargetPath -> Instruction) -> Parser Instruction
 fileList name constr = do
     paths <-
         (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]") <|>
         (try spaceSeparated <?> "a space separated list of file paths")
-    let ps = fmap T.pack paths
-    case ps of
-        [_] -> unexpected $ "end of line. At least two arguments are required for " ++ name
-        _ -> return $ constr (SourcePath <$> fromList (init ps)) (TargetPath $ last ps)
+    case paths of
+        [_] -> customError $ FileListError (T.unpack name)
+        _ -> return $ constr (SourcePath <$> fromList (init paths)) (TargetPath $ last paths)
   where
-    spaceSeparated = many (noneOf "\t\n ") `sepBy1` (try spaces1 <?> "at least another file path")
+    spaceSeparated = anyUnless (== ' ') `sepBy1` (try spaces1 <?> "at least another file path")
     stringList = brackets $ commaSep stringLiteral
 
-unexpectedFlag :: String -> String -> Parser a
-unexpectedFlag name "" = unexpected $ "flag " ++ name ++ " with no value"
-unexpectedFlag name _ = unexpected $ "invalid flag " ++ name
+unexpectedFlag :: Text -> Text -> Parser a
+unexpectedFlag name "" = customFailure $ NoValueFlagError (T.unpack name)
+unexpectedFlag name _ = customFailure $ InvalidFlagError (T.unpack name)
 
 shell :: Parser Instruction
 shell = do
@@ -175,28 +190,28 @@ shell = do
 stopsignal :: Parser Instruction
 stopsignal = do
     reserved "STOPSIGNAL"
-    args <- many1 (noneOf "\n")
-    return $ Stopsignal (T.pack args)
+    args <- untilEol "the stop signal"
+    return $ Stopsignal args
 
 -- We cannot use string literal because it swallows space
 -- and therefore have to implement quoted values by ourselves
-doubleQuotedValue :: Parser String
-doubleQuotedValue = between (char '"') (char '"') (many $ noneOf "\n\"")
+doubleQuotedValue :: Parser Text
+doubleQuotedValue =
+    between (string "\"") (string "\"") (takeWhileP Nothing (\c -> c /= '"' && c /= '\n'))
 
-singleQuotedValue :: Parser String
-singleQuotedValue = between (void $ char '\'') (void $ char '\'') (many $ noneOf "\n'")
+singleQuotedValue :: Parser Text
+singleQuotedValue =
+    between (string "'") (string "'") (takeWhileP Nothing (\c -> c /= '\'' && c /= '\n'))
 
-unquotedString :: String -> Parser String
+unquotedString :: String -> Parser Text
 unquotedString stopChars = do
     str <- charsWithEscapedSpaces stopChars
     case str of
-        '\'':_ -> unexpected $ errMsg "single" str
-        '"':_ -> unexpected $ errMsg "double" str
-        _ -> return str
-  where
-    errMsg t str = "end of " ++ t ++ " quoted string " ++ str ++ " (unmatched quote)"
+        '\'':_ -> customError $ QuoteError "single" str
+        '"':_ -> customError $ QuoteError "double" str
+        _ -> return (T.pack str)
 
-singleValue :: String -> Parser String
+singleValue :: String -> Parser Text
 singleValue stopChars =
     try doubleQuotedValue <|> -- Quotes or no quotes are fine
     try singleQuotedValue <|>
@@ -207,7 +222,7 @@ pair = do
     key <- singleValue "="
     void $ char '='
     value <- singleValue ""
-    return (T.pack key, T.pack value)
+    return (key, value)
 
 pairsList :: Parser Pairs
 pairsList = pair `sepBy1` spaces1
@@ -221,14 +236,14 @@ label = do
 arg :: Parser Instruction
 arg = do
     reserved "ARG"
-    (try nameWithDefault <?> "the arg name") <|> Arg <$> toEnd <*> pure Nothing
+    (try nameWithDefault <?> "the arg name") <|>
+        Arg <$> untilEol "the argument name" <*> pure Nothing
   where
-    toEnd = T.pack <$> untilEol
     nameWithDefault = do
-        name <- many1 $ noneOf "\t\n= "
+        name <- someUnless "the argument name" (== '=')
         void $ char '='
-        def <- toEnd
-        return $ Arg (T.pack name) (Just def)
+        def <- untilEol "the argument value"
+        return $ Arg name (Just def)
 
 env :: Parser Instruction
 env = do
@@ -241,16 +256,16 @@ pairs = try pairsList <|> try singlePair
 
 singlePair :: Parser Pairs
 singlePair = do
-    key <- many (noneOf "\t\n= ")
-    spaces1 <?> "a space followed by the value for the variable '" ++ key ++ "'"
-    val <- untilEol
-    return [(T.pack key, T.pack val)]
+    key <- anyUnless (== '=')
+    spaces1 <?> "a space followed by the value for the variable '" ++ T.unpack key ++ "'"
+    val <- untilEol "the variable value"
+    return [(key, val)]
 
 user :: Parser Instruction
 user = do
     reserved "USER"
-    username <- untilEol
-    return $ User (T.pack username)
+    username <- untilEol "the user"
+    return $ User username
 
 add :: Parser Instruction
 add = do
@@ -259,7 +274,7 @@ add = do
     notFollowedBy (string "--") <?> "only the --chown flag or the src and dest paths"
     case flag of
         FlagChown ch -> fileList "ADD" (\src dest -> Add (AddArgs src dest ch))
-        FlagSource _ -> unexpected "flag --from"
+        FlagSource _ -> customError $ InvalidFlagError "--from"
         FlagInvalid (k, v) -> unexpectedFlag k v
 
 expose :: Parser Instruction
@@ -276,7 +291,7 @@ port =
     (try portInt <?> "a valid port number")
 
 ports :: Parser Ports
-ports = Ports <$> port `sepEndBy1` space
+ports = Ports <$> port `sepEndBy1` (char ' ' <|> char '\t')
 
 portRange :: Parser Port
 portRange = do
@@ -297,7 +312,7 @@ protocol = do
 portInt :: Parser Port
 portInt = do
     portNumber <- natural
-    notFollowedBy (oneOf "/-")
+    notFollowedBy (string "/" <|> string "-")
     return $ Port (fromIntegral portNumber) TCP
 
 portWithProtocol :: Parser Port
@@ -308,9 +323,9 @@ portWithProtocol = do
 
 portVariable :: Parser Port
 portVariable = do
-    void $ lookAhead (char '$')
-    variable <- untilOccurrence "\t\n- "
-    return $ PortStr (T.pack variable)
+    void  (char '$')
+    variable <- someUnless "the variable name" (== '$')
+    return $ PortStr (T.append "$" variable)
 
 run :: Parser Instruction
 run = do
@@ -319,41 +334,38 @@ run = do
     return $ Run c
 
 -- Parse value until end of line is reached
-untilEol :: Parser String
-untilEol = many1 (noneOf "\n")
-
-untilOccurrence :: String -> Parser String
-untilOccurrence t = many $ noneOf t
+untilEol :: String -> Parser Text
+untilEol name = takeWhile1P (Just name) (not . isNl)
 
 workdir :: Parser Instruction
 workdir = do
     reserved "WORKDIR"
-    directory <- untilEol
-    return $ Workdir (T.pack directory)
+    directory <- untilEol "the workdir path"
+    return $ Workdir directory
 
 volume :: Parser Instruction
 volume = do
     reserved "VOLUME"
-    directory <- untilEol
-    return $ Volume (T.pack directory)
+    directory <- untilEol "the volume path"
+    return $ Volume directory
 
 maintainer :: Parser Instruction
 maintainer = do
     reserved "MAINTAINER"
-    name <- untilEol
-    return $ Maintainer (T.pack name)
+    name <- untilEol "the maintainer name"
+    return $ Maintainer name
 
 -- Parse arguments of a command in the exec form
 argumentsExec :: Parser Arguments
 argumentsExec = do
     args <- brackets $ commaSep stringLiteral
-    return $ Arguments (fmap T.pack args)
+    return $ Arguments args
 
 -- Parse arguments of a command in the shell form
 argumentsShell :: Parser Arguments
 argumentsShell = Arguments <$> toEnd
   where
-    toEnd = T.words . T.pack <$> untilEol
+    toEnd = T.words <$> untilEol "the shell arguments"
 
 arguments :: Parser Arguments
 arguments = try argumentsExec <|> try argumentsShell
@@ -398,10 +410,10 @@ healthcheck = do
       -- Let's do some validation on the flags
         case (invalid, intervals, timeouts, startPeriods, retriesD) of
             ((k, v):_, _, _, _, _) -> unexpectedFlag k v
-            (_, _:_:_, _, _, _) -> unexpected "duplicate flag: --interval"
-            (_, _, _:_:_, _, _) -> unexpected "duplicate flag: --timeout"
-            (_, _, _, _:_:_, _) -> unexpected "duplicate flag: --start-period"
-            (_, _, _, _, _:_:_) -> unexpected "duplicate flag: --retries"
+            (_, _:_:_, _, _, _) -> customError $ DuplicateFlagError "--interval"
+            (_, _, _:_:_, _, _) -> customError $ DuplicateFlagError "--timeout"
+            (_, _, _, _:_:_, _) -> customError $ DuplicateFlagError "--start-period"
+            (_, _, _, _, _:_:_) -> customError $ DuplicateFlagError "--retries"
             _ -> do
                 Cmd checkCommand <- cmd
                 let interval = listToMaybe intervals
@@ -418,7 +430,7 @@ checkFlag =
     (FlagRetries <$> retriesFlag <?> "--retries") <|>
     (CFlagInvalid <$> anyFlag <?> "no flags")
 
-durationFlag :: String -> Parser Duration
+durationFlag :: Text -> Parser Duration
 durationFlag flagName = do
     void $ try (string flagName)
     scale <- natural
@@ -437,29 +449,29 @@ retriesFlag = do
 
 parseInstruction :: Parser Instruction
 parseInstruction =
-    try onbuild <|> -- parse all main instructions
-    try from <|>
-    try copy <|>
-    try run <|>
-    try workdir <|>
-    try entrypoint <|>
-    try volume <|>
-    try expose <|>
-    try env <|>
-    try arg <|>
-    try user <|>
-    try label <|>
-    try stopsignal <|>
-    try cmd <|>
-    try shell <|>
-    try maintainer <|>
-    try add <|>
-    try comment <|>
-    try healthcheck
+    onbuild <|> -- parse all main instructions
+    from <|>
+    copy <|>
+    run <|>
+    workdir <|>
+    entrypoint <|>
+    volume <|>
+    expose <|>
+    env <|>
+    arg <|>
+    user <|>
+    label <|>
+    stopsignal <|>
+    cmd <|>
+    shell <|>
+    maintainer <|>
+    add <|>
+    comment <|>
+    healthcheck
 
 contents :: Parser a -> Parser a
 contents p = do
-    void $ many (space <|> void (char '\n'))
+    void $ takeWhileP Nothing isSpaceNl
     r <- p
     eof
     return r
@@ -472,13 +484,13 @@ dockerfile =
     many $ do
         pos <- getPosition
         i <- parseInstruction
-        void (many1 eol) <|> eof <?> "a new line followed by the next instruction"
-        return $ InstructionPos i (T.pack . sourceName $ pos) (sourceLine pos)
+        void (some eol) <|> eof <?> "a new line followed by the next instruction"
+        return $ InstructionPos i (T.pack . sourceName $ pos) (unPos . sourceLine $ pos)
 
-parseString :: String -> Either ParseError Dockerfile
-parseString s = parse (contents dockerfile) "<string>" $ normalizeEscapedLines s
+parseString :: String -> Either Error Dockerfile
+parseString s = parse (contents dockerfile) "<string>" $ T.pack (normalizeEscapedLines s)
 
-parseFile :: String -> IO (Either ParseError Dockerfile)
+parseFile :: FilePath -> IO (Either Error Dockerfile)
 parseFile file = doParse <$> readFile file
   where
-    doParse = parse (contents dockerfile) file . normalizeEscapedLines
+    doParse = parse (contents dockerfile) file . T.pack . normalizeEscapedLines

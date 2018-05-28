@@ -11,7 +11,6 @@ import Control.Monad.Free
 import Control.Monad.Free.TH
 import Control.Monad.Trans.Free (FreeT, iterTM)
 import Control.Monad.Writer
-import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.Char8 as B8
 import Data.List.NonEmpty (NonEmpty)
@@ -164,7 +163,7 @@ untagged = flip EUntaggedImage Nothing . fromString . Text.unpack
 tagged :: Syntax.Image -> Syntax.Tag -> EBaseImage
 tagged imageName tag = ETaggedImage imageName tag Nothing
 
-digested :: Syntax.Image -> ByteString -> EBaseImage
+digested :: Syntax.Image -> Text -> EBaseImage
 digested imageName hash = EDigestedImage imageName hash Nothing
 
 -- | Alias a FROM instruction to be used as a build stage.

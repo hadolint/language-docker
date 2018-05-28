@@ -2,7 +2,6 @@
 
 module Language.Docker.EDSL.Types where
 
-import Data.ByteString.Char8 (ByteString)
 import Data.List.NonEmpty (NonEmpty)
 import Data.String
 import Data.Text (Text)
@@ -15,7 +14,7 @@ data EBaseImage
                    Syntax.Tag
                    (Maybe Syntax.ImageAlias)
     | EDigestedImage Syntax.Image
-                     ByteString
+                     Text
                      (Maybe Syntax.ImageAlias)
     deriving (Show, Eq, Ord)
 

@@ -26,7 +26,7 @@ extra-source-files:
 dependencies:
   - base >=4.8 && <5
   - bytestring >=0.10
-  - parsec >=3.1
+  - megaparsec >=6.4
   - prettyprinter
   - split >=0.2
   - free
@@ -35,6 +35,7 @@ dependencies:
   - th-lift
   - text
   - time
+  - containers
 
 library:
   source-dirs: src
@@ -71,3 +72,4 @@ tests:
     - filepath
     - process
     - HUnit >=1.2
+    - megaparsec >=6.4

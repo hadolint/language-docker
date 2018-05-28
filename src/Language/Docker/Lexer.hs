@@ -1,60 +1,84 @@
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+
 module Language.Docker.Lexer where
 
 import Control.Monad (void)
-import Data.Char
-import Text.Parsec hiding (spaces)
-import Text.Parsec.Language (haskell)
-import Text.Parsec.String (Parser)
-import qualified Text.Parsec.Token as Token
+import Data.Data
+import qualified Data.Set as S
+import Data.Text (Text)
+import qualified Data.Text as Text
+import Text.Megaparsec
+import Text.Megaparsec.Char
+import qualified Text.Megaparsec.Char.Lexer as L
 
-reserved :: String -> Parser ()
-reserved name =
-    void $ do
-        _ <- try (caseInsensitiveString name) <?> name
-        spaces1 <?> "at least one space after '" ++ name ++ "' followed by its arguments"
+data DockerfileError
+    = DuplicateFlagError String
+    | NoValueFlagError String
+    | InvalidFlagError String
+    | FileListError String
+    | QuoteError String
+                 String
+    deriving (Eq, Data, Typeable, Ord, Read, Show)
+
+instance ShowErrorComponent DockerfileError where
+    showErrorComponent (DuplicateFlagError f) = "duplicate flag: " ++ f
+    showErrorComponent (FileListError f) =
+        "unexpected end of line. At least two arguments are required for " ++ f
+    showErrorComponent (NoValueFlagError f) = "unexpected flag " ++ f ++ " with no value"
+    showErrorComponent (InvalidFlagError f) = "invalid flag: " ++ f
+    showErrorComponent (QuoteError t str) =
+        "unexpected end of " ++ t ++ " quoted string " ++ str ++ " (unmatched quote)"
+
+-- | End parsing signaling a “conversion error”.
+customError :: DockerfileError -> Parser a
+customError = fancyFailure . S.singleton . ErrorCustom
+
+type Parser = Parsec DockerfileError Text
+
+reserved :: Text -> Parser ()
+reserved name = void (lexeme (string' name) <?> Text.unpack name)
 
 natural :: Parser Integer
-natural = zeroNumber <|> Token.decimal haskell <?> "positive number"
-  where
-    zeroNumber = char '0' >> return 0
+natural = L.decimal <?> "positive number"
 
 commaSep :: Parser a -> Parser [a]
 commaSep p = sepBy p (symbol ",")
 
-stringLiteral :: Parser String
-stringLiteral = Token.stringLiteral haskell
+stringLiteral :: Parser Text
+stringLiteral = do
+    void (char '"')
+    lit <- manyTill L.charLiteral (char '"')
+    return (Text.pack lit)
 
 brackets :: Parser a -> Parser a
 brackets = between (symbol "[") (symbol "]")
 
-whiteSpace :: Parser ()
-whiteSpace = void (char ' ' <|> char '\t') <?> "space"
-
-space :: Parser ()
-space = whiteSpace
-
 spaces1 :: Parser ()
-spaces1 = void (many1 whiteSpace <?> "at least one space")
+spaces1 = void (takeWhile1P (Just "at least one space") (\c -> c == ' ' || c == '\t'))
 
 spaces :: Parser ()
-spaces = void (many whiteSpace <?> "spaces")
+spaces = void (takeWhileP (Just "at least one space") (\c -> c == ' ' || c == '\t'))
 
-symbol :: String -> Parser String
-symbol name = lexeme (string name)
+symbol :: Text -> Parser Text
+symbol name = do
+    x <- string name
+    spaces
+    return x
 
 caseInsensitiveChar :: Char -> Parser Char
-caseInsensitiveChar c = char (toUpper c) <|> char (toLower c)
+caseInsensitiveChar = char'
 
-caseInsensitiveString :: String -> Parser String
-caseInsensitiveString s = mapM caseInsensitiveChar s <?> "\"" ++ s ++ "\""
+caseInsensitiveString :: Text -> Parser Text
+caseInsensitiveString = string'
 
 charsWithEscapedSpaces :: String -> Parser String
 charsWithEscapedSpaces stopChars = do
-    buf <- many1 $ noneOf ("\n\t\\ " ++ stopChars)
+    buf <- some $ noneOf ("\n\t\\ " ++ stopChars)
     try (jumpEscapeSequence buf) <|> try (backslashFollowedByChars buf) <|> return buf
   where
     backslashFollowedByChars buf = do
-        backslashes <- many1 (char '\\')
+        backslashes <- some (char '\\')
         notFollowedBy (char ' ')
         rest <- charsWithEscapedSpaces stopChars
         return $ buf ++ backslashes ++ rest
@@ -66,5 +90,5 @@ charsWithEscapedSpaces stopChars = do
 lexeme :: Parser a -> Parser a
 lexeme p = do
     x <- p
-    spaces
+    spaces1
     return x

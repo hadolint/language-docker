@@ -9,7 +9,6 @@
 
 module Language.Docker.PrettyPrint where
 
-import qualified Data.ByteString.Char8 as ByteString (unpack)
 import Data.List.NonEmpty as NonEmpty (NonEmpty(..), toList)
 import Data.String (fromString)
 import Data.Text (Text)
@@ -46,7 +45,7 @@ prettyPrintBaseImage b =
         DigestedImage img digest alias -> do
             prettyPrintImage img
             pretty '@'
-            pretty (ByteString.unpack digest)
+            pretty digest
             prettyAlias alias
         UntaggedImage (Image _ name) alias -> do
             pretty name

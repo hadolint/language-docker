@@ -3,7 +3,6 @@
 
 module Language.Docker.Syntax where
 
-import Data.ByteString.Char8 (ByteString)
 import Data.List (intercalate, isInfixOf)
 import Data.List.NonEmpty (NonEmpty)
 import Data.List.Split (endBy)
@@ -74,7 +73,7 @@ data BaseImage
                   !Tag
                   !(Maybe ImageAlias)
     | DigestedImage !Image
-                    !ByteString
+                    !Text
                     !(Maybe ImageAlias)
     deriving (Eq, Ord, Show)
 

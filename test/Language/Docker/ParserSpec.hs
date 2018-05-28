@@ -9,7 +9,7 @@ import Language.Docker.Syntax
 
 import Test.HUnit hiding (Label)
 import Test.Hspec
-import Text.Parsec
+import Text.Megaparsec hiding (Label)
 
 spec :: Spec
 spec = do
@@ -338,5 +338,5 @@ spec = do
                                   ]
 assertAst s ast =
     case parseString (s ++ "\n") of
-        Left err -> assertFailure $ show err
+        Left err -> assertFailure $ parseErrorPretty err
         Right dockerfile -> assertEqual "ASTs are not equal" ast $ map instruction dockerfile
