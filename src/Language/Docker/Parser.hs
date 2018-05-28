@@ -1,12 +1,15 @@
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 
-module Language.Docker.Parser where
+module Language.Docker.Parser  (parseText, parseFile) where
 
 import Control.Monad (void)
 import qualified Data.ByteString as B
+import Data.Data
 import Data.List.NonEmpty (NonEmpty, fromList)
 import Data.Maybe (listToMaybe)
+import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as E
@@ -14,10 +17,21 @@ import qualified Data.Text.Encoding.Error as E
 import Data.Time.Clock (secondsToDiffTime)
 import Text.Megaparsec hiding (Label, label)
 import Text.Megaparsec.Char hiding (eol)
+import qualified Text.Megaparsec.Char.Lexer as L
 
-import Language.Docker.Lexer
 import Language.Docker.Normalize
 import Language.Docker.Syntax
+
+data DockerfileError
+    = DuplicateFlagError String
+    | NoValueFlagError String
+    | InvalidFlagError String
+    | FileListError String
+    | QuoteError String
+                 String
+    deriving (Eq, Data, Typeable, Ord, Read, Show)
+
+type Parser = Parsec DockerfileError Text
 
 type Error = ParseError Char DockerfileError
 
@@ -33,6 +47,79 @@ data CheckFlag
     | FlagRetries Retries
     | CFlagInvalid (Text, Text)
 
+instance ShowErrorComponent DockerfileError where
+    showErrorComponent (DuplicateFlagError f) = "duplicate flag: " ++ f
+    showErrorComponent (FileListError f) =
+        "unexpected end of line. At least two arguments are required for " ++ f
+    showErrorComponent (NoValueFlagError f) = "unexpected flag " ++ f ++ " with no value"
+    showErrorComponent (InvalidFlagError f) = "invalid flag: " ++ f
+    showErrorComponent (QuoteError t str) =
+        "unexpected end of " ++ t ++ " quoted string " ++ str ++ " (unmatched quote)"
+
+------------------------------------
+-- Utilities
+------------------------------------
+-- | End parsing signaling a “conversion error”.
+customError :: DockerfileError -> Parser a
+customError = fancyFailure . S.singleton . ErrorCustom
+
+eol :: Parser ()
+eol = void $ takeWhile1P (Just "whitespace") isSpaceNl
+
+reserved :: Text -> Parser ()
+reserved name = void (lexeme (string' name) <?> T.unpack name)
+
+natural :: Parser Integer
+natural = L.decimal <?> "positive number"
+
+commaSep :: Parser a -> Parser [a]
+commaSep p = sepBy p (symbol ",")
+
+stringLiteral :: Parser Text
+stringLiteral = do
+    void (char '"')
+    lit <- manyTill L.charLiteral (char '"')
+    return (T.pack lit)
+
+brackets :: Parser a -> Parser a
+brackets = between (symbol "[") (symbol "]")
+
+spaces1 :: Parser ()
+spaces1 = void (takeWhile1P (Just "at least one space") (\c -> c == ' ' || c == '\t'))
+
+spaces :: Parser ()
+spaces = void (takeWhileP (Just "at least one space") (\c -> c == ' ' || c == '\t'))
+
+symbol :: Text -> Parser Text
+symbol name = do
+    x <- string name
+    spaces
+    return x
+
+caseInsensitiveString :: Text -> Parser Text
+caseInsensitiveString = string'
+
+charsWithEscapedSpaces :: String -> Parser String
+charsWithEscapedSpaces stopChars = do
+    buf <- some $ noneOf ("\n\t\\ " ++ stopChars)
+    try (jumpEscapeSequence buf) <|> try (backslashFollowedByChars buf) <|> return buf
+  where
+    backslashFollowedByChars buf = do
+        backslashes <- some (char '\\')
+        notFollowedBy (char ' ')
+        rest <- charsWithEscapedSpaces stopChars
+        return $ buf ++ backslashes ++ rest
+    jumpEscapeSequence buf = do
+        void $ string "\\ "
+        rest <- charsWithEscapedSpaces stopChars
+        return $ buf ++ ' ' : rest
+
+lexeme :: Parser a -> Parser a
+lexeme p = do
+    x <- p
+    spaces1
+    return x
+
 isNl :: Char -> Bool
 isNl c = c == '\n'
 
@@ -45,6 +132,9 @@ anyUnless predicate = takeWhileP Nothing (\c -> not (isSpaceNl c || predicate c)
 someUnless :: String -> (Char -> Bool) -> Parser Text
 someUnless name predicate = takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c))
 
+------------------------------------
+-- DOCKER INSTRUCTIONS PARSER
+------------------------------------
 comment :: Parser Instruction
 comment = do
     void $ char '#'
@@ -450,6 +540,9 @@ retriesFlag = do
     n <- try natural <?> "the number of retries"
     return $ Retries (fromIntegral n)
 
+------------------------------------
+-- Main Parser
+------------------------------------
 parseInstruction :: Parser Instruction
 parseInstruction =
     onbuild <|> -- parse all main instructions
@@ -478,9 +571,6 @@ contents p = do
     r <- p
     eof
     return r
-
-eol :: Parser ()
-eol = void $ takeWhile1P (Just "whitespace") isSpaceNl
 
 dockerfile :: Parser Dockerfile
 dockerfile =
