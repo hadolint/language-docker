@@ -1,6 +1,6 @@
 module Language.Docker
     ( Language.Docker.Syntax.Dockerfile -- * Parsing Dockerfiles (@Language.Docker.Syntax@ and @Language.Docker.Parser@)
-    , parseString
+    , parseText
     , parseFile
     -- * Re-exports from @megaparsec@
     , Text.Megaparsec.parseErrorPretty

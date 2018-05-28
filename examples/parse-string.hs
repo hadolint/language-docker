@@ -1,5 +1,5 @@
 import Language.Docker
 
 main = do
-    c <- readFile "./Dockerfile"
-    print (parseString c)
+    c <- parseFile "./Dockerfile"
+    print c

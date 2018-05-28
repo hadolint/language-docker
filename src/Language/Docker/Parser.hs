@@ -4,13 +4,16 @@
 module Language.Docker.Parser where
 
 import Control.Monad (void)
+import qualified Data.ByteString as B
 import Data.List.NonEmpty (NonEmpty, fromList)
 import Data.Maybe (listToMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as E
+import qualified Data.Text.Encoding.Error as E
 import Data.Time.Clock (secondsToDiffTime)
 import Text.Megaparsec hiding (Label, label)
-import Text.Megaparsec.Char hiding (eol, space)
+import Text.Megaparsec.Char hiding (eol)
 
 import Language.Docker.Lexer
 import Language.Docker.Normalize
@@ -323,7 +326,7 @@ portWithProtocol = do
 
 portVariable :: Parser Port
 portVariable = do
-    void  (char '$')
+    void (char '$')
     variable <- someUnless "the variable name" (== '$')
     return $ PortStr (T.append "$" variable)
 
@@ -477,20 +480,21 @@ contents p = do
     return r
 
 eol :: Parser ()
-eol = void $ char '\n' <|> (char '\r' >> option '\n' (char '\n'))
+eol = void $ takeWhile1P (Just "whitespace") isSpaceNl
 
 dockerfile :: Parser Dockerfile
 dockerfile =
     many $ do
         pos <- getPosition
         i <- parseInstruction
-        void (some eol) <|> eof <?> "a new line followed by the next instruction"
+        eol <|> eof <?> "a new line followed by the next instruction"
         return $ InstructionPos i (T.pack . sourceName $ pos) (unPos . sourceLine $ pos)
 
-parseString :: String -> Either Error Dockerfile
-parseString s = parse (contents dockerfile) "<string>" $ T.pack (normalizeEscapedLines s)
+parseText :: Text -> Either Error Dockerfile
+parseText s = parse (contents dockerfile) "<string>" $ normalizeEscapedLines s
 
 parseFile :: FilePath -> IO (Either Error Dockerfile)
-parseFile file = doParse <$> readFile file
+parseFile file = doParse <$> B.readFile file
   where
-    doParse = parse (contents dockerfile) file . T.pack . normalizeEscapedLines
+    doParse =
+        parse (contents dockerfile) file . normalizeEscapedLines . E.decodeUtf8With E.lenientDecode
