@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies,
-  DuplicateRecordFields, FlexibleInstances #-}
+  DuplicateRecordFields, FlexibleInstances, DeriveFunctor #-}
 
 module Language.Docker.Syntax where
 
@@ -134,12 +134,12 @@ data AddArgs = AddArgs
 data Check args
     = Check !(CheckArgs args)
     | NoCheck
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Functor)
 
 data Arguments args
     = ArgumentsText args
     | ArgumentsList args
-    deriving (Show, Eq, Ord)
+    deriving (Show, Eq, Ord, Functor)
 
 instance IsString (Arguments Text) where
     fromString = ArgumentsText . Text.pack
@@ -156,7 +156,7 @@ data CheckArgs args = CheckArgs
     , timeout :: !(Maybe Duration)
     , startPeriod :: !(Maybe Duration)
     , retries :: !(Maybe Retries)
-    } deriving (Show, Eq, Ord)
+    } deriving (Show, Eq, Ord, Functor)
 
 type Pairs = [(Text, Text)]
 
@@ -182,7 +182,7 @@ data Instruction args
     | Healthcheck !(Check args)
     | Comment !Text
     | OnBuild !(Instruction args)
-    deriving (Eq, Ord, Show)
+    deriving (Eq, Ord, Show, Functor)
 
 type Filename = Text
 
@@ -194,4 +194,4 @@ data InstructionPos args = InstructionPos
     { instruction :: !(Instruction args)
     , sourcename :: !Filename
     , lineNumber :: !Linenumber
-    } deriving (Eq, Ord, Show)
+    } deriving (Eq, Ord, Show, Functor)
