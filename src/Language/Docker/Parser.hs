@@ -2,7 +2,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 
-module Language.Docker.Parser  (parseText, parseFile) where
+module Language.Docker.Parser
+    ( parseText
+    , parseFile
+    ) where
 
 import Control.Monad (void)
 import qualified Data.ByteString as B
@@ -99,20 +102,20 @@ symbol name = do
 caseInsensitiveString :: Text -> Parser Text
 caseInsensitiveString = string'
 
-charsWithEscapedSpaces :: String -> Parser String
+charsWithEscapedSpaces :: String -> Parser Text
 charsWithEscapedSpaces stopChars = do
-    buf <- some $ noneOf ("\n\t\\ " ++ stopChars)
+    buf <- takeWhile1P Nothing (`notElem` ("\n\t\\ " ++ stopChars))
     try (jumpEscapeSequence buf) <|> try (backslashFollowedByChars buf) <|> return buf
   where
     backslashFollowedByChars buf = do
-        backslashes <- some (char '\\')
+        backslashes <- takeWhile1P Nothing (== '\\')
         notFollowedBy (char ' ')
         rest <- charsWithEscapedSpaces stopChars
-        return $ buf ++ backslashes ++ rest
+        return $ T.concat [buf, backslashes, rest]
     jumpEscapeSequence buf = do
         void $ string "\\ "
         rest <- charsWithEscapedSpaces stopChars
-        return $ buf ++ ' ' : rest
+        return $ T.concat [buf, " ", rest]
 
 lexeme :: Parser a -> Parser a
 lexeme p = do
@@ -299,10 +302,13 @@ singleQuotedValue =
 unquotedString :: String -> Parser Text
 unquotedString stopChars = do
     str <- charsWithEscapedSpaces stopChars
-    case str of
-        '\'':_ -> customError $ QuoteError "single" str
-        '"':_ -> customError $ QuoteError "double" str
-        _ -> return (T.pack str)
+    checkFaults str
+  where
+    checkFaults str
+        | T.null str = return str
+        | T.head str == '\'' = customError $ QuoteError "single" (T.unpack str)
+        | T.head str == '\"' = customError $ QuoteError "double" (T.unpack str)
+        | otherwise = return str
 
 singleValue :: String -> Parser Text
 singleValue stopChars =
