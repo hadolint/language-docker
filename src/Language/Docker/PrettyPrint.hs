@@ -3,7 +3,6 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -12,6 +11,8 @@
 module Language.Docker.PrettyPrint where
 
 import Data.List.NonEmpty as NonEmpty (NonEmpty(..), toList)
+import Data.Maybe (Maybe(..))
+import Data.Semigroup ((<>))
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -20,9 +21,7 @@ import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Internal (Doc(Empty))
 import Data.Text.Prettyprint.Doc.Render.Text (renderLazy)
 import Language.Docker.Syntax
-import Prelude
-       (Bool(..), Maybe(..), ($), (++), (.), (==), fmap, maybe, mempty,
-        show)
+import Prelude hiding ((<>), (>>), return)
 
 instance Pretty (Arguments Text) where
     pretty = prettyPrintArguments
@@ -33,7 +32,7 @@ prettyPrint = renderLazy . layoutPretty opts . prettyPrintDockerfile
   where
     opts = LayoutOptions Unbounded
 
-prettyPrintDockerfile :: Pretty (Arguments args) =>[InstructionPos args] -> Doc ann
+prettyPrintDockerfile :: Pretty (Arguments args) => [InstructionPos args] -> Doc ann
 prettyPrintDockerfile = vsep . fmap prettyPrintInstructionPos
 
 -- | Pretty print a 'InstructionPos' to a 'Doc'
