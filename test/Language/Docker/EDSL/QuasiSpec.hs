@@ -16,10 +16,10 @@ spec = do
             let df = map instruction [dockerfile|
                                                 FROM node
                                                 RUN apt-get update
-                                                CMD node something.js
+                                                CMD ["node", "something.js"]
                                                 |]
             df `shouldBe` [ From (UntaggedImage "node" Nothing)
-                          , Run ["apt-get", "update"]
+                          , Run "apt-get update"
                           , Cmd ["node", "something.js"]
                           ]
 
@@ -35,6 +35,6 @@ spec = do
                 df = map instruction (toDockerfile d)
             df `shouldBe` [ From (UntaggedImage "node" (Just $ ImageAlias "node-build"))
                           , Expose (Ports [Port 8080 TCP, PortStr "$PORT"])
-                          , Run ["apt-get", "update"]
-                          , Cmd ["node", "something.js"]
+                          , Run "apt-get update"
+                          , Cmd "node something.js"
                           ]

@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, TypeFamilies,
-  DuplicateRecordFields #-}
+  DuplicateRecordFields, FlexibleInstances #-}
 
 module Language.Docker.Syntax where
 
@@ -78,7 +78,7 @@ data BaseImage
     deriving (Eq, Ord, Show)
 
 -- | Type of the Dockerfile AST
-type Dockerfile = [InstructionPos]
+type Dockerfile = [InstructionPos Text]
 
 newtype SourcePath = SourcePath
     { unSourcePath :: Text
@@ -131,25 +131,27 @@ data AddArgs = AddArgs
     , chownFlag :: !Chown
     } deriving (Show, Eq, Ord)
 
-data Check
-    = Check !CheckArgs
+data Check args
+    = Check !(CheckArgs args)
     | NoCheck
     deriving (Show, Eq, Ord)
 
-newtype Arguments =
-    Arguments [Text]
+data Arguments args
+    = ArgumentsText args
+    | ArgumentsList args
     deriving (Show, Eq, Ord)
 
-instance IsString Arguments where
-    fromString = Arguments . Text.words . Text.pack
+instance IsString (Arguments Text) where
+    fromString = ArgumentsText . Text.pack
 
-instance IsList Arguments where
-    type Item Arguments = Text
-    fromList = Arguments
-    toList (Arguments ps) = ps
+instance IsList (Arguments Text) where
+    type Item (Arguments Text) = Text
+    fromList = ArgumentsList . Text.unwords
+    toList (ArgumentsText ps) = Text.words ps
+    toList (ArgumentsList ps) = Text.words ps
 
-data CheckArgs = CheckArgs
-    { checkCommand :: !Arguments
+data CheckArgs args = CheckArgs
+    { checkCommand :: !(Arguments args)
     , interval :: !(Maybe Duration)
     , timeout :: !(Maybe Duration)
     , startPeriod :: !(Maybe Duration)
@@ -159,27 +161,27 @@ data CheckArgs = CheckArgs
 type Pairs = [(Text, Text)]
 
 -- | All commands available in Dockerfiles
-data Instruction
+data Instruction args
     = From !BaseImage
     | Add !AddArgs
     | User !Text
     | Label !Pairs
     | Stopsignal !Text
     | Copy !CopyArgs
-    | Run !Arguments
-    | Cmd !Arguments
-    | Shell !Arguments
+    | Run !(Arguments args)
+    | Cmd !(Arguments args)
+    | Shell !(Arguments args)
     | Workdir !Directory
     | Expose !Ports
     | Volume !Text
-    | Entrypoint !Arguments
+    | Entrypoint !(Arguments args)
     | Maintainer !Text
     | Env !Pairs
     | Arg !Text
           !(Maybe Text)
-    | Healthcheck !Check
+    | Healthcheck !(Check args)
     | Comment !Text
-    | OnBuild !Instruction
+    | OnBuild !(Instruction args)
     deriving (Eq, Ord, Show)
 
 type Filename = Text
@@ -188,8 +190,8 @@ type Linenumber = Int
 
 -- | 'Instruction' with additional location information required for creating
 -- good check messages
-data InstructionPos = InstructionPos
-    { instruction :: !Instruction
+data InstructionPos args = InstructionPos
+    { instruction :: !(Instruction args)
     , sourcename :: !Filename
     , lineNumber :: !Linenumber
     } deriving (Eq, Ord, Show)

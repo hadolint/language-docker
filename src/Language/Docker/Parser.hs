@@ -38,6 +38,8 @@ type Parser = Parsec DockerfileError Text
 
 type Error = ParseError Char DockerfileError
 
+type Instr = Instruction Text
+
 data CopyFlag
     = FlagChown Chown
     | FlagSource CopySource
@@ -138,7 +140,7 @@ someUnless name predicate = takeWhile1P (Just name) (\c -> not (isSpaceNl c || p
 ------------------------------------
 -- DOCKER INSTRUCTIONS PARSER
 ------------------------------------
-comment :: Parser Instruction
+comment :: Parser Instr
 comment = do
     void $ char '#'
     text <- takeWhileP Nothing (not . isNl)
@@ -200,19 +202,19 @@ baseImage =
     try taggedImage <|>
     untaggedImage
 
-from :: Parser Instruction
+from :: Parser Instr
 from = do
     reserved "FROM"
     image <- baseImage
     return $ From image
 
-cmd :: Parser Instruction
+cmd :: Parser Instr
 cmd = do
     reserved "CMD"
     args <- arguments
     return $ Cmd args
 
-copy :: Parser Instruction
+copy :: Parser Instr
 copy = do
     reserved "COPY"
     flags <- copyFlag `sepEndBy` spaces1
@@ -261,7 +263,7 @@ anyFlag = do
     val <- anyUnless (== ' ')
     return (T.append "--" name, val)
 
-fileList :: Text -> (NonEmpty SourcePath -> TargetPath -> Instruction) -> Parser Instruction
+fileList :: Text -> (NonEmpty SourcePath -> TargetPath -> Instr) -> Parser Instr
 fileList name constr = do
     paths <-
         (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]") <|>
@@ -277,13 +279,13 @@ unexpectedFlag :: Text -> Text -> Parser a
 unexpectedFlag name "" = customFailure $ NoValueFlagError (T.unpack name)
 unexpectedFlag name _ = customFailure $ InvalidFlagError (T.unpack name)
 
-shell :: Parser Instruction
+shell :: Parser Instr
 shell = do
     reserved "SHELL"
     args <- arguments
     return $ Shell args
 
-stopsignal :: Parser Instruction
+stopsignal :: Parser Instr
 stopsignal = do
     reserved "STOPSIGNAL"
     args <- untilEol "the stop signal"
@@ -326,13 +328,13 @@ pair = do
 pairsList :: Parser Pairs
 pairsList = pair `sepBy1` spaces1
 
-label :: Parser Instruction
+label :: Parser Instr
 label = do
     reserved "LABEL"
     p <- pairs
     return $ Label p
 
-arg :: Parser Instruction
+arg :: Parser Instr
 arg = do
     reserved "ARG"
     (try nameWithDefault <?> "the arg name") <|>
@@ -344,7 +346,7 @@ arg = do
         def <- untilEol "the argument value"
         return $ Arg name (Just def)
 
-env :: Parser Instruction
+env :: Parser Instr
 env = do
     reserved "ENV"
     p <- pairs
@@ -360,13 +362,13 @@ singlePair = do
     val <- untilEol "the variable value"
     return [(key, val)]
 
-user :: Parser Instruction
+user :: Parser Instr
 user = do
     reserved "USER"
     username <- untilEol "the user"
     return $ User username
 
-add :: Parser Instruction
+add :: Parser Instr
 add = do
     reserved "ADD"
     flag <- lexeme copyFlag <|> return (FlagChown NoChown)
@@ -376,7 +378,7 @@ add = do
         FlagSource _ -> customError $ InvalidFlagError "--from"
         FlagInvalid (k, v) -> unexpectedFlag k v
 
-expose :: Parser Instruction
+expose :: Parser Instr
 expose = do
     reserved "EXPOSE"
     ps <- ports
@@ -426,7 +428,7 @@ portVariable = do
     variable <- someUnless "the variable name" (== '$')
     return $ PortStr (T.append "$" variable)
 
-run :: Parser Instruction
+run :: Parser Instr
 run = do
     reserved "RUN"
     c <- arguments
@@ -436,52 +438,52 @@ run = do
 untilEol :: String -> Parser Text
 untilEol name = takeWhile1P (Just name) (not . isNl)
 
-workdir :: Parser Instruction
+workdir :: Parser Instr
 workdir = do
     reserved "WORKDIR"
     directory <- untilEol "the workdir path"
     return $ Workdir directory
 
-volume :: Parser Instruction
+volume :: Parser Instr
 volume = do
     reserved "VOLUME"
     directory <- untilEol "the volume path"
     return $ Volume directory
 
-maintainer :: Parser Instruction
+maintainer :: Parser Instr
 maintainer = do
     reserved "MAINTAINER"
     name <- untilEol "the maintainer name"
     return $ Maintainer name
 
 -- Parse arguments of a command in the exec form
-argumentsExec :: Parser Arguments
+argumentsExec :: Parser (Arguments Text)
 argumentsExec = do
     args <- brackets $ commaSep stringLiteral
-    return $ Arguments args
+    return $ ArgumentsList (T.unwords args)
 
 -- Parse arguments of a command in the shell form
-argumentsShell :: Parser Arguments
-argumentsShell = Arguments <$> toEnd
+argumentsShell :: Parser (Arguments Text)
+argumentsShell = ArgumentsText <$> toEnd
   where
-    toEnd = T.words <$> untilEol "the shell arguments"
+    toEnd = untilEol "the shell arguments"
 
-arguments :: Parser Arguments
+arguments :: Parser (Arguments Text)
 arguments = try argumentsExec <|> try argumentsShell
 
-entrypoint :: Parser Instruction
+entrypoint :: Parser Instr
 entrypoint = do
     reserved "ENTRYPOINT"
     args <- arguments
     return $ Entrypoint args
 
-onbuild :: Parser Instruction
+onbuild :: Parser Instr
 onbuild = do
     reserved "ONBUILD"
     i <- parseInstruction
     return $ OnBuild i
 
-healthcheck :: Parser Instruction
+healthcheck :: Parser Instr
 healthcheck = do
     reserved "HEALTHCHECK"
     Healthcheck <$> (fullCheck <|> noCheck)
@@ -549,7 +551,7 @@ retriesFlag = do
 ------------------------------------
 -- Main Parser
 ------------------------------------
-parseInstruction :: Parser Instruction
+parseInstruction :: Parser Instr
 parseInstruction =
     onbuild <|> -- parse all main instructions
     from <|>

@@ -39,11 +39,11 @@ data EInstruction next
                Syntax.Chown
                Syntax.CopySource
                next
-    | RunArgs Syntax.Arguments
+    | RunArgs (Syntax.Arguments Text)
               next
-    | CmdArgs Syntax.Arguments
+    | CmdArgs (Syntax.Arguments Text)
               next
-    | Shell Syntax.Arguments
+    | Shell (Syntax.Arguments Text)
             next
     | Workdir Syntax.Directory
               next
@@ -51,7 +51,7 @@ data EInstruction next
              next
     | Volume Text
              next
-    | EntrypointArgs Syntax.Arguments
+    | EntrypointArgs (Syntax.Arguments Text)
                      next
     | Maintainer Text
                  next
@@ -62,10 +62,10 @@ data EInstruction next
           next
     | Comment Text
               next
-    | Healthcheck Syntax.Check
+    | Healthcheck (Syntax.Check Text)
                   next
-    | OnBuildRaw Syntax.Instruction
+    | OnBuildRaw (Syntax.Instruction Text)
                  next
-    | Embed [Syntax.InstructionPos]
+    | Embed [Syntax.InstructionPos Text]
             next
     deriving (Functor)

@@ -6,6 +6,8 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Language.Docker.PrettyPrint where
 
@@ -22,17 +24,20 @@ import Prelude
        (Bool(..), Maybe(..), ($), (++), (.), (==), fmap, maybe, mempty,
         show)
 
+instance Pretty (Arguments Text) where
+    pretty = prettyPrintArguments
+
 -- | Pretty print a 'Dockerfile' to a 'Text'
 prettyPrint :: Dockerfile -> L.Text
 prettyPrint = renderLazy . layoutPretty opts . prettyPrintDockerfile
   where
     opts = LayoutOptions Unbounded
 
-prettyPrintDockerfile :: Dockerfile -> Doc ann
+prettyPrintDockerfile :: Pretty (Arguments args) =>[InstructionPos args] -> Doc ann
 prettyPrintDockerfile = vsep . fmap prettyPrintInstructionPos
 
 -- | Pretty print a 'InstructionPos' to a 'Doc'
-prettyPrintInstructionPos :: InstructionPos -> Doc ann
+prettyPrintInstructionPos :: Pretty (Arguments args) => InstructionPos args -> Doc ann
 prettyPrintInstructionPos (InstructionPos i _ _) = prettyPrintInstruction i
 
 prettyPrintImage :: Image -> Doc ann
@@ -69,14 +74,15 @@ prettyPrintPairs ps = hsep $ fmap prettyPrintPair ps
 prettyPrintPair :: (Text, Text) -> Doc ann
 prettyPrintPair (k, v) = pretty k <> pretty '=' <> pretty v
 
-prettyPrintArguments :: Arguments -> Doc ann
-prettyPrintArguments (Arguments as) = hsep (fmap helper as)
+prettyPrintArguments :: Arguments Text -> Doc ann
+prettyPrintArguments (ArgumentsList as) = prettyPrintJSON (Text.words as)
+prettyPrintArguments (ArgumentsText as) = hsep (fmap helper (Text.words as))
   where
     helper "&&" = "\\\n &&"
     helper a = pretty a
 
-prettyPrintJSON :: Arguments -> Doc ann
-prettyPrintJSON (Arguments as) = list (fmap doubleQoute as)
+prettyPrintJSON :: [Text] -> Doc ann
+prettyPrintJSON args = list (fmap doubleQoute args)
   where
     doubleQoute w = enclose dquote dquote (pretty w)
 
@@ -118,7 +124,7 @@ prettyPrintRetries = maybe mempty pp
   where
     pp (Retries r) = "--retries=" <> pretty r
 
-prettyPrintInstruction :: Instruction -> Doc ann
+prettyPrintInstruction :: Pretty (Arguments args) => Instruction args -> Doc ann
 prettyPrintInstruction i =
     case i of
         Maintainer m -> do
@@ -132,7 +138,7 @@ prettyPrintInstruction i =
             pretty k <> "=" <> pretty v
         Entrypoint e -> do
             "ENTRYPOINT"
-            prettyPrintJSON e
+            pretty e
         Stopsignal s -> do
             "STOPSIGNAL"
             pretty s
@@ -147,7 +153,7 @@ prettyPrintInstruction i =
             pretty dir
         Run c -> do
             "RUN"
-            prettyPrintArguments c
+            pretty c
         Copy CopyArgs {sourcePaths, targetPath, chownFlag, sourceFlag} -> do
             "COPY"
             prettyPrintChown chownFlag
@@ -155,7 +161,7 @@ prettyPrintInstruction i =
             prettyPrintFileList sourcePaths targetPath
         Cmd c -> do
             "CMD"
-            prettyPrintJSON c
+            pretty c
         Label l -> do
             "LABEL"
             prettyPrintPairs l
@@ -180,7 +186,7 @@ prettyPrintInstruction i =
             prettyPrintFileList sourcePaths targetPath
         Shell args -> do
             "SHELL"
-            prettyPrintJSON args
+            pretty args
         Healthcheck NoCheck -> "HEALTHCHECK NONE"
         Healthcheck (Check CheckArgs {..}) -> do
             "HEALTHCHECK"
@@ -189,7 +195,7 @@ prettyPrintInstruction i =
             prettyPrintDuration "--start-period=" startPeriod
             prettyPrintRetries retries
             "CMD"
-            prettyPrintArguments checkCommand
+            pretty checkCommand
   where
     (>>) = spaceCat
     return a = a

@@ -37,11 +37,13 @@ type EInstructionTM = FreeT EInstruction
 
 makeFree ''EInstruction
 
-runDockerWriter :: (MonadWriter [Syntax.Instruction] m) => EDockerfileM a -> m a
+runDockerWriter :: (MonadWriter [Syntax.Instruction Text] m) => EDockerfileM a -> m a
 runDockerWriter = iterM runD
 
 runDockerWriterIO ::
-       (Monad m, MonadTrans t, MonadWriter [Syntax.Instruction] (t m)) => EDockerfileTM m a -> t m a
+       (Monad m, MonadTrans t, MonadWriter [Syntax.Instruction Text] (t m))
+    => EDockerfileTM m a
+    -> t m a
 runDockerWriterIO = iterTM runD
 
 runDef :: MonadWriter [t] m => (t1 -> t) -> t1 -> m b -> m b
@@ -50,7 +52,7 @@ runDef f a n = tell [f a] >> n
 runDef2 :: MonadWriter [t] m => (t1 -> t2 -> t) -> t1 -> t2 -> m b -> m b
 runDef2 f a b n = tell [f a b] >> n
 
-runD :: MonadWriter [Syntax.Instruction] m => EInstruction (m b) -> m b
+runD :: MonadWriter [Syntax.Instruction Text] m => EInstruction (m b) -> m b
 runD (From bi n) =
     case bi of
         EUntaggedImage bi' alias -> runDef Syntax.From (Syntax.UntaggedImage bi' alias) n
@@ -78,7 +80,7 @@ runD (Embed is n) = do
     tell (map Syntax.instruction is)
     n
 
-instructionPos :: Syntax.Instruction -> Syntax.InstructionPos
+instructionPos :: Syntax.Instruction args -> Syntax.InstructionPos args
 instructionPos i = Syntax.InstructionPos i "" 0
 
 -- | Runs the Dockerfile EDSL and returns a 'Dockerfile' you can pretty print
@@ -184,7 +186,7 @@ aliased image alias =
 -- @
 -- run "apt-get install wget"
 -- @
-run :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+run :: MonadFree EInstruction m => Syntax.Arguments Text -> m ()
 run = runArgs
 
 -- | Create an ENTRYPOINT instruction with the given arguments.
@@ -192,7 +194,7 @@ run = runArgs
 -- @
 -- entrypoint "/usr/local/bin/program --some-flag"
 -- @
-entrypoint :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+entrypoint :: MonadFree EInstruction m => Syntax.Arguments Text -> m ()
 entrypoint = entrypointArgs
 
 -- | Create a CMD instruction with the given arguments.
@@ -200,7 +202,7 @@ entrypoint = entrypointArgs
 -- @
 -- cmd "my-program --some-flag"
 -- @
-cmd :: MonadFree EInstruction m => Syntax.Arguments -> m ()
+cmd :: MonadFree EInstruction m => Syntax.Arguments Text -> m ()
 cmd = cmdArgs
 
 -- | Create a COPY instruction. This function is meant to be
@@ -309,7 +311,7 @@ portRange a b = Syntax.PortRange a b Syntax.TCP
 udpPortRange :: Int -> Int -> Syntax.Port
 udpPortRange a b = Syntax.PortRange a b Syntax.UDP
 
-check :: Syntax.Arguments -> Syntax.Check
+check :: Syntax.Arguments args -> Syntax.Check args
 check command =
     Syntax.Check
         Syntax.CheckArgs
@@ -320,31 +322,31 @@ check command =
         , Syntax.retries = Nothing
         }
 
-interval :: Syntax.Check -> Integer -> Syntax.Check
+interval :: Syntax.Check args -> Integer -> Syntax.Check args
 interval ch secs =
     case ch of
         Syntax.NoCheck -> Syntax.NoCheck
         Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.interval = Just $ fromInteger secs}
 
-timeout :: Syntax.Check -> Integer -> Syntax.Check
+timeout :: Syntax.Check args -> Integer -> Syntax.Check args
 timeout ch secs =
     case ch of
         Syntax.NoCheck -> Syntax.NoCheck
         Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.timeout = Just $ fromInteger secs}
 
-startPeriod :: Syntax.Check -> Integer -> Syntax.Check
+startPeriod :: Syntax.Check args -> Integer -> Syntax.Check args
 startPeriod ch secs =
     case ch of
         Syntax.NoCheck -> Syntax.NoCheck
         Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.startPeriod = Just $ fromInteger secs}
 
-retries :: Syntax.Check -> Integer -> Syntax.Check
+retries :: Syntax.Check args -> Integer -> Syntax.Check args
 retries ch tries =
     case ch of
         Syntax.NoCheck -> Syntax.NoCheck
         Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.retries = Just $ fromInteger tries}
 
-noCheck :: Syntax.Check
+noCheck :: Syntax.Check args
 noCheck = Syntax.NoCheck
 
 -- | ONBUILD Dockerfile instruction

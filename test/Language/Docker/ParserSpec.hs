@@ -123,17 +123,23 @@ spec = do
 
         describe "parse RUN" $ do
             it "escaped with space before" $
-                let dockerfile = Text.unlines ["RUN yum install -y \\", " imagemagick \\", " mysql"]
-                in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"]]
+                let dockerfile = Text.unlines ["RUN yum install -y \\", "imagemagick \\", "mysql"]
+                in assertAst dockerfile [Run "yum install -y imagemagick mysql"]
 
             it "does not choke on unmatched brackets" $
                 let dockerfile = Text.unlines ["RUN [foo"]
-                in assertAst dockerfile [Run ["[foo"]]
+                in assertAst dockerfile [Run "[foo"]
+
+            it "Distinguishes between text and a list" $
+                let dockerfile = Text.unlines [ "RUN echo foo"
+                                              , "RUN [\"echo\", \"foo\"]"
+                                              ]
+                in assertAst dockerfile [Run $ ArgumentsText "echo foo", Run $ ArgumentsList "echo foo"]
 
         describe "parse CMD" $ do
-            it "one line cmd" $ assertAst "CMD true" [Cmd ["true"]]
+            it "one line cmd" $ assertAst "CMD true" [Cmd "true"]
             it "cmd over several lines" $
-                assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"]]
+                assertAst "CMD true \\\n && true" [Cmd "true  && true"]
             it "quoted command params" $ assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
 
         describe "parse SHELL" $ do
@@ -208,12 +214,12 @@ spec = do
         describe "parse # comment " $ do
             it "multiple comments before run" $
                 let dockerfile = Text.unlines ["# line 1", "# line 2", "RUN apt-get update"]
-                in assertAst dockerfile [Comment " line 1", Comment " line 2", Run ["apt-get", "update"]]
+                in assertAst dockerfile [Comment " line 1", Comment " line 2", Run "apt-get update"]
             it "multiple comments after run" $
                 let dockerfile = Text.unlines ["RUN apt-get update", "# line 1", "# line 2"]
                 in assertAst
                        dockerfile
-                       [Run ["apt-get", "update"], Comment " line 1", Comment " line 2"]
+                       [Run "apt-get update", Comment " line 1", Comment " line 2"]
 
             it "empty comment" $
                 let dockerfile = Text.unlines ["#", "# Hello"]
@@ -338,7 +344,7 @@ spec = do
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (CopySource "node")
                                   ]
 
-assertAst :: HasCallStack => Text.Text -> [Instruction] -> Assertion
+assertAst :: HasCallStack => Text.Text -> [Instruction Text.Text] -> Assertion
 assertAst s ast =
     case parseText s of
         Left err -> assertFailure $ parseErrorPretty err
