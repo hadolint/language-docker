@@ -4,7 +4,7 @@
 import Language.Docker
 
 main =
-    putDockerfileStrLn $ do
+    putDockerfileStr $ do
         from "node"
         run "apt-get update"
         cmd ["node", "app.js"]

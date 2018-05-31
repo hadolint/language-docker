@@ -16,7 +16,7 @@ import qualified Data.Text as Text
 import           Data.Semigroup ((<>))
 
 printed :: [L.Text] -> L.Text
-printed = L.dropEnd 1 . L.unlines
+printed = L.unlines
 
 spec :: Spec
 spec = do

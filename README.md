@@ -51,7 +51,7 @@ main = do
 {-# LANGUAGE OverloadedLists #-}
 import Language.Docker
 
-main = putDockerfileStrLn $ do
+main = putDockerfileStr $ do
     from "node"
     run "apt-get update"
     run ["apt-get", "install", "something"]
@@ -64,7 +64,7 @@ main = putDockerfileStrLn $ do
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 import Language.Docker
-main = putDockerfileStrLn $ do
+main = putDockerfileStr $ do
     from "node"
     run "apt-get update"
     [edockerfile|

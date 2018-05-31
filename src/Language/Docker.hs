@@ -10,7 +10,7 @@ module Language.Docker
       -- * Writting Dockerfiles (@Language.Docker.EDSL@)
     , Language.Docker.EDSL.toDockerfileText
     , Language.Docker.EDSL.toDockerfile
-    , Language.Docker.EDSL.putDockerfileStrLn
+    , Language.Docker.EDSL.putDockerfileStr
     , Language.Docker.EDSL.writeDockerFile
     , Language.Docker.EDSL.toDockerfileTextIO
     , Language.Docker.EDSL.toDockerfileIO

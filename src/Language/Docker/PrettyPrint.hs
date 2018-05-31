@@ -33,7 +33,9 @@ prettyPrint = renderLazy . layoutPretty opts . prettyPrintDockerfile
     opts = LayoutOptions Unbounded
 
 prettyPrintDockerfile :: Pretty (Arguments args) => [InstructionPos args] -> Doc ann
-prettyPrintDockerfile = vsep . fmap prettyPrintInstructionPos
+prettyPrintDockerfile instr = doPrint instr <> "\n"
+  where
+    doPrint = vsep . fmap prettyPrintInstructionPos
 
 -- | Pretty print a 'InstructionPos' to a 'Doc'
 prettyPrintInstructionPos :: Pretty (Arguments args) => InstructionPos args -> Doc ann
@@ -41,7 +43,7 @@ prettyPrintInstructionPos (InstructionPos i _ _) = prettyPrintInstruction i
 
 prettyPrintImage :: Image -> Doc ann
 prettyPrintImage (Image Nothing name) = pretty name
-prettyPrintImage (Image (Just (Registry reg)) name) = pretty reg <> pretty '/' <> pretty name
+prettyPrintImage (Image (Just (Registry reg)) name) = pretty reg <> "/" <> pretty name
 
 prettyPrintBaseImage :: BaseImage -> Doc ann
 prettyPrintBaseImage b =

@@ -137,8 +137,8 @@ writeDockerFile filename =
 --     run "stack build --test --only-dependencies"
 --     cmd "stack test"
 -- @
-putDockerfileStrLn :: EDockerfileM a -> IO ()
-putDockerfileStrLn = B8.putStrLn . E.encodeUtf8 . PrettyPrint.prettyPrint . toDockerfile
+putDockerfileStr :: EDockerfileM a -> IO ()
+putDockerfileStr = B8.putStrLn . E.encodeUtf8 . PrettyPrint.prettyPrint . toDockerfile
 
 -- | Use a docker image in a FROM instruction without a tag
 --
