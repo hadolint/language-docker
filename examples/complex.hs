@@ -5,8 +5,7 @@
 import Language.Docker
 
 main =
-    putStr $
-    toDockerfileStr $
+    putDockerfileStr $
     [edockerfile|
     # https://github.com/mhart/alpine-node
     FROM mhart/alpine-node:5.5.0

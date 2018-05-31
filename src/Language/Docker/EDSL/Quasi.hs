@@ -7,9 +7,11 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Language.Haskell.TH.Syntax
 
+import qualified Data.Text as Text
 import Language.Docker.EDSL
 import qualified Language.Docker.Parser as Parser
 import Language.Docker.Syntax.Lift ()
+import Text.Megaparsec (parseErrorPretty)
 
 -- | Quasiquoter for embedding dockerfiles on the EDSL
 --
@@ -27,8 +29,8 @@ edockerfile = dockerfile {quoteExp = edockerfileE}
 
 edockerfileE :: String -> ExpQ
 edockerfileE e =
-    case Parser.parseString e of
-        Left err -> fail (show err)
+    case Parser.parseText (Text.pack e) of
+        Left err -> fail (parseErrorPretty err)
         Right d -> [|embed d|]
 
 dockerfile :: QuasiQuoter
@@ -42,6 +44,6 @@ dockerfile =
 
 dockerfileE :: String -> ExpQ
 dockerfileE e =
-    case Parser.parseString e of
-        Left err -> fail (show err)
+    case Parser.parseText (Text.pack e) of
+        Left err -> fail (parseErrorPretty err)
         Right d -> lift d

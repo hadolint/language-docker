@@ -48,11 +48,13 @@ main = do
 
 ```haskell
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedLists #-}
 import Language.Docker
-main = putStr $ toDockerfileStr $ do
+
+main = putDockerfileStr $ do
     from "node"
     run "apt-get update"
-    runArgs ["apt-get", "install", "something"]
+    run ["apt-get", "install", "something"]
     -- ...
 ```
 
@@ -62,7 +64,7 @@ main = putStr $ toDockerfileStr $ do
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes       #-}
 import Language.Docker
-main = putStr $ toDockerfileStr $ do
+main = putDockerfileStr $ do
     from "node"
     run "apt-get update"
     [edockerfile|
@@ -81,6 +83,7 @@ main = putStr $ toDockerfileStr $ do
 import Control.Monad
 import Language.Docker
 import Data.String (fromString)
+import qualified Data.Text.Lazy.IO as L
 
 tags = ["7.8", "7.10", "8"]
 cabalSandboxBuild packageName = do
@@ -93,10 +96,10 @@ cabalSandboxBuild packageName = do
     run "cabal build"
 main =
     forM_ tags $ \tag -> do
-        let df = toDockerfileStr $ do
+        let df = toDockerfileText $ do
             from ("haskell" `tagged` tag)
             cabalSandboxBuild "mypackage"
-        writeFile ("./examples/templating-" ++ tag ++ ".dockerfile") df
+        L.writeFile ("./examples/templating-" ++ tag ++ ".dockerfile") df
 ```
 
 ## Using IO in the DSL
@@ -111,9 +114,10 @@ import qualified System.Directory     as Directory
 import qualified System.FilePath      as FilePath
 import qualified System.FilePath.Glob as Glob
 import Data.List.NonEmpty (fromList)
+import qualified Data.Text.Lazy.IO    as L
 
 main = do
-    str <- toDockerfileStrIO $ do
+    str <- toDockerfileTextIO $ do
         fs <- liftIO $ do
             cwd <- Directory.getCurrentDirectory
             fs <- Glob.glob "./test/*.hs"
@@ -121,7 +125,7 @@ main = do
             return (fromList relativeFiles)
         from "ubuntu"
 	copy $ (toSources fs) `to` "/app/"
-    putStr str
+    L.putStr str
 ```
 
 [hackage-img]: https://img.shields.io/hackage/v/language-docker.svg

@@ -9,7 +9,8 @@ import Language.Docker.Syntax
 
 import Test.HUnit hiding (Label)
 import Test.Hspec
-import Text.Parsec
+import Text.Megaparsec hiding (Label)
+import qualified Data.Text as Text
 
 spec :: Spec
 spec = do
@@ -52,7 +53,7 @@ spec = do
             it "parse space separated label" $ assertAst "LABEL foo bar baz" [Label[("foo", "bar baz")]]
             it "parse quoted labels" $ assertAst "LABEL \"foo bar\"=baz" [Label[("foo bar", "baz")]]
             it "parses multiline labels" $
-                let dockerfile = unlines [ "LABEL foo=bar \\", "hobo=mobo"]
+                let dockerfile = Text.unlines [ "LABEL foo=bar \\", "hobo=mobo"]
                     ast = [ Label [("foo", "bar"), ("hobo", "mobo")] ]
                 in assertAst dockerfile ast
 
@@ -76,16 +77,16 @@ spec = do
                 let dockerfile = "ENV NODE_VERSION=v5.7.1  DEBIAN_FRONTEND=noninteractive"
                 in assertAst dockerfile [Env[("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]]
             it "have envs on multiple lines" $
-                let dockerfile = unlines [ "FROM busybox"
-                                 , "ENV NODE_VERSION=v5.7.1 \\"
-                                 , "DEBIAN_FRONTEND=noninteractive"
-                                 ]
+                let dockerfile = Text.unlines [ "FROM busybox"
+                                              , "ENV NODE_VERSION=v5.7.1 \\"
+                                              , "DEBIAN_FRONTEND=noninteractive"
+                                              ]
                     ast = [ From (UntaggedImage "busybox" Nothing)
                           , Env[("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]
                           ]
                 in assertAst dockerfile ast
             it "parses long env over multiple lines" $
-                let dockerfile = unlines [ "ENV LD_LIBRARY_PATH=\"/usr/lib/\" \\"
+                let dockerfile = Text.unlines [ "ENV LD_LIBRARY_PATH=\"/usr/lib/\" \\"
                                          , "APACHE_RUN_USER=\"www-data\" APACHE_RUN_GROUP=\"www-data\""]
                     ast = [Env [("LD_LIBRARY_PATH", "/usr/lib/")
                                ,("APACHE_RUN_USER", "www-data")
@@ -96,17 +97,17 @@ spec = do
             it "parse single var list" $
                 assertAst "ENV foo val1 val2 val3 val4" [Env [("foo", "val1 val2 val3 val4")]]
             it "parses many env lines with an equal sign in the value" $
-                let dockerfile = unlines [ "ENV TOMCAT_VERSION 9.0.2"
-                                         , "ENV TOMCAT_URL foo.com?q=1"
-                                         ]
+                let dockerfile = Text.unlines [ "ENV TOMCAT_VERSION 9.0.2"
+                                              , "ENV TOMCAT_URL foo.com?q=1"
+                                              ]
                     ast = [ Env [("TOMCAT_VERSION", "9.0.2")]
                           , Env [("TOMCAT_URL", "foo.com?q=1")]
                           ]
                 in assertAst dockerfile ast
             it "parses many env lines in mixed style" $
-                let dockerfile = unlines [ "ENV myName=\"John Doe\" myDog=Rex\\ The\\ Dog \\"
-                                         , "    myCat=fluffy"
-                                         ]
+                let dockerfile = Text.unlines [ "ENV myName=\"John Doe\" myDog=Rex\\ The\\ Dog \\"
+                                              , "    myCat=fluffy"
+                                              ]
                     ast = [ Env [("myName", "John Doe")
                                 ,("myDog", "Rex The Dog")
                                 ,("myCat", "fluffy")
@@ -114,25 +115,31 @@ spec = do
                           ]
                 in assertAst dockerfile ast
             it "parses many env with backslashes" $
-                let dockerfile = unlines [ "ENV JAVA_HOME=C:\\\\jdk1.8.0_112"
-                                         ]
+                let dockerfile = Text.unlines [ "ENV JAVA_HOME=C:\\\\jdk1.8.0_112"
+                                              ]
                     ast = [ Env [("JAVA_HOME", "C:\\\\jdk1.8.0_112")]
                           ]
                 in assertAst dockerfile ast
 
         describe "parse RUN" $ do
             it "escaped with space before" $
-                let dockerfile = unlines ["RUN yum install -y \\ ", "imagemagick \\ ", "mysql"]
-                in assertAst dockerfile [Run ["yum", "install", "-y", "imagemagick", "mysql"]]
+                let dockerfile = Text.unlines ["RUN yum install -y \\", "imagemagick \\", "mysql"]
+                in assertAst dockerfile [Run "yum install -y imagemagick mysql"]
 
             it "does not choke on unmatched brackets" $
-                let dockerfile = unlines ["RUN [foo"]
-                in assertAst dockerfile [Run ["[foo"]]
+                let dockerfile = Text.unlines ["RUN [foo"]
+                in assertAst dockerfile [Run "[foo"]
+
+            it "Distinguishes between text and a list" $
+                let dockerfile = Text.unlines [ "RUN echo foo"
+                                              , "RUN [\"echo\", \"foo\"]"
+                                              ]
+                in assertAst dockerfile [Run $ ArgumentsText "echo foo", Run $ ArgumentsList "echo foo"]
 
         describe "parse CMD" $ do
-            it "one line cmd" $ assertAst "CMD true" [Cmd ["true"]]
+            it "one line cmd" $ assertAst "CMD true" [Cmd "true"]
             it "cmd over several lines" $
-                assertAst "CMD true \\\n && true" [Cmd ["true", "&&", "true"]]
+                assertAst "CMD true \\\n && true" [Cmd "true  && true"]
             it "quoted command params" $ assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
 
         describe "parse SHELL" $ do
@@ -206,34 +213,34 @@ spec = do
                 in assertAst maintainerFromProg maintainerFromAst
         describe "parse # comment " $ do
             it "multiple comments before run" $
-                let dockerfile = unlines ["# line 1", "# line 2", "RUN apt-get update"]
-                in assertAst dockerfile [Comment " line 1", Comment " line 2", Run ["apt-get", "update"]]
+                let dockerfile = Text.unlines ["# line 1", "# line 2", "RUN apt-get update"]
+                in assertAst dockerfile [Comment " line 1", Comment " line 2", Run "apt-get update"]
             it "multiple comments after run" $
-                let dockerfile = unlines ["RUN apt-get update", "# line 1", "# line 2"]
+                let dockerfile = Text.unlines ["RUN apt-get update", "# line 1", "# line 2"]
                 in assertAst
                        dockerfile
-                       [Run ["apt-get", "update"], Comment " line 1", Comment " line 2"]
+                       [Run "apt-get update", Comment " line 1", Comment " line 2"]
 
             it "empty comment" $
-                let dockerfile = unlines ["#", "# Hello"]
+                let dockerfile = Text.unlines ["#", "# Hello"]
                 in assertAst dockerfile [Comment "", Comment " Hello"]
         describe "normalize lines" $ do
             it "join multiple ENV" $
-                let dockerfile = unlines [ "FROM busybox"
-                                 , "ENV NODE_VERSION=v5.7.1 \\"
-                                 , "DEBIAN_FRONTEND=noninteractive"
-                                 ]
-                    normalizedDockerfile = unlines [ "FROM busybox"
-                                                   , "ENV NODE_VERSION=v5.7.1  DEBIAN_FRONTEND=noninteractive\n"
+                let dockerfile = Text.unlines [ "FROM busybox"
+                                              , "ENV NODE_VERSION=v5.7.1 \\"
+                                              , "DEBIAN_FRONTEND=noninteractive"
+                                              ]
+                    normalizedDockerfile = Text.unlines [ "FROM busybox"
+                                                   , "ENV NODE_VERSION=v5.7.1 DEBIAN_FRONTEND=noninteractive\n"
                                                    ]
                 in normalizeEscapedLines dockerfile `shouldBe` normalizedDockerfile
             it "join escaped lines" $
-                let dockerfile = unlines ["ENV foo=bar \\", "baz=foz"]
-                    normalizedDockerfile = unlines ["ENV foo=bar  baz=foz", ""]
+                let dockerfile = Text.unlines ["ENV foo=bar \\", "baz=foz"]
+                    normalizedDockerfile = Text.unlines ["ENV foo=bar baz=foz", ""]
                 in normalizeEscapedLines dockerfile `shouldBe` normalizedDockerfile
             it "join long CMD" $
                 let longEscapedCmd =
-                        unlines
+                        Text.unlines
                             [ "RUN wget https://download.com/${version}.tar.gz -O /tmp/logstash.tar.gz && \\"
                             , "(cd /tmp && tar zxf logstash.tar.gz && mv logstash-${version} /opt/logstash && \\"
                             , "rm logstash.tar.gz) && \\"
@@ -241,102 +248,104 @@ spec = do
                             , "/opt/logstash/bin/plugin install contrib)"
                             ]
                     longEscapedCmdExpected =
-                        concat
-                            ([ "RUN wget https://download.com/${version}.tar.gz -O /tmp/logstash.tar.gz &&  "
-                            , "(cd /tmp && tar zxf logstash.tar.gz && mv logstash-${version} /opt/logstash &&  "
-                            , "rm logstash.tar.gz) &&  "
-                            , "(cd /opt/logstash &&  "
+                        Text.concat
+                            [ "RUN wget https://download.com/${version}.tar.gz -O /tmp/logstash.tar.gz && "
+                            , "(cd /tmp && tar zxf logstash.tar.gz && mv logstash-${version} /opt/logstash && "
+                            , "rm logstash.tar.gz) && "
+                            , "(cd /opt/logstash && "
                             , "/opt/logstash/bin/plugin install contrib)\n"
                             , "\n"
                             , "\n"
                             , "\n"
                             , "\n"
-                            ] :: [String])
+                            ]
                 in normalizeEscapedLines longEscapedCmd `shouldBe` longEscapedCmdExpected
         describe "expose" $ do
-            it "should handle number ports" $ do
+            it "should handle number ports" $
                 let content = "EXPOSE 8080"
-                parse expose "" content `shouldBe` Right (Expose (Ports [Port 8080 TCP]))
-            it "should handle many number ports" $ do
+                in assertAst content [Expose (Ports [Port 8080 TCP])]
+            it "should handle many number ports" $
                 let content = "EXPOSE 8080 8081"
-                parse expose "" content `shouldBe` Right (Expose (Ports [Port 8080 TCP, Port 8081 TCP]))
-            it "should handle ports with protocol" $ do
+                in  assertAst content [Expose (Ports [Port 8080 TCP, Port 8081 TCP])]
+            it "should handle ports with protocol" $
                 let content = "EXPOSE 8080/TCP 8081/UDP"
-                parse expose "" content `shouldBe` Right (Expose (Ports [Port 8080 TCP, Port 8081 UDP]))
-            it "should handle ports with protocol and variables" $ do
+                in assertAst content [Expose (Ports [Port 8080 TCP, Port 8081 UDP])]
+            it "should handle ports with protocol and variables" $
                 let content = "EXPOSE $PORT 8080 8081/UDP"
-                parse expose "" content `shouldBe` Right (Expose (Ports [PortStr "$PORT", Port 8080 TCP, Port 8081 UDP]))
-            it "should handle port ranges" $ do
+                in assertAst content [Expose (Ports [PortStr "$PORT", Port 8080 TCP, Port 8081 UDP])]
+            it "should handle port ranges" $
                 let content = "EXPOSE 80 81 8080-8085"
-                parse expose "" content `shouldBe` Right (Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 TCP]))
-            it "should handle udp port ranges" $ do
+                in assertAst content [Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 TCP])]
+            it "should handle udp port ranges" $
                 let content = "EXPOSE 80 81 8080-8085/udp"
-                parse expose "" content `shouldBe` Right (Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 UDP]))
+                in assertAst content [Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 UDP])]
 
         describe "syntax" $ do
-            it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $ do
+            it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $
                 let content = "from ubuntu"
-                parse dockerfile "" content `shouldBe` Right [InstructionPos (From (UntaggedImage "ubuntu" Nothing)) "" 1]
+                in assertAst content [From (UntaggedImage "ubuntu" Nothing)]
 
         describe "ADD" $ do
             it "simple ADD" $
-                let file = unlines ["ADD . /app", "ADD http://foo.bar/baz ."]
+                let file = Text.unlines ["ADD . /app", "ADD http://foo.bar/baz ."]
                 in assertAst file [ Add $ AddArgs [SourcePath "."] (TargetPath "/app") NoChown
                                   , Add $ AddArgs [SourcePath "http://foo.bar/baz"] (TargetPath ".") NoChown
                                   ]
             it "multifiles ADD" $
-                let file = unlines ["ADD foo bar baz /app"]
+                let file = Text.unlines ["ADD foo bar baz /app"]
                 in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
                                   ]
 
             it "list of quoted files" $
-                let file = unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
+                let file = Text.unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
                 in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
                                   ]
 
             it "with chown flag" $
-                let file = unlines ["ADD --chown=root:root foo bar"]
+                let file = Text.unlines ["ADD --chown=root:root foo bar"]
                 in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "root:root")
                                   ]
 
             it "list of quoted files and chown" $
-                let file = unlines ["ADD --chown=user:group [\"foo\", \"bar\", \"baz\", \"/app\"]"]
+                let file = Text.unlines ["ADD --chown=user:group [\"foo\", \"bar\", \"baz\", \"/app\"]"]
                 in assertAst file [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") (Chown "user:group")
                                   ]
         describe "COPY" $ do
             it "simple COPY" $
-                let file = unlines ["COPY . /app", "COPY baz /some/long/path"]
+                let file = Text.unlines ["COPY . /app", "COPY baz /some/long/path"]
                 in assertAst file [ Copy $ CopyArgs [SourcePath "."] (TargetPath "/app") NoChown NoSource
                                   , Copy $ CopyArgs [SourcePath "baz"] (TargetPath "/some/long/path") NoChown NoSource
                                   ]
             it "multifiles COPY" $
-                let file = unlines ["COPY foo bar baz /app"]
+                let file = Text.unlines ["COPY foo bar baz /app"]
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
                                   ]
 
             it "list of quoted files" $
-                let file = unlines ["COPY [\"foo\", \"bar\", \"baz\", \"/app\"]"]
+                let file = Text.unlines ["COPY [\"foo\", \"bar\", \"baz\", \"/app\"]"]
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
                                   ]
 
             it "with chown flag" $
-                let file = unlines ["COPY --chown=user:group foo bar"]
+                let file = Text.unlines ["COPY --chown=user:group foo bar"]
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") NoSource
                                   ]
 
             it "with from flag" $
-                let file = unlines ["COPY --from=node foo bar"]
+                let file = Text.unlines ["COPY --from=node foo bar"]
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") NoChown (CopySource "node")
                                   ]
             it "with both flags" $
-                let file = unlines ["COPY --from=node --chown=user:group foo bar"]
+                let file = Text.unlines ["COPY --from=node --chown=user:group foo bar"]
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (CopySource "node")
                                   ]
             it "with both flags in different order" $
-                let file = unlines ["COPY --chown=user:group --from=node foo bar"]
+                let file = Text.unlines ["COPY --chown=user:group --from=node foo bar"]
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (CopySource "node")
                                   ]
+
+assertAst :: HasCallStack => Text.Text -> [Instruction Text.Text] -> Assertion
 assertAst s ast =
-    case parseString (s ++ "\n") of
-        Left err -> assertFailure $ show err
+    case parseText s of
+        Left err -> assertFailure $ parseErrorPretty err
         Right dockerfile -> assertEqual "ASTs are not equal" ast $ map instruction dockerfile
