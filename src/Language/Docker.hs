@@ -6,7 +6,7 @@ module Language.Docker
     , Text.Megaparsec.parseErrorPretty
       -- * Pretty-printing Dockerfiles (@Language.Docker.PrettyPrint@)
     , prettyPrint
-    , prettyPrintInstructionPos
+    , prettyPrintDockerfile
       -- * Writting Dockerfiles (@Language.Docker.EDSL@)
     , Language.Docker.EDSL.toDockerfileText
     , Language.Docker.EDSL.toDockerfile

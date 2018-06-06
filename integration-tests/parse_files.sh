@@ -109,8 +109,11 @@ function parse_dockerfiles() {
 	if [[ "$BLACKLIST" == *$dockerfile* ]]; then
 		continue;
 	fi
-        if ./parseFile "$dockerfile" | grep -a1 unexpected; then
-            result="false"
+
+        if ./parseFile "$dockerfile" > /dev/null; then
+	    echo "$dockerfile"
+        else
+	    result="false"
         fi
     done
     if [[ ${result} == "false" ]]; then false; fi

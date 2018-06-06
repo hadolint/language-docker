@@ -50,7 +50,7 @@ normalize allLines =
     -- and we return 'Nothing' as an indication that this line does not form part of the
     -- final result.
     transform :: NormalizedLine -> Text -> (NormalizedLine, Maybe Text)
-    transform (Joined prev times) line
+    transform (Joined prev times) rawLine
         -- If we are buffering lines and the next one is empty or it starts with a comment
         -- we simply ignore the comment and remember to add a newline
         | Text.null line || isComment line = (Joined prev (times + 1), Nothing)
@@ -61,12 +61,16 @@ normalize allLines =
         -- the concatanation of the buffer and the current line as result, after padding with
         -- newlines
         | otherwise = (Continue, Just (toText (prev <> Builder.fromText line <> padNewlines times)))
+      where
+        line = Text.stripEnd rawLine
     -- When not buffering lines, then we just check if we need to start doing it by checking
     -- whether or not the current line ends with \. If it does not, then we just yield the
     -- current line as part of the result
-    transform Continue l
-        | endsWithEscape l = (Joined (normalizeLast l) 1, Nothing)
-        | otherwise = (Continue, Just l)
+    transform Continue rawLine
+        | endsWithEscape line = (Joined (normalizeLast line) 1, Nothing)
+        | otherwise = (Continue, Just line)
+      where
+        line = Text.stripEnd rawLine
     --
     endsWithEscape t
         | Text.null t = False
