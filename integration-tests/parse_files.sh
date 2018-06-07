@@ -106,14 +106,14 @@ function parse_dockerfiles() {
     stack ghc parseFile.hs --package language-docker
     dockerfiles=$(find . -name 'Dockerfile')
     for dockerfile in $dockerfiles; do
-	if [[ "$BLACKLIST" == *$dockerfile* ]]; then
-		continue;
-	fi
+        if [[ "$BLACKLIST" == *$dockerfile* ]]; then
+            continue;
+        fi
 
         if ./parseFile "$dockerfile" > /dev/null; then
-	    echo "$dockerfile"
+            echo "$dockerfile"
         else
-	    result="false"
+            result="false"
         fi
     done
     if [[ ${result} == "false" ]]; then false; fi
