@@ -234,10 +234,12 @@ spec = do
                                                    , "ENV NODE_VERSION=v5.7.1 DEBIAN_FRONTEND=noninteractive\n"
                                                    ]
                 in normalizeEscapedLines dockerfile `shouldBe` normalizedDockerfile
+
             it "join escaped lines" $
                 let dockerfile = Text.unlines ["ENV foo=bar \\", "baz=foz"]
                     normalizedDockerfile = Text.unlines ["ENV foo=bar baz=foz", ""]
                 in normalizeEscapedLines dockerfile `shouldBe` normalizedDockerfile
+
             it "join long CMD" $
                 let longEscapedCmd =
                         Text.unlines
@@ -260,6 +262,16 @@ spec = do
                             , "\n"
                             ]
                 in normalizeEscapedLines longEscapedCmd `shouldBe` longEscapedCmdExpected
+
+            it "tolerates spaces after a newline escape" $
+                let dockerfile = Text.unlines [ "FROM busy\\     "
+                                              , "box"
+                                              , "RUN echo\\    "
+                                              , " hello"
+                                              ]
+                in assertAst dockerfile [ From (UntaggedImage "busybox" Nothing)
+                                        , Run "echo hello"
+                                        ]
         describe "expose" $ do
             it "should handle number ports" $
                 let content = "EXPOSE 8080"

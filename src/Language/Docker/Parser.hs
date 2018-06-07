@@ -5,6 +5,9 @@
 module Language.Docker.Parser
     ( parseText
     , parseFile
+    , Parser
+    , Error
+    , DockerfileError(..)
     ) where
 
 import Control.Monad (void)
