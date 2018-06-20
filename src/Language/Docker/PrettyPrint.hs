@@ -17,11 +17,18 @@ import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as L
+import qualified Data.Text.Lazy.Builder as B
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Internal (Doc(Empty))
 import Data.Text.Prettyprint.Doc.Render.Text (renderLazy)
 import Language.Docker.Syntax
 import Prelude hiding ((<>), (>>), return)
+
+data EscapeAccum = EscapeAccum
+    { buffer :: !B.Builder
+    , count :: !Int
+    , escaping :: !Bool
+    }
 
 instance Pretty (Arguments Text) where
     pretty = prettyPrintArguments
@@ -73,7 +80,7 @@ prettyPrintPairs :: Pairs -> Doc ann
 prettyPrintPairs ps = hsep $ fmap prettyPrintPair ps
 
 prettyPrintPair :: (Text, Text) -> Doc ann
-prettyPrintPair (k, v) = pretty k <> pretty '=' <> pretty v
+prettyPrintPair (k, v) = pretty k <> pretty '=' <> doubleQoute v
 
 prettyPrintArguments :: Arguments Text -> Doc ann
 prettyPrintArguments (ArgumentsList as) = prettyPrintJSON (Text.words as)
@@ -84,8 +91,28 @@ prettyPrintArguments (ArgumentsText as) = hsep (fmap helper (Text.words as))
 
 prettyPrintJSON :: [Text] -> Doc ann
 prettyPrintJSON args = list (fmap doubleQoute args)
+
+doubleQoute :: Text -> Doc ann
+doubleQoute w = enclose dquote dquote (pretty (escapeQuotes w))
+
+escapeQuotes :: Text -> L.Text
+escapeQuotes text =
+    case Text.foldr accumulate (EscapeAccum mempty 0 False) text of
+        EscapeAccum buffer _ False -> B.toLazyText buffer
+        EscapeAccum buffer count True ->
+            case count `mod` 2 of
+                0 -> B.toLazyText (B.singleton '\\' <> buffer)
+                _ -> B.toLazyText buffer
   where
-    doubleQoute w = enclose dquote dquote (pretty w)
+    accumulate '"' EscapeAccum {buffer, escaping = False} =
+        EscapeAccum (B.singleton '"' <> buffer) 0 True
+    accumulate '\\' EscapeAccum {buffer, escaping = True, count} =
+        EscapeAccum (B.singleton '\\' <> buffer) (count + 1) True
+    accumulate c EscapeAccum {buffer, escaping = True, count}
+        | count `mod` 2 == 0 = EscapeAccum (B.singleton c <> B.singleton '\\' <> buffer) 0 False
+        | otherwise = EscapeAccum (B.singleton c <> buffer) 0 False -- It was already escaped
+    accumulate c EscapeAccum {buffer, escaping = False} =
+        EscapeAccum (B.singleton c <> buffer) 0 False
 
 prettyPrintPort :: Port -> Doc ann
 prettyPrintPort (PortStr str) = pretty str

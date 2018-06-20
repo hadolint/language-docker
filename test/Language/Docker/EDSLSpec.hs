@@ -93,6 +93,19 @@ spec = do
                                  , "COPY --from=builder something crazy"
                                  , "COPY --chown=www-data --from=builder this that"
                                  ]
+        it "quotes label and env correctly" $ do
+            let r = prettyPrint $ toDockerfile $ do
+                        from "scratch"
+                        label [("email", "Example <example@example.com>")]
+                        label [("escape", "Escape this\" thing")]
+                        env [("foo", "bar baz")]
+                        env [("double_escape", "escape this \\\"")]
+            r `shouldBe` printed [ "FROM scratch"
+                                 , "LABEL email=\"Example <example@example.com>\""
+                                 , "LABEL escape=\"Escape this\\\" thing\""
+                                 , "ENV foo=\"bar baz\""
+                                 , "ENV double_escape=\"escape this \\\"\""
+                                 ]
 
     describe "toDockerfileTextIO" $
         it "let's us run in the IO monad" $ do
