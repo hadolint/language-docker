@@ -78,6 +78,14 @@ spec = do
                                  , "RUN echo foo"
                                  ]
 
+        it "parses and prints from with a registry" $ do
+            let r = prettyPrint $ toDockerfile $ do
+                        from "opensuse/tumbleweed"
+                        run "echo foo"
+            r `shouldBe` printed [ "FROM opensuse/tumbleweed"
+                                 , "RUN echo foo"
+                                 ]
+
         it "parses and prints copy instructions" $ do
             let r = prettyPrint $ toDockerfile $ do
                         from "scratch"
@@ -92,6 +100,19 @@ spec = do
                                  , "COPY foo.js bar.js baz/"
                                  , "COPY --from=builder something crazy"
                                  , "COPY --chown=www-data --from=builder this that"
+                                 ]
+        it "quotes label and env correctly" $ do
+            let r = prettyPrint $ toDockerfile $ do
+                        from "scratch"
+                        label [("email", "Example <example@example.com>")]
+                        label [("escape", "Escape this\" thing")]
+                        env [("foo", "bar baz")]
+                        env [("double_escape", "escape this \\\"")]
+            r `shouldBe` printed [ "FROM scratch"
+                                 , "LABEL email=\"Example <example@example.com>\""
+                                 , "LABEL escape=\"Escape this\\\" thing\""
+                                 , "ENV foo=\"bar baz\""
+                                 , "ENV double_escape=\"escape this \\\"\""
                                  ]
 
     describe "toDockerfileTextIO" $
