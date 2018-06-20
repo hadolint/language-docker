@@ -60,8 +60,8 @@ prettyPrintBaseImage b =
             pretty '@'
             pretty digest
             prettyAlias alias
-        UntaggedImage (Image _ name) alias -> do
-            pretty name
+        UntaggedImage img alias -> do
+            prettyPrintImage img
             prettyAlias alias
         TaggedImage img (Tag tag) alias -> do
             prettyPrintImage img

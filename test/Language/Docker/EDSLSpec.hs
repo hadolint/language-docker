@@ -78,6 +78,14 @@ spec = do
                                  , "RUN echo foo"
                                  ]
 
+        it "parses and prints from with a registry" $ do
+            let r = prettyPrint $ toDockerfile $ do
+                        from "opensuse/tumbleweed"
+                        run "echo foo"
+            r `shouldBe` printed [ "FROM opensuse/tumbleweed"
+                                 , "RUN echo foo"
+                                 ]
+
         it "parses and prints copy instructions" $ do
             let r = prettyPrint $ toDockerfile $ do
                         from "scratch"
