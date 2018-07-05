@@ -15,6 +15,7 @@ import qualified Data.ByteString as B
 import Data.Data
 import Data.List.NonEmpty (NonEmpty, fromList)
 import Data.Maybe (listToMaybe)
+import Data.Semigroup ((<>))
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -151,9 +152,11 @@ comment = do
 
 parseRegistry :: Parser Registry
 parseRegistry = do
-    name <- someUnless "a registry name" (== '/')
+    domain <- someUnless "a domain name" (== '.')
+    void $ char '.'
+    tld <- someUnless "a TLD" (== '/')
     void $ char '/'
-    return $ Registry name
+    return $ Registry (domain <> "." <> tld)
 
 taggedImage :: Parser BaseImage
 taggedImage = do
