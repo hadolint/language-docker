@@ -47,6 +47,10 @@ spec = do
                 assertAst
                 "FROM myregistry.com:5000/imagename:5.12-dev"
                 [From (TaggedImage (Image (Just "myregistry.com:5000") "imagename") "5.12-dev" Nothing)]
+            it "Not a registry if no TLD" $
+                assertAst
+                "FROM myfolder/imagename:5.12-dev"
+                [From (TaggedImage (Image Nothing "myfolder/imagename") "5.12-dev" Nothing)]
 
         describe "parse LABEL" $ do
             it "parse label" $ assertAst "LABEL foo=bar" [Label[("foo", "bar")]]

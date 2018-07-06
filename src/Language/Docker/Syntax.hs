@@ -21,12 +21,11 @@ instance IsString Image where
     fromString img =
         if "/" `isInfixOf` img
             then let parts = endBy "/" img
-                 in case parts of
-                        reg:rest ->
-                            Image
-                                (Just (Registry (Text.pack reg)))
-                                (Text.pack . intercalate "/" $ rest)
-                        _ -> Image Nothing (Text.pack img)
+                 in if "." `isInfixOf` head parts
+                        then Image
+                                 (Just (Registry (Text.pack (head parts))))
+                                 (Text.pack . intercalate "/" $ tail parts)
+                        else Image Nothing (Text.pack img)
             else Image Nothing (Text.pack img)
 
 newtype Registry = Registry
