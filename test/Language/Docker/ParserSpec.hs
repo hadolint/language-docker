@@ -140,6 +140,11 @@ spec = do
                                               ]
                 in assertAst dockerfile [Run $ ArgumentsText "echo foo", Run $ ArgumentsList "echo foo"]
 
+            it "Accepts spaces inside the brackets" $
+                let dockerfile = Text.unlines [ "RUN [  \"echo\", \"foo\"  ]"
+                                              ]
+                in assertAst dockerfile [Run $ ArgumentsList "echo foo"]
+
         describe "parse CMD" $ do
             it "one line cmd" $ assertAst "CMD true" [Cmd "true"]
             it "cmd over several lines" $
