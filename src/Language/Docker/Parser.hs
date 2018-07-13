@@ -91,7 +91,7 @@ stringLiteral = do
     return (T.pack lit)
 
 brackets :: Parser a -> Parser a
-brackets = between (symbol "[") (symbol "]")
+brackets = between (symbol "[" *> spaces) (spaces *> symbol "]")
 
 spaces1 :: Parser ()
 spaces1 = void (takeWhile1P (Just "at least one space") (\c -> c == ' ' || c == '\t'))
