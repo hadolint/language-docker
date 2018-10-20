@@ -5,6 +5,7 @@
 module Language.Docker.Parser
     ( parseText
     , parseFile
+    , parseStdin
     , Parser
     , Error
     , DockerfileError(..)
@@ -602,3 +603,10 @@ parseFile file = doParse <$> B.readFile file
   where
     doParse =
         parse (contents dockerfile) file . normalizeEscapedLines . E.decodeUtf8With E.lenientDecode
+
+-- | Reads the standard input until the end and parses the contents as a Dockerfile
+parseStdin :: IO (Either Error Dockerfile)
+parseStdin = doParse <$> B.getContents
+  where
+    doParse =
+        parse (contents dockerfile) "/dev/stdin" . normalizeEscapedLines . E.decodeUtf8With E.lenientDecode
