@@ -308,6 +308,19 @@ spec = do
             it "should handle udp port ranges" $
                 let content = "EXPOSE 80 81 8080-8085/udp"
                 in assertAst content [Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 UDP])]
+            it "should handle multiline variables" $
+                let content = "EXPOSE  ${PORT} ${PORT_SSL} \\\n\
+                              \        ${PORT_HTTP} ${PORT_HTTPS} \\\n\
+                              \        ${PORT_REP} \\\n\
+                              \        ${PORT_ADMIN} ${PORT_ADMIN_HTTP}"
+                in assertAst content [ Expose (Ports [ PortStr "${PORT}"
+                                                     , PortStr "${PORT_SSL}"
+                                                     , PortStr "${PORT_HTTP}"
+                                                     , PortStr "${PORT_HTTPS}"
+                                                     , PortStr "${PORT_REP}"
+                                                     , PortStr "${PORT_ADMIN}"
+                                                     , PortStr "${PORT_ADMIN_HTTP}"])
+                                     ]
 
         describe "syntax" $ do
             it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $

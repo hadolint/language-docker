@@ -391,7 +391,7 @@ port =
     (try portInt <?> "a valid port number")
 
 ports :: Parser Ports
-ports = Ports <$> port `sepEndBy1` (char ' ' <|> char '\t')
+ports = Ports <$> port `sepEndBy` spaces1
 
 portRange :: Parser Port
 portRange = do
