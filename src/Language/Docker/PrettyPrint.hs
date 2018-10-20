@@ -78,7 +78,9 @@ prettyPrintBaseImage b =
             Just (Digest d) -> "@" <> pretty d
 
 prettyPrintPairs :: Pairs -> Doc ann
-prettyPrintPairs ps = hsep $ fmap prettyPrintPair ps
+prettyPrintPairs ps = align $ sepLine $ fmap prettyPrintPair ps
+  where
+    sepLine = concatWith (\x y -> x <> " \\" <> line <> y)
 
 prettyPrintPair :: (Text, Text) -> Doc ann
 prettyPrintPair (k, v) = pretty k <> pretty '=' <> doubleQoute v
