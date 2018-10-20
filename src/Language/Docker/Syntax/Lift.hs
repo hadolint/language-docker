@@ -38,6 +38,8 @@ deriveLift ''ImageAlias
 
 deriveLift ''Tag
 
+deriveLift ''Digest
+
 deriveLift ''BaseImage
 
 deriveLift ''Arguments

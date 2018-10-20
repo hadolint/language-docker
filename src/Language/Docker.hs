@@ -87,6 +87,7 @@ module Language.Docker
     , Language.Docker.Syntax.Registry(..)
     , Language.Docker.Syntax.ImageAlias(..)
     , Language.Docker.Syntax.Tag(..)
+    , Language.Docker.Syntax.Digest(..)
     , Language.Docker.Syntax.Ports
     , Language.Docker.Syntax.Directory
     , Language.Docker.Syntax.Arguments

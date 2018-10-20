@@ -22,35 +22,43 @@ spec = do
 
         describe "parse FROM" $ do
             it "parse untagged image" $
-                assertAst "FROM busybox" [From (UntaggedImage "busybox" Nothing)]
+                assertAst "FROM busybox" [From (UntaggedImage "busybox" Nothing Nothing)]
             it "parse tagged image" $
                 assertAst
                     "FROM busybox:5.12-dev"
-                    [From (TaggedImage "busybox" "5.12-dev" Nothing)]
+                    [From (TaggedImage "busybox" "5.12-dev" Nothing Nothing)]
             it "parse digested image" $
                 assertAst
                     "FROM ubuntu@sha256:0ef2e08ed3fab"
-                    [From (DigestedImage "ubuntu" "sha256:0ef2e08ed3fab" Nothing)]
+                    [From (UntaggedImage "ubuntu" (Just "sha256:0ef2e08ed3fab") Nothing)]
+            it "parse digested image with tag" $
+                assertAst
+                    "FROM ubuntu:14.04@sha256:0ef2e08ed3fab"
+                    [From (TaggedImage "ubuntu" "14.04" (Just "sha256:0ef2e08ed3fab") Nothing)]
 
         describe "parse aliased FROM" $ do
             it "parse untagged image" $
-                assertAst "FROM busybox as foo" [From (UntaggedImage "busybox" (Just $ ImageAlias "foo"))]
+                assertAst "FROM busybox as foo" [From (UntaggedImage "busybox" Nothing (Just "foo"))]
             it "parse tagged image" $
-                assertAst "FROM busybox:5.12-dev AS foo-bar" [From (TaggedImage "busybox" "5.12-dev" (Just $ ImageAlias "foo-bar"))]
+                assertAst "FROM busybox:5.12-dev AS foo-bar"
+                          [ From (TaggedImage "busybox" "5.12-dev" Nothing (Just "foo-bar"))
+                          ]
             it "parse diggested image" $
-                assertAst "FROM ubuntu@sha256:0ef2e08ed3fab AS foo" [From (DigestedImage "ubuntu" "sha256:0ef2e08ed3fab" (Just $ ImageAlias "foo"))]
+                assertAst "FROM ubuntu@sha256:0ef2e08ed3fab AS foo"
+                          [ From (UntaggedImage "ubuntu" (Just "sha256:0ef2e08ed3fab") (Just "foo"))
+                          ]
 
         describe "parse FROM with registry" $ do
             it "registry without port" $
-                assertAst "FROM foo.com/node" [From (UntaggedImage (Image (Just "foo.com") "node") Nothing)]
+                assertAst "FROM foo.com/node" [From (UntaggedImage (Image (Just "foo.com") "node") Nothing Nothing)]
             it "parse with port and tag" $
                 assertAst
                 "FROM myregistry.com:5000/imagename:5.12-dev"
-                [From (TaggedImage (Image (Just "myregistry.com:5000") "imagename") "5.12-dev" Nothing)]
+                [From (TaggedImage (Image (Just "myregistry.com:5000") "imagename") "5.12-dev" Nothing Nothing)]
             it "Not a registry if no TLD" $
                 assertAst
                 "FROM myfolder/imagename:5.12-dev"
-                [From (TaggedImage (Image Nothing "myfolder/imagename") "5.12-dev" Nothing)]
+                [From (TaggedImage (Image Nothing "myfolder/imagename") "5.12-dev" Nothing Nothing)]
 
         describe "parse LABEL" $ do
             it "parse label" $ assertAst "LABEL foo=bar" [Label[("foo", "bar")]]
@@ -85,7 +93,7 @@ spec = do
                                               , "ENV NODE_VERSION=v5.7.1 \\"
                                               , "DEBIAN_FRONTEND=noninteractive"
                                               ]
-                    ast = [ From (UntaggedImage "busybox" Nothing)
+                    ast = [ From (UntaggedImage "busybox" Nothing Nothing)
                           , Env[("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]
                           ]
                 in assertAst dockerfile ast
@@ -213,12 +221,12 @@ spec = do
             it "maintainer of untagged scratch image" $
                 assertAst
                     "FROM scratch\nMAINTAINER hudu@mail.com"
-                    [From (UntaggedImage "scratch" Nothing), Maintainer "hudu@mail.com"]
+                    [From (UntaggedImage "scratch" Nothing Nothing), Maintainer "hudu@mail.com"]
             it "maintainer with mail" $
                 assertAst "MAINTAINER hudu@mail.com" [Maintainer "hudu@mail.com"]
             it "maintainer only mail after from" $
                 let maintainerFromProg = "FROM busybox\nMAINTAINER hudu@mail.com"
-                    maintainerFromAst = [From (UntaggedImage "busybox" Nothing), Maintainer "hudu@mail.com"]
+                    maintainerFromAst = [From (UntaggedImage "busybox" Nothing Nothing), Maintainer "hudu@mail.com"]
                 in assertAst maintainerFromProg maintainerFromAst
         describe "parse # comment " $ do
             it "multiple comments before run" $
@@ -278,7 +286,7 @@ spec = do
                                               , "RUN echo\\    "
                                               , " hello"
                                               ]
-                in assertAst dockerfile [ From (UntaggedImage "busybox" Nothing)
+                in assertAst dockerfile [ From (UntaggedImage "busybox" Nothing Nothing)
                                         , Run "echo hello"
                                         ]
         describe "expose" $ do
@@ -304,7 +312,7 @@ spec = do
         describe "syntax" $ do
             it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $
                 let content = "from ubuntu"
-                in assertAst content [From (UntaggedImage "ubuntu" Nothing)]
+                in assertAst content [From (UntaggedImage "ubuntu" Nothing Nothing)]
 
         describe "ADD" $ do
             it "simple ADD" $

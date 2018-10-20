@@ -28,6 +28,7 @@ spec = do
             r `shouldBe` [ Syntax.From $
                              Syntax.UntaggedImage "node"
                              Nothing
+                             Nothing
                          , Syntax.Cmd ["node", "-e", "'console.log(\'hey\')'"]
                          ]
 
