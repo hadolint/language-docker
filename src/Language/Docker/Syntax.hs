@@ -36,6 +36,10 @@ newtype Tag = Tag
     { unTag :: Text
     } deriving (Show, Eq, Ord, IsString)
 
+newtype Digest = Digest
+    { unDigest :: Text
+    } deriving (Show, Eq, Ord, IsString)
+
 data Protocol
     = TCP
     | UDP
@@ -67,13 +71,12 @@ newtype ImageAlias = ImageAlias
 
 data BaseImage
     = UntaggedImage !Image
+                    !(Maybe Digest)
                     !(Maybe ImageAlias)
     | TaggedImage !Image
                   !Tag
+                  !(Maybe Digest)
                   !(Maybe ImageAlias)
-    | DigestedImage !Image
-                    !Text
-                    !(Maybe ImageAlias)
     deriving (Eq, Ord, Show)
 
 -- | Type of the Dockerfile AST

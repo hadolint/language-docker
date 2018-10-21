@@ -9,17 +9,16 @@ import qualified Language.Docker.Syntax as Syntax
 
 data EBaseImage
     = EUntaggedImage Syntax.Image
+                     (Maybe Syntax.Digest)
                      (Maybe Syntax.ImageAlias)
     | ETaggedImage Syntax.Image
                    Syntax.Tag
+                     (Maybe Syntax.Digest)
                    (Maybe Syntax.ImageAlias)
-    | EDigestedImage Syntax.Image
-                     Text
-                     (Maybe Syntax.ImageAlias)
     deriving (Show, Eq, Ord)
 
 instance IsString EBaseImage where
-    fromString = flip EUntaggedImage Nothing . fromString
+    fromString s = EUntaggedImage (fromString s) Nothing Nothing
 
 data EInstruction next
     = From EBaseImage

@@ -55,18 +55,15 @@ prettyPrintImage (Image (Just (Registry reg)) name) = pretty reg <> "/" <> prett
 prettyPrintBaseImage :: BaseImage -> Doc ann
 prettyPrintBaseImage b =
     case b of
-        DigestedImage img digest alias -> do
+        UntaggedImage img digest alias -> do
             prettyPrintImage img
-            pretty '@'
-            pretty digest
+            prettyDigest digest
             prettyAlias alias
-        UntaggedImage img alias -> do
-            prettyPrintImage img
-            prettyAlias alias
-        TaggedImage img (Tag tag) alias -> do
+        TaggedImage img (Tag tag) digest alias -> do
             prettyPrintImage img
             pretty ':'
             pretty tag
+            prettyDigest digest
             prettyAlias alias
   where
     (>>) = (<>)
@@ -75,9 +72,15 @@ prettyPrintBaseImage b =
         case maybeAlias of
             Nothing -> mempty
             Just (ImageAlias alias) -> " AS " <> pretty alias
+    prettyDigest maybeDigest =
+        case maybeDigest of
+            Nothing -> mempty
+            Just (Digest d) -> "@" <> pretty d
 
 prettyPrintPairs :: Pairs -> Doc ann
-prettyPrintPairs ps = hsep $ fmap prettyPrintPair ps
+prettyPrintPairs ps = align $ sepLine $ fmap prettyPrintPair ps
+  where
+    sepLine = concatWith (\x y -> x <> " \\" <> line <> y)
 
 prettyPrintPair :: (Text, Text) -> Doc ann
 prettyPrintPair (k, v) = pretty k <> pretty '=' <> doubleQoute v

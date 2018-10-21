@@ -5,6 +5,7 @@
 module Language.Docker.Parser
     ( parseText
     , parseFile
+    , parseStdin
     , Parser
     , Error
     , DockerfileError(..)
@@ -163,35 +164,30 @@ taggedImage = do
     registryName <- (Just <$> try parseRegistry) <|> return Nothing
     name <- someUnless "the image name with a tag" (\c -> c == '@' || c == ':')
     void $ char ':'
-    tag <- someUnless "the image tag" (== ':')
+    tag <- someUnless "the image tag" (\c -> c == '@' || c == ':')
+    maybeDigest <- (Just <$> try digest) <|> return Nothing
     maybeAlias <- maybeImageAlias
-    return $ TaggedImage (Image registryName name) (Tag tag) maybeAlias
+    return $ TaggedImage (Image registryName name) (Tag tag) maybeDigest maybeAlias
 
-digestedImage :: Parser BaseImage
-digestedImage = do
-    name <- someUnless "the image name with a digest" (\c -> c == '@' || c == ':')
+digest :: Parser Digest
+digest = do
     void $ char '@'
-    digest <- someUnless "the image digest" (== '@')
-    maybeAlias <- maybeImageAlias
-    return $ DigestedImage (Image Nothing name) digest maybeAlias
+    d <- someUnless "the image digest" (== '@')
+    return $ Digest d
 
 untaggedImage :: Parser BaseImage
 untaggedImage = do
     registryName <- (Just <$> try parseRegistry) <|> return Nothing
     name <- someUnless "just the image name" (\c -> c == '@' || c == ':')
     notInvalidTag name
-    notInvalidDigest name
+    maybeDigest <- (Just <$> try digest) <|> return Nothing
     maybeAlias <- maybeImageAlias
-    return $ UntaggedImage (Image registryName name) maybeAlias
+    return $ UntaggedImage (Image registryName name) maybeDigest maybeAlias
   where
     notInvalidTag :: Text -> Parser ()
     notInvalidTag name =
         try (notFollowedBy $ string ":") <?> "no ':' or a valid image tag string (example: " ++
         T.unpack name ++ ":valid-tag)"
-    notInvalidDigest :: Text -> Parser ()
-    notInvalidDigest name =
-        try (notFollowedBy $ string "@") <?> "no '@' or a valid digest hash (example: " ++
-        T.unpack name ++ "@a3f42f2de)"
 
 maybeImageAlias :: Parser (Maybe ImageAlias)
 maybeImageAlias = Just <$> (spaces1 >> imageAlias) <|> return Nothing
@@ -203,10 +199,7 @@ imageAlias = do
     return $ ImageAlias alias
 
 baseImage :: Parser BaseImage
-baseImage =
-    try digestedImage <|> -- Let's try each version
-    try taggedImage <|>
-    untaggedImage
+baseImage = try taggedImage <|> untaggedImage
 
 from :: Parser Instr
 from = do
@@ -398,7 +391,7 @@ port =
     (try portInt <?> "a valid port number")
 
 ports :: Parser Ports
-ports = Ports <$> port `sepEndBy1` (char ' ' <|> char '\t')
+ports = Ports <$> port `sepEndBy` spaces1
 
 portRange :: Parser Port
 portRange = do
@@ -602,3 +595,10 @@ parseFile file = doParse <$> B.readFile file
   where
     doParse =
         parse (contents dockerfile) file . normalizeEscapedLines . E.decodeUtf8With E.lenientDecode
+
+-- | Reads the standard input until the end and parses the contents as a Dockerfile
+parseStdin :: IO (Either Error Dockerfile)
+parseStdin = doParse <$> B.getContents
+  where
+    doParse =
+        parse (contents dockerfile) "/dev/stdin" . normalizeEscapedLines . E.decodeUtf8With E.lenientDecode
