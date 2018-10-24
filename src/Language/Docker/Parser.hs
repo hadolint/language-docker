@@ -41,7 +41,7 @@ data DockerfileError
 
 type Parser = Parsec DockerfileError Text
 
-type Error = ParseError Char DockerfileError
+type Error = ParseErrorBundle Text DockerfileError
 
 type Instr = Instruction Text
 
@@ -582,7 +582,7 @@ contents p = do
 dockerfile :: Parser Dockerfile
 dockerfile =
     many $ do
-        pos <- getPosition
+        pos <- getSourcePos
         i <- parseInstruction
         eol <|> eof <?> "a new line followed by the next instruction"
         return $ InstructionPos i (T.pack . sourceName $ pos) (unPos . sourceLine $ pos)

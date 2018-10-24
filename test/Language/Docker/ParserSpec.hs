@@ -389,5 +389,5 @@ spec = do
 assertAst :: HasCallStack => Text.Text -> [Instruction Text.Text] -> Assertion
 assertAst s ast =
     case parseText s of
-        Left err -> assertFailure $ parseErrorPretty err
+        Left err -> assertFailure $ errorBundlePretty err
         Right dockerfile -> assertEqual "ASTs are not equal" ast $ map instruction dockerfile

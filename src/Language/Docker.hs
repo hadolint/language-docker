@@ -5,6 +5,7 @@ module Language.Docker
     , parseStdin
     -- * Re-exports from @megaparsec@
     , Text.Megaparsec.parseErrorPretty
+    , Text.Megaparsec.errorBundlePretty
       -- * Pretty-printing Dockerfiles (@Language.Docker.PrettyPrint@)
     , prettyPrint
     , prettyPrintDockerfile

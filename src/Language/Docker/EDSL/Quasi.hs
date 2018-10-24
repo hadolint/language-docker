@@ -11,7 +11,7 @@ import qualified Data.Text as Text
 import Language.Docker.EDSL
 import qualified Language.Docker.Parser as Parser
 import Language.Docker.Syntax.Lift ()
-import Text.Megaparsec (parseErrorPretty)
+import Text.Megaparsec (errorBundlePretty)
 
 -- | Quasiquoter for embedding dockerfiles on the EDSL
 --
@@ -30,7 +30,7 @@ edockerfile = dockerfile {quoteExp = edockerfileE}
 edockerfileE :: String -> ExpQ
 edockerfileE e =
     case Parser.parseText (Text.pack e) of
-        Left err -> fail (parseErrorPretty err)
+        Left err -> fail (errorBundlePretty err)
         Right d -> [|embed d|]
 
 dockerfile :: QuasiQuoter
@@ -45,5 +45,5 @@ dockerfile =
 dockerfileE :: String -> ExpQ
 dockerfileE e =
     case Parser.parseText (Text.pack e) of
-        Left err -> fail (parseErrorPretty err)
+        Left err -> fail (errorBundlePretty err)
         Right d -> lift d
