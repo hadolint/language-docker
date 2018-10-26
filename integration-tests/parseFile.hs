@@ -6,5 +6,5 @@ main = do
     args <- getArgs
     output <- parseFile $ head args
     case output of
-        Left err -> error (parseErrorPretty err)
+        Left err -> error (errorBundlePretty err)
         Right ast -> print (prettyPrintDockerfile ast)
