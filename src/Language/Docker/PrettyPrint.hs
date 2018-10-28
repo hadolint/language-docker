@@ -53,25 +53,27 @@ prettyPrintImage (Image Nothing name) = pretty name
 prettyPrintImage (Image (Just (Registry reg)) name) = pretty reg <> "/" <> pretty name
 
 prettyPrintBaseImage :: BaseImage -> Doc ann
-prettyPrintBaseImage b =
-    case b of
-        UntaggedImage img digest alias -> do
-            prettyPrintImage img
-            prettyDigest digest
-            prettyAlias alias
-        TaggedImage img (Tag tag) digest alias -> do
-            prettyPrintImage img
-            pretty ':'
-            pretty tag
-            prettyDigest digest
-            prettyAlias alias
+prettyPrintBaseImage BaseImage{..} = do
+    prettyPlatform platform
+    prettyPrintImage image
+    prettyTag tag
+    prettyDigest digest
+    prettyAlias alias
   where
     (>>) = (<>)
     return = (mempty <>)
+    prettyPlatform maybePlatform =
+        case maybePlatform of
+            Nothing -> mempty
+            Just p -> "--platform=" <> pretty p <> " "
+    prettyTag maybeTag =
+        case maybeTag of
+            Nothing -> mempty
+            Just (Tag p) -> ":" <> pretty p
     prettyAlias maybeAlias =
         case maybeAlias of
             Nothing -> mempty
-            Just (ImageAlias alias) -> " AS " <> pretty alias
+            Just (ImageAlias a) -> " AS " <> pretty a
     prettyDigest maybeDigest =
         case maybeDigest of
             Nothing -> mempty

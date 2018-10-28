@@ -65,19 +65,19 @@ instance IsList Ports where
 
 type Directory = Text
 
+type Platform = Text
+
 newtype ImageAlias = ImageAlias
     { unImageAlias :: Text
     } deriving (Show, Eq, Ord, IsString)
 
-data BaseImage
-    = UntaggedImage !Image
-                    !(Maybe Digest)
-                    !(Maybe ImageAlias)
-    | TaggedImage !Image
-                  !Tag
-                  !(Maybe Digest)
-                  !(Maybe ImageAlias)
-    deriving (Eq, Ord, Show)
+data BaseImage = BaseImage
+    { image :: !Image
+    , tag :: !(Maybe Tag)
+    , digest :: !(Maybe Digest)
+    , alias :: !(Maybe ImageAlias)
+    , platform :: !(Maybe Platform)
+    } deriving (Eq, Ord, Show)
 
 -- | Type of the Dockerfile AST
 type Dockerfile = [InstructionPos Text]

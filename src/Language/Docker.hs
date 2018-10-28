@@ -94,6 +94,7 @@ module Language.Docker
     , Language.Docker.Syntax.Arguments
     , Language.Docker.Syntax.Pairs
     , Language.Docker.Syntax.Filename
+    , Language.Docker.Syntax.Platform
     , Language.Docker.Syntax.Linenumber
     -- * Instruction and InstructionPos helpers
     , Language.Docker.EDSL.instructionPos

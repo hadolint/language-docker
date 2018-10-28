@@ -159,35 +159,45 @@ parseRegistry = do
     void $ char '/'
     return $ Registry (domain <> "." <> tld)
 
-taggedImage :: Parser BaseImage
-taggedImage = do
+parsePlatform :: Parser Platform
+parsePlatform = do
+    void $ string "--platform="
+    p <- someUnless "the platform for the FROM image" (== ' ')
+    spaces1
+    return p
+
+parseBaseImage :: (Text -> Parser (Maybe Tag)) -> Parser BaseImage
+parseBaseImage tagParser = do
+    maybePlatform <- (Just <$> try parsePlatform) <|> return Nothing
+    notFollowedBy (string "--")
     registryName <- (Just <$> try parseRegistry) <|> return Nothing
     name <- someUnless "the image name with a tag" (\c -> c == '@' || c == ':')
-    void $ char ':'
-    tag <- someUnless "the image tag" (\c -> c == '@' || c == ':')
-    maybeDigest <- (Just <$> try digest) <|> return Nothing
+    maybeTag <- tagParser name
+    maybeDigest <- (Just <$> try parseDigest) <|> return Nothing
     maybeAlias <- maybeImageAlias
-    return $ TaggedImage (Image registryName name) (Tag tag) maybeDigest maybeAlias
+    return $ BaseImage (Image registryName name) maybeTag maybeDigest maybeAlias maybePlatform
 
-digest :: Parser Digest
-digest = do
+taggedImage :: Parser BaseImage
+taggedImage = parseBaseImage tagParser
+  where
+    tagParser _ = do
+      void $ char ':'
+      tag <- someUnless "the image tag" (\c -> c == '@' || c == ':')
+      return (Just . Tag $ tag)
+
+parseDigest :: Parser Digest
+parseDigest = do
     void $ char '@'
     d <- someUnless "the image digest" (== '@')
     return $ Digest d
 
 untaggedImage :: Parser BaseImage
-untaggedImage = do
-    registryName <- (Just <$> try parseRegistry) <|> return Nothing
-    name <- someUnless "just the image name" (\c -> c == '@' || c == ':')
-    notInvalidTag name
-    maybeDigest <- (Just <$> try digest) <|> return Nothing
-    maybeAlias <- maybeImageAlias
-    return $ UntaggedImage (Image registryName name) maybeDigest maybeAlias
+untaggedImage = parseBaseImage notInvalidTag
   where
-    notInvalidTag :: Text -> Parser ()
-    notInvalidTag name =
-        try (notFollowedBy $ string ":") <?> "no ':' or a valid image tag string (example: " ++
-        T.unpack name ++ ":valid-tag)"
+    notInvalidTag :: Text -> Parser (Maybe Tag)
+    notInvalidTag name = do
+        try (notFollowedBy $ string ":") <?> "no ':' or a valid image tag string (example: " ++ T.unpack name ++ ":valid-tag)"
+        return Nothing
 
 maybeImageAlias :: Parser (Maybe ImageAlias)
 maybeImageAlias = Just <$> (spaces1 >> imageAlias) <|> return Nothing

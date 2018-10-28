@@ -26,7 +26,9 @@ spec = do
                         from "node"
                         cmdArgs ["node", "-e", "'console.log(\'hey\')'"])
             r `shouldBe` [ Syntax.From $
-                             Syntax.UntaggedImage "node"
+                             Syntax.BaseImage "node"
+                             Nothing
+                             Nothing
                              Nothing
                              Nothing
                          , Syntax.Cmd ["node", "-e", "'console.log(\'hey\')'"]

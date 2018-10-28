@@ -53,10 +53,7 @@ runDef2 :: MonadWriter [t] m => (t1 -> t2 -> t) -> t1 -> t2 -> m b -> m b
 runDef2 f a b n = tell [f a b] >> n
 
 runD :: MonadWriter [Syntax.Instruction Text] m => EInstruction (m b) -> m b
-runD (From bi n) =
-    case bi of
-        EUntaggedImage bi' md alias -> runDef Syntax.From (Syntax.UntaggedImage bi' md alias) n
-        ETaggedImage bi' tg md alias -> runDef Syntax.From (Syntax.TaggedImage bi' tg md alias) n
+runD (From (EBaseImage name t d a p) n) = runDef Syntax.From (Syntax.BaseImage name t d a p) n
 runD (CmdArgs as n) = runDef Syntax.Cmd as n
 runD (Shell as n) = runDef Syntax.Shell as n
 runD (AddArgs s d c n) = runDef Syntax.Add (Syntax.AddArgs s d c) n
@@ -153,7 +150,7 @@ putDockerfileStr = B8.putStrLn . E.encodeUtf8 . PrettyPrint.prettyPrint . toDock
 -- from "fpco/stack-build"
 -- @
 untagged :: Text -> EBaseImage
-untagged s = EUntaggedImage (fromString . Text.unpack $ s) Nothing Nothing
+untagged s = EBaseImage (fromString . Text.unpack $ s) Nothing Nothing Nothing Nothing
 
 -- | Use a specific tag for a docker image. This function is meant
 -- to be used as an infix operator.
@@ -162,7 +159,7 @@ untagged s = EUntaggedImage (fromString . Text.unpack $ s) Nothing Nothing
 -- from $ "fpco/stack-build" `tagged` "lts-10.3"
 -- @
 tagged :: Syntax.Image -> Syntax.Tag -> EBaseImage
-tagged imageName tag = ETaggedImage imageName tag Nothing Nothing
+tagged imageName tag = EBaseImage imageName (Just tag) Nothing Nothing Nothing
 
 -- | Adds a digest checksum so a FROM instruction
 -- This function is meant to be used as an infix operator.
@@ -171,10 +168,7 @@ tagged imageName tag = ETaggedImage imageName tag Nothing Nothing
 -- from $ "fpco/stack-build" `digested` "sha256:abcdef123"
 -- @
 digested :: EBaseImage -> Syntax.Digest -> EBaseImage
-digested image d =
-    case image of
-        EUntaggedImage n _ alias -> EUntaggedImage n (Just d) alias
-        ETaggedImage n t _ alias -> ETaggedImage n t (Just d) alias
+digested (EBaseImage n t _ a p) d = EBaseImage n t (Just d) a p
 
 -- | Alias a FROM instruction to be used as a build stage.
 -- This function is meant to be used as an infix operator.
@@ -183,10 +177,7 @@ digested image d =
 -- from $ "fpco/stack-build" `aliased` "builder"
 -- @
 aliased :: EBaseImage -> Syntax.ImageAlias -> EBaseImage
-aliased image alias =
-    case image of
-        EUntaggedImage n d _ -> EUntaggedImage n d (Just alias)
-        ETaggedImage n t d _ -> ETaggedImage n t d (Just alias)
+aliased (EBaseImage n t d _ p) a = EBaseImage n t d (Just a) p
 
 -- | Create a RUN instruction with the given arguments.
 --
