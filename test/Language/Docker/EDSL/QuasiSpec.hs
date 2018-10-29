@@ -18,7 +18,7 @@ spec = do
                                                 RUN apt-get update
                                                 CMD ["node", "something.js"]
                                                 |]
-            df `shouldBe` [ From (UntaggedImage "node" Nothing Nothing)
+            df `shouldBe` [ From (BaseImage "node" Nothing Nothing Nothing Nothing)
                           , Run "apt-get update"
                           , Cmd ["node", "something.js"]
                           ]
@@ -33,7 +33,13 @@ spec = do
                                 CMD node something.js
                                 |]
                 df = map instruction (toDockerfile d)
-            df `shouldBe` [ From (UntaggedImage "node" Nothing (Just "node-build"))
+            df `shouldBe` [ From (BaseImage
+                                            { image = "node"
+                                            , alias = Just "node-build"
+                                            , tag = Nothing
+                                            , digest = Nothing
+                                            , platform = Nothing}
+                                 )
                           , Expose (Ports [Port 8080 TCP, PortStr "$PORT"])
                           , Run "apt-get update"
                           , Cmd "node something.js"

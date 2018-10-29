@@ -7,18 +7,15 @@ import Data.String
 import Data.Text (Text)
 import qualified Language.Docker.Syntax as Syntax
 
-data EBaseImage
-    = EUntaggedImage Syntax.Image
-                     (Maybe Syntax.Digest)
-                     (Maybe Syntax.ImageAlias)
-    | ETaggedImage Syntax.Image
-                   Syntax.Tag
-                     (Maybe Syntax.Digest)
-                   (Maybe Syntax.ImageAlias)
+data EBaseImage = EBaseImage Syntax.Image
+                             (Maybe Syntax.Tag)
+                             (Maybe Syntax.Digest)
+                             (Maybe Syntax.ImageAlias)
+                             (Maybe Syntax.Platform)
     deriving (Show, Eq, Ord)
 
 instance IsString EBaseImage where
-    fromString s = EUntaggedImage (fromString s) Nothing Nothing
+    fromString s = EBaseImage (fromString s) Nothing Nothing Nothing Nothing
 
 data EInstruction next
     = From EBaseImage
