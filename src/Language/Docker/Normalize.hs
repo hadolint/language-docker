@@ -67,6 +67,7 @@ normalize allLines =
     -- whether or not the current line ends with \. If it does not, then we just yield the
     -- current line as part of the result
     transform Continue rawLine
+        | isComment line = (Continue, Just line)
         | endsWithEscape line = (Joined (normalizeLast line) 1, Nothing)
         | otherwise = (Continue, Just line)
       where
