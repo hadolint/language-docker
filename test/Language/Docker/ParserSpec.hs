@@ -312,6 +312,18 @@ spec = do
                 in assertAst dockerfile [ From (untaggedImage "busybox")
                                         , Run "echo hello"
                                         ]
+
+            it "Correctly joins blank lines starting with comments" $
+                let dockerfile = Text.unlines [ "FROM busybox"
+                                              , "# I forgot to remove the backslash \\"
+                                              , "# This is a comment"
+                                              , "RUN echo hello"
+                                              ]
+                in assertAst dockerfile [ From (untaggedImage "busybox")
+                                        , Comment " I forgot to remove the backslash \\"
+                                        , Comment " This is a comment"
+                                        , Run "echo hello"
+                                        ]
         describe "expose" $ do
             it "should handle number ports" $
                 let content = "EXPOSE 8080"

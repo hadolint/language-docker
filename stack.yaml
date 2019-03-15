@@ -1,7 +1,5 @@
-resolver: lts-12.13
+resolver: lts-13.12
 packages:
 - '.'
 flags: {}
 extra-package-dbs: []
-extra-deps:
-- megaparsec-7.0.2
