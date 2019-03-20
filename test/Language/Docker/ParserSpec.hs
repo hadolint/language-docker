@@ -178,11 +178,15 @@ spec = do
 
         describe "parse CMD" $ do
             it "one line cmd" $ assertAst "CMD true" [Cmd "true"]
+
             it "cmd over several lines" $
                 assertAst "CMD true \\\n && true" [Cmd "true  && true"]
+
             it "quoted command params" $ assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
 
-        describe "parse SHELL" $ do
+            it "Parses commas correctly" $ assertAst "CMD [ \"echo\" ,\"-e\" , \"1\"]" [Cmd ["echo", "-e", "1"]]
+
+        describe "parse SHELL" $
             it "quoted shell params" $
                 assertAst "SHELL [\"/bin/bash\",  \"-c\"]" [Shell ["/bin/bash", "-c"]]
 

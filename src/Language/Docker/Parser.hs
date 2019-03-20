@@ -83,7 +83,7 @@ natural :: Parser Integer
 natural = L.decimal <?> "positive number"
 
 commaSep :: Parser a -> Parser [a]
-commaSep p = sepBy p (symbol ",")
+commaSep p = sepBy (p <* spaces) (symbol ",")
 
 stringLiteral :: Parser Text
 stringLiteral = do
