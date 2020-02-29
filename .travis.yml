@@ -17,16 +17,11 @@ matrix:
   # variable, such as using --stack-yaml to point to a different file.
   - env: ARGS="--resolver lts"
 
-  - env: ARGS=""
-
   # Nightly builds are allowed to fail
   - env: ARGS="--resolver nightly"
 
   # Build on OS X in addition to Linux
   - env: ARGS="--resolver lts"
-    os: osx
-
-  - env: ARGS=""
     os: osx
 
   - env: ARGS="--resolver nightly"
