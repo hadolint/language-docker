@@ -16,7 +16,6 @@ import qualified Data.ByteString as B
 import Data.Data
 import Data.List.NonEmpty (NonEmpty, fromList)
 import Data.Maybe (listToMaybe)
-import Data.Semigroup ((<>))
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T

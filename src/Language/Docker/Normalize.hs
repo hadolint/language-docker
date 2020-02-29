@@ -4,7 +4,6 @@ module Language.Docker.Normalize
 
 import Data.List (mapAccumL)
 import Data.Maybe (catMaybes)
-import Data.Semigroup ((<>))
 import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Text.Lazy (toStrict)
