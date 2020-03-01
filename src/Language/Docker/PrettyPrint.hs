@@ -11,8 +11,6 @@
 module Language.Docker.PrettyPrint where
 
 import Data.List.NonEmpty as NonEmpty (NonEmpty(..), toList)
-import Data.Maybe (Maybe(..))
-import Data.Semigroup ((<>))
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -22,7 +20,7 @@ import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Internal (Doc(Empty))
 import Data.Text.Prettyprint.Doc.Render.Text (renderLazy)
 import Language.Docker.Syntax
-import Prelude hiding ((<>), (>>), return)
+import Prelude hiding ((<>), (>>))
 
 data EscapeAccum = EscapeAccum
     { buffer :: !B.Builder
@@ -61,7 +59,6 @@ prettyPrintBaseImage BaseImage{..} = do
     prettyAlias alias
   where
     (>>) = (<>)
-    return = (mempty <>)
     prettyPlatform maybePlatform =
         case maybePlatform of
             Nothing -> mempty
@@ -231,7 +228,6 @@ prettyPrintInstruction i =
             pretty checkCommand
   where
     (>>) = spaceCat
-    return a = a
 
 spaceCat :: Doc ann -> Doc ann -> Doc ann
 spaceCat a Empty = a
