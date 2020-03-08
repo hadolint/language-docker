@@ -294,6 +294,10 @@ spec = do
                 in assertAst dockerfile [ Env [("A", "a.sh"), ("B", "b.sh"), ("c", "true")]
                                         ]
 
+            it "accepts backslash inside string" $
+                let dockerfile = "RUN grep 'foo \\.'"
+                in assertAst dockerfile [Run (ArgumentsText "grep 'foo \\.'")]
+
             it "join long CMD" $
                 let longEscapedCmd =
                         Text.unlines

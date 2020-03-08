@@ -122,29 +122,24 @@ onlySpaces = takeWhileP (Just "spaces") (\c -> c == ' ' || c == '\t')
 onlySpaces1 :: Parser Text
 onlySpaces1 = takeWhile1P (Just "at least one space") (\c -> c == ' ' || c == '\t')
 
-foundSpacesOnly :: Parser FoundWhitespace
-foundSpacesOnly = choice
-  [ FoundWhitespace <$ onlySpaces1
-  , pure MissingWhitespace
-  ]
-
 escapedLineBreaks :: Parser FoundWhitespace
 escapedLineBreaks = mconcat <$> breaks
   where
-    breaks = many $ do
+    breaks = some $ do
         try (char '\\' *> onlySpaces *> newlines)
         void (many . try $ onlySpaces *> comment *> newlines)
         -- Spaces before the next '\' have a special significance
         -- so we remembeer the fact that we found some
-        foundSpacesOnly
+        (FoundWhitespace <$ onlySpaces1 <|> pure MissingWhitespace)
     newlines = takeWhile1P Nothing isNl
 
 foundWhitespace :: Parser FoundWhitespace
-foundWhitespace = do
-    leading <- foundSpacesOnly
-    extra <- escapedLineBreaks
-    trailing <- foundSpacesOnly
-    return (leading <> extra <> trailing)
+foundWhitespace = mconcat <$> found
+  where
+    found = many $ choice
+      [ FoundWhitespace <$ onlySpaces1
+      , escapedLineBreaks
+      ]
 
 whitespace :: Parser ()
 whitespace = void foundWhitespace
@@ -164,12 +159,11 @@ untilEol name = do
   when (res == "") $ fail ("expecting " ++ name)
   pure res
   where
-    predicate = many $ do
-        x <- takeWhile1P (Just name) (\c -> c /= '\n' && c /= '\\')
-        ws <- escapedLineBreaks
-        case ws of
-          FoundWhitespace -> pure (x <> " ")
-          MissingWhitespace -> pure x
+    predicate = many $ choice
+        [ castToSpace <$> escapedLineBreaks
+        , takeWhile1P (Just name) (\c -> c /= '\n' && c /= '\\')
+        , takeWhile1P Nothing (== '\\') <* notFollowedBy (char '\n')
+        ]
 
 symbol :: Text -> Parser Text
 symbol name = do
@@ -184,15 +178,14 @@ stringWithEscaped :: Char -> Maybe (Char -> Bool) -> Parser Text
 stringWithEscaped quote maybeStopCondition = mconcat <$> sequences
   where
     sequences = many $ choice
-      [ inner
+      [ mconcat <$> inner
       , try $ takeWhile1P Nothing (== '\\') <* notFollowedBy (char quote)
       , quoteText <$ string ("\\" <> quoteText)
       ]
-    inner = do
-      pre <- escapedLineBreaks
-      x <- takeWhile1P Nothing (\c -> c /= '\\' && c /= '\n' && c /= quote && stopCondition c)
-      post <- escapedLineBreaks
-      return $ castToSpace pre <> x <> castToSpace post
+    inner = some $ choice
+      [ castToSpace <$> escapedLineBreaks
+      , takeWhile1P Nothing (\c -> c /= '\\' && c /= '\n' && c /= quote && stopCondition c)
+      ]
     quoteText = T.singleton quote
     stopCondition = fromMaybe (const True) maybeStopCondition
 
@@ -218,19 +211,10 @@ someUnless name predicate = do
       [] -> fail ("expecting " ++ name)
       _ -> pure (mconcat res)
   where
-    applyPredicate = many $ do
-      pre <- escapedLineBreaks
-      x <- someUnlessOrSpaces name predicate
-      post <- escapedLineBreaks
-      return $ castToSpace pre <> x <> castToSpace post
-
-someUnlessOrSpaces :: String -> (Char -> Bool) -> Parser Text
-someUnlessOrSpaces name predicate =
-    takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c))
-
-anyUnlessOrSpaces :: (Char -> Bool) -> Parser Text
-anyUnlessOrSpaces predicate =
-    takeWhileP Nothing (\c -> not (isSpaceNl c || predicate c))
+    applyPredicate = many $ choice
+      [ castToSpace <$> escapedLineBreaks
+      , takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c))
+      ]
 
 ------------------------------------
 -- DOCKER INSTRUCTIONS PARSER
@@ -402,21 +386,24 @@ singleQuotedValue =
 
 unquotedString :: (Char -> Bool) -> Parser Text
 unquotedString stopCondition = do
-    str <- stringWithEscaped ' ' (Just stopCondition)
+    str <- stringWithEscaped ' ' (Just (\c -> stopCondition c && c /= '"' && c /= '\''))
     checkFaults str
   where
     checkFaults str
-        | T.null str = return str
+        | T.null str = fail "a non empty string"
         | T.head str == '\'' = customError $ QuoteError "single" (T.unpack str)
         | T.head str == '\"' = customError $ QuoteError "double" (T.unpack str)
         | otherwise = return str
 
 singleValue :: (Char -> Bool) -> Parser Text
-singleValue stopCondition = choice
-    [ doubleQuotedValue <?> "a string inside double quotes"
-    , singleQuotedValue <?> "a string inside single quotes"
-    , unquotedString stopCondition <?> "a string with no quotes"
-    ]
+singleValue stopCondition = mconcat <$> variants
+  where
+    variants = many $
+      choice
+        [ doubleQuotedValue <?> "a string inside double quotes"
+        , singleQuotedValue <?> "a string inside single quotes"
+        , unquotedString stopCondition <?> "a string with no quotes"
+        ]
 
 pair :: Parser (Text, Text)
 pair = do
