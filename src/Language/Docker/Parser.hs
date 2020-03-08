@@ -6,16 +6,17 @@ module Language.Docker.Parser
     ( parseText
     , parseFile
     , parseStdin
+    , someUnless
     , Parser
     , Error
     , DockerfileError(..)
     ) where
 
-import Control.Monad (void)
+import Control.Monad (void, when)
 import qualified Data.ByteString as B
 import Data.Data
 import Data.List.NonEmpty (NonEmpty, fromList)
-import Data.Maybe (listToMaybe)
+import Data.Maybe (fromMaybe, listToMaybe)
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
@@ -26,8 +27,9 @@ import Text.Megaparsec hiding (Label, label)
 import Text.Megaparsec.Char hiding (eol)
 import qualified Text.Megaparsec.Char.Lexer as L
 
-import Language.Docker.Normalize
 import Language.Docker.Syntax
+
+import Text.Megaparsec.Debug
 
 data DockerfileError
     = DuplicateFlagError String
@@ -65,6 +67,21 @@ instance ShowErrorComponent DockerfileError where
     showErrorComponent (QuoteError t str) =
         "unexpected end of " ++ t ++ " quoted string " ++ str ++ " (unmatched quote)"
 
+-- Spaces are sometimes significant information in a dockerfile, this type records
+-- thee presence of lack of such whitespace in certain lines.
+data FoundWhitespace = FoundWhitespace | MissingWhitespace deriving (Eq, Show)
+
+-- There is no need to remember how mamny spaces we found in a line, so we can
+-- cheaply remmeber that we already whitenessed some significant whitespace while
+-- parsing an expression by concatenating smaller results
+instance Semigroup FoundWhitespace where
+  FoundWhitespace <> _  = FoundWhitespace
+  _ <> a = a
+
+instance Monoid FoundWhitespace where
+  mempty = MissingWhitespace
+
+
 ------------------------------------
 -- Utilities
 ------------------------------------
@@ -72,8 +89,14 @@ instance ShowErrorComponent DockerfileError where
 customError :: DockerfileError -> Parser a
 customError = fancyFailure . S.singleton . ErrorCustom
 
+castToSpace :: FoundWhitespace -> Text
+castToSpace FoundWhitespace = " "
+castToSpace MissingWhitespace = ""
+
 eol :: Parser ()
-eol = void $ takeWhile1P (Just "whitespace") isSpaceNl
+eol = do
+    whitespace
+    void (takeWhile1P (Just "whitespace") isSpaceNl)
 
 reserved :: Text -> Parser ()
 reserved name = void (lexeme (string' name) <?> T.unpack name)
@@ -82,7 +105,7 @@ natural :: Parser Integer
 natural = L.decimal <?> "positive number"
 
 commaSep :: Parser a -> Parser [a]
-commaSep p = sepBy (p <* spaces) (symbol ",")
+commaSep p = sepBy (p <* whitespace) (symbol ",")
 
 stringLiteral :: Parser Text
 stringLiteral = do
@@ -91,55 +114,123 @@ stringLiteral = do
     return (T.pack lit)
 
 brackets :: Parser a -> Parser a
-brackets = between (symbol "[" *> spaces) (spaces *> symbol "]")
+brackets = between (symbol "[" *> whitespace) (whitespace *> symbol "]")
 
-spaces1 :: Parser ()
-spaces1 = void (takeWhile1P (Just "at least one space") (\c -> c == ' ' || c == '\t'))
+onlySpaces :: Parser Text
+onlySpaces = takeWhileP (Just "spaces") (\c -> c == ' ' || c == '\t')
 
-spaces :: Parser ()
-spaces = void (takeWhileP (Just "at least one space") (\c -> c == ' ' || c == '\t'))
+onlySpaces1 :: Parser Text
+onlySpaces1 = takeWhile1P (Just "at least one space") (\c -> c == ' ' || c == '\t')
+
+foundSpacesOnly :: Parser FoundWhitespace
+foundSpacesOnly = choice
+  [ FoundWhitespace <$ onlySpaces1
+  , pure MissingWhitespace
+  ]
+
+escapedLineBreaks :: Parser FoundWhitespace
+escapedLineBreaks = mconcat <$> breaks
+  where
+    breaks = many $ do
+        try (char '\\' *> onlySpaces *> newlines)
+        void (many . try $ onlySpaces *> comment *> newlines)
+        -- Spaces before the next '\' have a special significance
+        -- so we remembeer the fact that we found some
+        foundSpacesOnly
+    newlines = takeWhile1P Nothing isNl
+
+foundWhitespace :: Parser FoundWhitespace
+foundWhitespace = do
+    leading <- foundSpacesOnly
+    extra <- escapedLineBreaks
+    trailing <- foundSpacesOnly
+    return (leading <> extra <> trailing)
+
+whitespace :: Parser ()
+whitespace = void foundWhitespace
+
+requiredWhitespace :: Parser ()
+requiredWhitespace = do
+    ws <- foundWhitespace
+    case ws of
+        FoundWhitespace -> pure ()
+        MissingWhitespace -> fail "missing whitespace"
+
+-- Parse value until end of line is reached
+-- after consuming all escaped newlines
+untilEol :: String -> Parser Text
+untilEol name = do
+  res <- mconcat <$> predicate
+  when (res == "") $ fail ("expecting " ++ name)
+  pure res
+  where
+    predicate = many $ do
+        x <- takeWhile1P (Just name) (\c -> c /= '\n' && c /= '\\')
+        ws <- escapedLineBreaks
+        case ws of
+          FoundWhitespace -> pure (x <> " ")
+          MissingWhitespace -> pure x
 
 symbol :: Text -> Parser Text
 symbol name = do
     x <- string name
-    spaces
+    whitespace
     return x
 
 caseInsensitiveString :: Text -> Parser Text
 caseInsensitiveString = string'
 
-charsWithEscapedSpaces :: String -> Parser Text
-charsWithEscapedSpaces stopChars = do
-    buf <- takeWhile1P Nothing (`notElem` ("\n\t\\ " ++ stopChars))
-    try (jumpEscapeSequence buf) <|> try (backslashFollowedByChars buf) <|> return buf
+stringWithEscaped :: Char -> Maybe (Char -> Bool) -> Parser Text
+stringWithEscaped quote maybeStopCondition = mconcat <$> sequences
   where
-    backslashFollowedByChars buf = do
-        backslashes <- takeWhile1P Nothing (== '\\')
-        notFollowedBy (char ' ')
-        rest <- charsWithEscapedSpaces stopChars
-        return $ T.concat [buf, backslashes, rest]
-    jumpEscapeSequence buf = do
-        void $ string "\\ "
-        rest <- charsWithEscapedSpaces stopChars
-        return $ T.concat [buf, " ", rest]
+    sequences = many $ choice
+      [ inner
+      , try $ takeWhile1P Nothing (== '\\') <* notFollowedBy (char quote)
+      , quoteText <$ string ("\\" <> quoteText)
+      ]
+    inner = do
+      pre <- escapedLineBreaks
+      x <- takeWhile1P Nothing (\c -> c /= '\\' && c /= '\n' && c /= quote && stopCondition c)
+      post <- escapedLineBreaks
+      return $ castToSpace pre <> x <> castToSpace post
+    quoteText = T.singleton quote
+    stopCondition = fromMaybe (const True) maybeStopCondition
 
 lexeme :: Parser a -> Parser a
 lexeme p = do
     x <- p
-    spaces1
+    requiredWhitespace
     return x
 
 isNl :: Char -> Bool
 isNl c = c == '\n'
 
 isSpaceNl :: Char -> Bool
-isSpaceNl c = c == ' ' || c == '\t' || c == '\n'
+isSpaceNl c = c == ' ' || c == '\t' || c == '\n' || c == '\\'
 
 anyUnless :: (Char -> Bool) -> Parser Text
-anyUnless predicate = takeWhileP Nothing (\c -> not (isSpaceNl c || predicate c))
+anyUnless predicate = someUnless "" predicate <|> pure ""
 
 someUnless :: String -> (Char -> Bool) -> Parser Text
-someUnless name predicate = takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c))
+someUnless name predicate = do
+    res <- applyPredicate
+    case res of
+      [] -> fail ("expecting " ++ name)
+      _ -> pure (mconcat res)
+  where
+    applyPredicate = many $ do
+      pre <- escapedLineBreaks
+      x <- someUnlessOrSpaces name predicate
+      post <- escapedLineBreaks
+      return $ castToSpace pre <> x <> castToSpace post
+
+someUnlessOrSpaces :: String -> (Char -> Bool) -> Parser Text
+someUnlessOrSpaces name predicate =
+    takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c))
+
+anyUnlessOrSpaces :: (Char -> Bool) -> Parser Text
+anyUnlessOrSpaces predicate =
+    takeWhileP Nothing (\c -> not (isSpaceNl c || predicate c))
 
 ------------------------------------
 -- DOCKER INSTRUCTIONS PARSER
@@ -162,7 +253,7 @@ parsePlatform :: Parser Platform
 parsePlatform = do
     void $ string "--platform="
     p <- someUnless "the platform for the FROM image" (== ' ')
-    spaces1
+    requiredWhitespace
     return p
 
 parseBaseImage :: (Text -> Parser (Maybe Tag)) -> Parser BaseImage
@@ -199,11 +290,11 @@ untaggedImage = parseBaseImage notInvalidTag
         return Nothing
 
 maybeImageAlias :: Parser (Maybe ImageAlias)
-maybeImageAlias = Just <$> (spaces1 >> imageAlias) <|> return Nothing
+maybeImageAlias = Just <$> (requiredWhitespace >> imageAlias) <|> return Nothing
 
 imageAlias :: Parser ImageAlias
 imageAlias = do
-    void (try (reserved "AS") <?> "AS followed by the image alias")
+    void (try (reserved "AS") <?> "'AS' followed by the image alias")
     alias <- someUnless "the image alias" (== '\n')
     return $ ImageAlias alias
 
@@ -225,7 +316,7 @@ cmd = do
 copy :: Parser Instr
 copy = do
     reserved "COPY"
-    flags <- copyFlag `sepEndBy` spaces1
+    flags <- copyFlag `sepEndBy` requiredWhitespace
     let chownFlags = [c | FlagChown c <- flags]
     let sourceFlags = [f | FlagSource f <- flags]
     let invalid = [i | FlagInvalid i <- flags]
@@ -280,7 +371,7 @@ fileList name constr = do
         [_] -> customError $ FileListError (T.unpack name)
         _ -> return $ constr (SourcePath <$> fromList (init paths)) (TargetPath $ last paths)
   where
-    spaceSeparated = anyUnless (== ' ') `sepBy1` (try spaces1 <?> "at least another file path")
+    spaceSeparated = anyUnless (== ' ') `sepBy1` (try requiredWhitespace <?> "at least another file path")
     stringList = brackets $ commaSep stringLiteral
 
 unexpectedFlag :: Text -> Text -> Parser a
@@ -303,15 +394,15 @@ stopsignal = do
 -- and therefore have to implement quoted values by ourselves
 doubleQuotedValue :: Parser Text
 doubleQuotedValue =
-    between (string "\"") (string "\"") (takeWhileP Nothing (\c -> c /= '"' && c /= '\n'))
+    between (string "\"") (string "\"") (stringWithEscaped '"' Nothing)
 
 singleQuotedValue :: Parser Text
 singleQuotedValue =
-    between (string "'") (string "'") (takeWhileP Nothing (\c -> c /= '\'' && c /= '\n'))
+    between (string "'") (string "'") (stringWithEscaped '\'' Nothing)
 
-unquotedString :: String -> Parser Text
-unquotedString stopChars = do
-    str <- charsWithEscapedSpaces stopChars
+unquotedString :: (Char -> Bool) -> Parser Text
+unquotedString stopCondition = do
+    str <- stringWithEscaped ' ' (Just stopCondition)
     checkFaults str
   where
     checkFaults str
@@ -320,21 +411,28 @@ unquotedString stopChars = do
         | T.head str == '\"' = customError $ QuoteError "double" (T.unpack str)
         | otherwise = return str
 
-singleValue :: String -> Parser Text
-singleValue stopChars =
-    try doubleQuotedValue <|> -- Quotes or no quotes are fine
-    try singleQuotedValue <|>
-    (try (unquotedString stopChars) <?> "a string with no quotes")
+singleValue :: (Char -> Bool) -> Parser Text
+singleValue stopCondition = choice
+    [ doubleQuotedValue <?> "a string inside double quotes"
+    , singleQuotedValue <?> "a string inside single quotes"
+    , unquotedString stopCondition <?> "a string with no quotes"
+    ]
 
 pair :: Parser (Text, Text)
 pair = do
-    key <- singleValue "="
-    void $ char '='
-    value <- singleValue ""
+    key <- singleValue (/= '=')
+    value <- withEqualSign <|> withoutEqualSign
     return (key, value)
+  where
+    withEqualSign = do
+      void $ char '='
+      singleValue (\c -> c /= ' ' && c /= '\t')
+    withoutEqualSign = do
+      requiredWhitespace
+      untilEol "value"
 
-pairsList :: Parser Pairs
-pairsList = pair `sepBy1` spaces1
+pairs :: Parser Pairs
+pairs = (pair <?> "a key value pair (key=value)") `sepEndBy1` requiredWhitespace
 
 label :: Parser Instr
 label = do
@@ -359,16 +457,6 @@ env = do
     reserved "ENV"
     p <- pairs
     return $ Env p
-
-pairs :: Parser Pairs
-pairs = try pairsList <|> try singlePair
-
-singlePair :: Parser Pairs
-singlePair = do
-    key <- anyUnless (== '=')
-    spaces1 <?> "a space followed by the value for the variable '" ++ T.unpack key ++ "'"
-    val <- untilEol "the variable value"
-    return [(key, val)]
 
 user :: Parser Instr
 user = do
@@ -400,7 +488,7 @@ port =
     (try portInt <?> "a valid port number")
 
 ports :: Parser Ports
-ports = Ports <$> port `sepEndBy` spaces1
+ports = Ports <$> port `sepEndBy` requiredWhitespace
 
 portRange :: Parser Port
 portRange = do
@@ -441,10 +529,6 @@ run = do
     reserved "RUN"
     c <- arguments
     return $ Run c
-
--- Parse value until end of line is reached
-untilEol :: String -> Parser Text
-untilEol name = takeWhile1P (Just name) (not . isNl)
 
 workdir :: Parser Instr
 workdir = do
@@ -499,11 +583,11 @@ healthcheck = do
     noCheck = string "NONE" >> return NoCheck
     allFlags = do
         flags <- someFlags
-        spaces1 <?> "another flag"
+        requiredWhitespace <?> "another flag"
         return flags
     someFlags = do
         x <- checkFlag
-        cont <- try (spaces1 >> lookAhead (string "--") >> return True) <|> return False
+        cont <- try (requiredWhitespace >> lookAhead (string "--") >> return True) <|> return False
         if cont
             then do
                 xs <- someFlags
@@ -597,17 +681,17 @@ dockerfile =
         return $ InstructionPos i (T.pack . sourceName $ pos) (unPos . sourceLine $ pos)
 
 parseText :: Text -> Either Error Dockerfile
-parseText s = parse (contents dockerfile) "<string>" $ normalizeEscapedLines s
+parseText = parse (contents dockerfile) "<string>"
 
 parseFile :: FilePath -> IO (Either Error Dockerfile)
 parseFile file = doParse <$> B.readFile file
   where
     doParse =
-        parse (contents dockerfile) file . normalizeEscapedLines . E.decodeUtf8With E.lenientDecode
+        parse (contents dockerfile) file . E.decodeUtf8With E.lenientDecode
 
 -- | Reads the standard input until the end and parses the contents as a Dockerfile
 parseStdin :: IO (Either Error Dockerfile)
 parseStdin = doParse <$> B.getContents
   where
     doParse =
-        parse (contents dockerfile) "/dev/stdin" . normalizeEscapedLines . E.decodeUtf8With E.lenientDecode
+        parse (contents dockerfile) "/dev/stdin" . E.decodeUtf8With E.lenientDecode

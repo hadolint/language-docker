@@ -284,6 +284,16 @@ spec = do
                     normalizedDockerfile = Text.unlines ["ENV foo=bar baz=foz", ""]
                 in normalizeEscapedLines dockerfile `shouldBe` normalizedDockerfile
 
+            it "many escaped lines" $
+                let dockerfile = Text.unlines [ "ENV A=\"a.sh\" \\"
+                                              , "    # comment a"
+                                              , "    B=\"b.sh\" \\"
+                                              , "    c=\"true\""
+                                              , ""
+                                              ]
+                in assertAst dockerfile [ Env [("A", "a.sh"), ("B", "b.sh"), ("c", "true")]
+                                        ]
+
             it "join long CMD" $
                 let longEscapedCmd =
                         Text.unlines

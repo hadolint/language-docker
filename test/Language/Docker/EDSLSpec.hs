@@ -132,5 +132,6 @@ spec = do
             str `shouldBe` printed [ "FROM ubuntu"
                                    , "ADD ./test/Language/Docker/EDSLSpec.hs /app/EDSLSpec.hs"
                                    , "ADD ./test/Language/Docker/ExamplesSpec.hs /app/ExamplesSpec.hs"
+                                   , "ADD ./test/Language/Docker/IntegrationSpec.hs /app/IntegrationSpec.hs"
                                    , "ADD ./test/Language/Docker/ParserSpec.hs /app/ParserSpec.hs"
                                    ]
