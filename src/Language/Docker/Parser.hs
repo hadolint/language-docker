@@ -94,9 +94,13 @@ castToSpace FoundWhitespace = " "
 castToSpace MissingWhitespace = ""
 
 eol :: Parser ()
-eol = do
-    whitespace
-    void (takeWhile1P (Just "whitespace") isSpaceNl)
+eol = void ws <?> "end of line"
+  where
+    ws = some $ choice
+      [ void onlySpaces1
+      , void $ takeWhile1P Nothing (== '\n')
+      , void escapedLineBreaks
+      ]
 
 reserved :: Text -> Parser ()
 reserved name = void (lexeme (string' name) <?> T.unpack name)
@@ -214,6 +218,7 @@ someUnless name predicate = do
     applyPredicate = many $ choice
       [ castToSpace <$> escapedLineBreaks
       , takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c))
+      , takeWhile1P Nothing (\c -> c == '\\' && not (predicate c)) <* notFollowedBy (char '\n')
       ]
 
 ------------------------------------
@@ -246,9 +251,9 @@ parseBaseImage tagParser = do
     notFollowedBy (string "--")
     registryName <- (Just <$> try parseRegistry) <|> return Nothing
     name <- someUnless "the image name with a tag" (\c -> c == '@' || c == ':')
-    maybeTag <- tagParser name
+    maybeTag <- tagParser name <|> return Nothing
     maybeDigest <- (Just <$> try parseDigest) <|> return Nothing
-    maybeAlias <- maybeImageAlias
+    maybeAlias <- (Just <$> try (requiredWhitespace *> imageAlias)) <|> return Nothing
     return $ BaseImage (Image registryName name) maybeTag maybeDigest maybeAlias maybePlatform
 
 taggedImage :: Parser BaseImage
@@ -272,9 +277,6 @@ untaggedImage = parseBaseImage notInvalidTag
     notInvalidTag name = do
         try (notFollowedBy $ string ":") <?> "no ':' or a valid image tag string (example: " ++ T.unpack name ++ ":valid-tag)"
         return Nothing
-
-maybeImageAlias :: Parser (Maybe ImageAlias)
-maybeImageAlias = Just <$> (requiredWhitespace >> imageAlias) <|> return Nothing
 
 imageAlias :: Parser ImageAlias
 imageAlias = do
@@ -355,7 +357,7 @@ fileList name constr = do
         [_] -> customError $ FileListError (T.unpack name)
         _ -> return $ constr (SourcePath <$> fromList (init paths)) (TargetPath $ last paths)
   where
-    spaceSeparated = anyUnless (== ' ') `sepBy1` (try requiredWhitespace <?> "at least another file path")
+    spaceSeparated = anyUnless (== ' ') `sepEndBy1` (try requiredWhitespace <?> "at least another file path")
     stringList = brackets $ commaSep stringLiteral
 
 unexpectedFlag :: Text -> Text -> Parser a

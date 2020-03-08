@@ -52,6 +52,11 @@ spec = do
                     "FROM ubuntu:14.04@sha256:0ef2e08ed3fab"
                     [From (taggedImage "ubuntu" "14.04" `withDigest` "sha256:0ef2e08ed3fab")]
 
+            it "parse image with spaces at the end" $
+                assertAst
+                    "FROM dockerfile/mariadb "
+                    [From (untaggedImage "dockerfile/mariadb")]
+
         describe "parse aliased FROM" $ do
             it "parse untagged image" $
                 assertAst "FROM busybox as foo" [From (untaggedImage "busybox" `withAlias` "foo")]
@@ -437,6 +442,11 @@ spec = do
             it "with both flags in different order" $
                 let file = Text.unlines ["COPY --chown=user:group --from=node foo bar"]
                 in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (CopySource "node")
+                                  ]
+
+            it "supports windows paths" $
+                let file = Text.unlines ["COPY C:\\\\go C:\\\\go"]
+                in assertAst file [ Copy $ CopyArgs (fmap SourcePath ["C:\\\\go"]) (TargetPath "C:\\\\go") NoChown NoSource
                                   ]
 
 assertAst :: HasCallStack => Text.Text -> [Instruction Text.Text] -> Assertion
