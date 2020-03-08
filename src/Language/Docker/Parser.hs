@@ -178,20 +178,20 @@ symbol name = do
 caseInsensitiveString :: Text -> Parser Text
 caseInsensitiveString = string'
 
-stringWithEscaped :: Char -> Maybe (Char -> Bool) -> Parser Text
-stringWithEscaped quote maybeStopCondition = mconcat <$> sequences
+stringWithEscaped :: [Char] -> Maybe (Char -> Bool) -> Parser Text
+stringWithEscaped quoteChars maybeAcceptCondition = mconcat <$> sequences
   where
     sequences = many $ choice
       [ mconcat <$> inner
-      , try $ takeWhile1P Nothing (== '\\') <* notFollowedBy (char quote)
-      , quoteText <$ string ("\\" <> quoteText)
+      , try $ takeWhile1P Nothing (== '\\') <* notFollowedBy quoteParser
+      , string "\\" *> quoteParser
       ]
     inner = some $ choice
       [ castToSpace <$> escapedLineBreaks
-      , takeWhile1P Nothing (\c -> c /= '\\' && c /= '\n' && c /= quote && stopCondition c)
+      , takeWhile1P Nothing (\c -> c /= '\\' && c /= '\n' && c `notElem`quoteChars && acceptCondition c)
       ]
-    quoteText = T.singleton quote
-    stopCondition = fromMaybe (const True) maybeStopCondition
+    quoteParser = T.singleton <$> choice (fmap char quoteChars)
+    acceptCondition = fromMaybe (const True) maybeAcceptCondition
 
 lexeme :: Parser a -> Parser a
 lexeme p = do
@@ -380,15 +380,15 @@ stopsignal = do
 -- and therefore have to implement quoted values by ourselves
 doubleQuotedValue :: Parser Text
 doubleQuotedValue =
-    between (string "\"") (string "\"") (stringWithEscaped '"' Nothing)
+    between (string "\"") (string "\"") (stringWithEscaped ['"'] Nothing)
 
 singleQuotedValue :: Parser Text
 singleQuotedValue =
-    between (string "'") (string "'") (stringWithEscaped '\'' Nothing)
+    between (string "'") (string "'") (stringWithEscaped ['\''] Nothing)
 
 unquotedString :: (Char -> Bool) -> Parser Text
-unquotedString stopCondition = do
-    str <- stringWithEscaped ' ' (Just (\c -> stopCondition c && c /= '"' && c /= '\''))
+unquotedString acceptCondition = do
+    str <- stringWithEscaped [' ', '\t'] (Just (\c -> acceptCondition c && c /= '"' && c /= '\''))
     checkFaults str
   where
     checkFaults str
@@ -398,13 +398,13 @@ unquotedString stopCondition = do
         | otherwise = return str
 
 singleValue :: (Char -> Bool) -> Parser Text
-singleValue stopCondition = mconcat <$> variants
+singleValue acceptCondition = mconcat <$> variants
   where
     variants = many $
       choice
         [ doubleQuotedValue <?> "a string inside double quotes"
         , singleQuotedValue <?> "a string inside single quotes"
-        , unquotedString stopCondition <?> "a string with no quotes"
+        , unquotedString acceptCondition <?> "a string with no quotes"
         ]
 
 pair :: Parser (Text, Text)
