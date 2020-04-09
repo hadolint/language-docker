@@ -1,17 +1,15 @@
+{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Language.Docker.Syntax.Lift where
 
-import qualified Data.ByteString as ByteString
 import Data.Fixed (Fixed)
 import Data.Time.Clock (DiffTime)
+import Instances.TH.Lift () -- Defines Lift instances for ByteString and Text
 import Language.Haskell.TH.Lift
 import Language.Haskell.TH.Syntax ()
 
 import Language.Docker.Syntax
-
-instance Lift ByteString.ByteString where
-    lift b = [|ByteString.pack $(lift $ ByteString.unpack b)|]
 
 deriveLift ''Fixed
 

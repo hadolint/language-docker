@@ -33,6 +33,7 @@ dependencies:
   - mtl
   - template-haskell
   - th-lift
+  - th-lift-instances
   - text
   - time
   - containers
