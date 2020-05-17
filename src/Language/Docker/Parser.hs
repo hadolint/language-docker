@@ -29,8 +29,6 @@ import qualified Text.Megaparsec.Char.Lexer as L
 
 import Language.Docker.Syntax
 
-import Text.Megaparsec.Debug
-
 data DockerfileError
     = DuplicateFlagError String
     | NoValueFlagError String
@@ -131,10 +129,10 @@ escapedLineBreaks = mconcat <$> breaks
   where
     breaks = some $ do
         try (char '\\' *> onlySpaces *> newlines)
-        void (many . try $ onlySpaces *> comment *> newlines)
+        skipMany . try $ onlySpaces *> comment *> newlines
         -- Spaces before the next '\' have a special significance
         -- so we remembeer the fact that we found some
-        (FoundWhitespace <$ onlySpaces1 <|> pure MissingWhitespace)
+        FoundWhitespace <$ onlySpaces1 <|> pure MissingWhitespace
     newlines = takeWhile1P Nothing isNl
 
 foundWhitespace :: Parser FoundWhitespace
@@ -290,14 +288,12 @@ baseImage = try taggedImage <|> untaggedImage
 from :: Parser Instr
 from = do
     reserved "FROM"
-    image <- baseImage
-    return $ From image
+    From <$> baseImage
 
 cmd :: Parser Instr
 cmd = do
     reserved "CMD"
-    args <- arguments
-    return $ Cmd args
+    Cmd <$> arguments
 
 copy :: Parser Instr
 copy = do
@@ -367,8 +363,7 @@ unexpectedFlag name _ = customFailure $ InvalidFlagError (T.unpack name)
 shell :: Parser Instr
 shell = do
     reserved "SHELL"
-    args <- arguments
-    return $ Shell args
+    Shell <$> arguments
 
 stopsignal :: Parser Instr
 stopsignal = do
@@ -426,8 +421,7 @@ pairs = (pair <?> "a key value pair (key=value)") `sepEndBy1` requiredWhitespace
 label :: Parser Instr
 label = do
     reserved "LABEL"
-    p <- pairs
-    return $ Label p
+    Label <$> pairs
 
 arg :: Parser Instr
 arg = do
@@ -444,8 +438,7 @@ arg = do
 env :: Parser Instr
 env = do
     reserved "ENV"
-    p <- pairs
-    return $ Env p
+    Env <$> pairs
 
 user :: Parser Instr
 user = do
@@ -466,8 +459,7 @@ add = do
 expose :: Parser Instr
 expose = do
     reserved "EXPOSE"
-    ps <- ports
-    return $ Expose ps
+    Expose <$> ports
 
 port :: Parser Port
 port =
@@ -504,8 +496,7 @@ portInt = do
 portWithProtocol :: Parser Port
 portWithProtocol = do
     portNumber <- natural
-    proto <- protocol
-    return $ Port (fromIntegral portNumber) proto
+    Port (fromIntegral portNumber) <$> protocol
 
 portVariable :: Parser Port
 portVariable = do
@@ -516,8 +507,7 @@ portVariable = do
 run :: Parser Instr
 run = do
     reserved "RUN"
-    c <- arguments
-    return $ Run c
+    Run <$> arguments
 
 workdir :: Parser Instr
 workdir = do
@@ -555,14 +545,12 @@ arguments = try argumentsExec <|> try argumentsShell
 entrypoint :: Parser Instr
 entrypoint = do
     reserved "ENTRYPOINT"
-    args <- arguments
-    return $ Entrypoint args
+    Entrypoint <$> arguments
 
 onbuild :: Parser Instr
 onbuild = do
     reserved "ONBUILD"
-    i <- parseInstruction
-    return $ OnBuild i
+    OnBuild <$> parseInstruction
 
 healthcheck :: Parser Instr
 healthcheck = do
