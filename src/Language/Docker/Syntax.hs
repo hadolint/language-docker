@@ -162,6 +162,77 @@ data CheckArgs args = CheckArgs
 
 type Pairs = [(Text, Text)]
 
+data RunMount
+    = BindMount !BindOpts
+    | CacheMount !CacheOpts
+    | TmpfsMount !TmpOpts
+    | SecretMount !SecretOpts
+    | SshMount !SecretOpts
+    deriving (Eq, Show, Ord)
+
+data BindOpts = BindOpts
+    { target :: !TargetPath
+    , source :: !(Maybe SourcePath)
+    , fromImage :: !(Maybe Text)
+    , readWrite :: !(Maybe Bool)
+    } deriving (Show, Eq, Ord)
+
+data CacheOpts = CacheOpts
+    { target :: !TargetPath
+    , id :: !(Maybe Text)
+    , sharing :: !CacheSharing
+    , readOnly :: !(Maybe Bool)
+    , fromImage :: !(Maybe Text)
+    , source :: !(Maybe SourcePath)
+    , mode :: !(Maybe Text)
+    , uid :: !(Maybe Int)
+    , gid :: !(Maybe Int)
+    } deriving (Show, Eq, Ord)
+
+
+newtype TmpOpts = TmpOpts { target :: TargetPath } deriving (Eq, Show, Ord)
+
+data SecretOpts = SecretOpts
+    { target :: !TargetPath
+    , id :: !(Maybe Text)
+    , isRequired :: !(Maybe Bool)
+    , mode :: !(Maybe Text)
+    , uid :: !(Maybe Int)
+    , gid :: !(Maybe Int)
+    } deriving (Eq, Show, Ord)
+
+data CacheSharing
+    = Shared
+    | Private
+    | Locked
+    deriving (Show, Eq, Ord)
+
+data RunSecurity
+    = Insecure
+    | Sandbox
+    deriving (Show, Eq, Ord)
+
+data RunNetwork
+    = NetworkNone
+    | NetworkHost
+    | NetworkDefault
+    deriving (Show, Eq, Ord)
+
+data RunArgs args = RunArgs
+    { mount :: !(Maybe RunMount)
+    , security :: !(Maybe RunSecurity)
+    , network :: !(Maybe RunNetwork)
+    , commands :: !(Arguments args)
+    } deriving (Show, Eq, Ord, Functor)
+
+instance IsString (RunArgs Text) where
+    fromString s = RunArgs
+      { commands = ArgumentsText . Text.pack $ s
+      , security = Nothing
+      , network = Nothing
+      , mount = Nothing
+      }
+
 -- | All commands available in Dockerfiles
 data Instruction args
     = From !BaseImage
@@ -170,7 +241,7 @@ data Instruction args
     | Label !Pairs
     | Stopsignal !Text
     | Copy !CopyArgs
-    | Run !(Arguments args)
+    | Run !(RunArgs args)
     | Cmd !(Arguments args)
     | Shell !(Arguments args)
     | Workdir !Directory

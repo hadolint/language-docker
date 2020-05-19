@@ -56,6 +56,11 @@ data CheckFlag
     | FlagRetries Retries
     | CFlagInvalid (Text, Text)
 
+data RunFlag
+  = RunFlagMount RunMount
+  | RunFlagSecurity RunSecurity
+  | RunFlagNetwrok RunNetwork
+
 instance ShowErrorComponent DockerfileError where
     showErrorComponent (DuplicateFlagError f) = "duplicate flag: " ++ f
     showErrorComponent (FileListError f) =
@@ -507,7 +512,10 @@ portVariable = do
 run :: Parser Instr
 run = do
     reserved "RUN"
-    Run <$> arguments
+    Run <$> runArguments
+
+runArguments :: Parser (RunArgs Text)
+runArguments = undefined
 
 workdir :: Parser Instr
 workdir = do
