@@ -181,7 +181,7 @@ prettyPrintInstruction i =
         Volume dir -> do
             "VOLUME"
             pretty dir
-        Run c -> do
+        Run (RunArgs c _f) -> do
             "RUN"
             pretty c
         Copy CopyArgs {sourcePaths, targetPath, chownFlag, sourceFlag} -> do

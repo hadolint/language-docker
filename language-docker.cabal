@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: db7b75721410a3295c9c0a76e6d609fbaac59c11dd5d6836d427ab893f8019dc
+-- hash: 16b417222b143d0446815001e459ca1bf6fd63e67b3862c3443a11aa44a9931a
 
 name:           language-docker
 version:        8.1.0
@@ -43,6 +43,15 @@ library
       Language.Docker.EDSL.Quasi
       Language.Docker.EDSL.Types
   other-modules:
+      Language.Docker.Parser.Arguments
+      Language.Docker.Parser.Cmd
+      Language.Docker.Parser.Copy
+      Language.Docker.Parser.Expose
+      Language.Docker.Parser.From
+      Language.Docker.Parser.Healthcheck
+      Language.Docker.Parser.Pairs
+      Language.Docker.Parser.Prelude
+      Language.Docker.Parser.Run
       Paths_language_docker
   hs-source-dirs:
       src
@@ -51,8 +60,9 @@ library
       base >=4.13 && <5
     , bytestring >=0.10
     , containers
+    , data-default-class
     , free
-    , megaparsec >=7.0
+    , megaparsec >=8.0
     , mtl
     , prettyprinter
     , split >=0.2
@@ -81,6 +91,7 @@ test-suite hspec
     , base >=4.13 && <5
     , bytestring >=0.10
     , containers
+    , data-default-class
     , directory
     , filepath
     , free
