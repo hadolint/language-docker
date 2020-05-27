@@ -155,6 +155,19 @@ spec = do
                     ast = [ Env [("JAVA_HOME", "C:\\\\jdk1.8.0_112")]
                           ]
                 in assertAst dockerfile ast
+            it "parses env with % in them" $
+                let dockerfile = Text.unlines [ "ENV PHP_FPM_ACCESS_FORMAT=\"prefix \\\"quoted\\\" suffix\""
+                                              ]
+                    ast = [ Env [("PHP_FPM_ACCESS_FORMAT", "%R - %u %t \"%m %r\" %s")]
+                          ]
+                in assertAst dockerfile ast
+
+            it "parses env with % in them" $
+                let dockerfile = Text.unlines [ "ENV PHP_FPM_ACCESS_FORMAT=\"%R - %u %t \\\"%m %r\\\" %s\""
+                                              ]
+                    ast = [ Env [("PHP_FPM_ACCESS_FORMAT", "%R - %u %t \"%m %r\" %s")]
+                          ]
+                in assertAst dockerfile ast
 
         describe "parse RUN" $ do
             it "escaped with space before" $
