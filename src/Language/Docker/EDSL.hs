@@ -1,8 +1,8 @@
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE OverloadedLists #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 module Language.Docker.EDSL where
@@ -13,18 +13,16 @@ import Control.Monad.Trans.Free (FreeT, iterTM)
 import Control.Monad.Writer
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.Char8 as B8
+import Data.Default.Class (def)
 import Data.List.NonEmpty (NonEmpty)
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as L
 import qualified Data.Text.Lazy.Encoding as E
-import Data.Default.Class (def)
-
+import Language.Docker.EDSL.Types
 import qualified Language.Docker.PrettyPrint as PrettyPrint
 import qualified Language.Docker.Syntax as Syntax
-
-import Language.Docker.EDSL.Types
 
 -- | The type of 'Identity' based EDSL blocks
 type EDockerfileM = Free EInstruction
@@ -42,9 +40,9 @@ runDockerWriter :: (MonadWriter [Syntax.Instruction Text] m) => EDockerfileM a -
 runDockerWriter = iterM runD
 
 runDockerWriterIO ::
-       (Monad m, MonadTrans t, MonadWriter [Syntax.Instruction Text] (t m))
-    => EDockerfileTM m a
-    -> t m a
+  (Monad m, MonadTrans t, MonadWriter [Syntax.Instruction Text] (t m)) =>
+  EDockerfileTM m a ->
+  t m a
 runDockerWriterIO = iterTM runD
 
 runDef :: MonadWriter [t] m => (t1 -> t) -> t1 -> m b -> m b
@@ -74,8 +72,8 @@ runD (Comment c n) = runDef Syntax.Comment c n
 runD (Healthcheck c n) = runDef Syntax.Healthcheck c n
 runD (OnBuildRaw i n) = runDef Syntax.OnBuild i n
 runD (Embed is n) = do
-    tell (map Syntax.instruction is)
-    n
+  tell (map Syntax.instruction is)
+  n
 
 instructionPos :: Syntax.Instruction args -> Syntax.InstructionPos args
 instructionPos i = Syntax.InstructionPos i "" 0
@@ -84,8 +82,8 @@ instructionPos i = Syntax.InstructionPos i "" 0
 -- or manipulate
 toDockerfile :: EDockerfileM a -> Syntax.Dockerfile
 toDockerfile e =
-    let (_, w) = runWriter (runDockerWriter e)
-    in map instructionPos w
+  let (_, w) = runWriter (runDockerWriter e)
+   in map instructionPos w
 
 -- | runs the Dockerfile EDSL and returns a 'Data.Text.Lazy' using
 -- 'Language.Docker.PrettyPrint'
@@ -119,7 +117,7 @@ toDockerfileText = PrettyPrint.prettyPrint . toDockerfile
 -- @
 writeDockerFile :: Text -> Syntax.Dockerfile -> IO ()
 writeDockerFile filename =
-    BL.writeFile (Text.unpack filename) . E.encodeUtf8 . PrettyPrint.prettyPrint
+  BL.writeFile (Text.unpack filename) . E.encodeUtf8 . PrettyPrint.prettyPrint
 
 -- | Prints the dockerfile to stdout. Mainly used for debugging purposes
 --
@@ -221,11 +219,11 @@ copy (Syntax.CopyArgs sources dest ch src) = copyArgs sources dest ch src
 -- copyFromStage "builder" ["foo.js", "bar.js"] "."
 -- @
 copyFromStage ::
-       MonadFree EInstruction m
-    => Syntax.CopySource
-    -> NonEmpty Syntax.SourcePath
-    -> Syntax.TargetPath
-    -> m ()
+  MonadFree EInstruction m =>
+  Syntax.CopySource ->
+  NonEmpty Syntax.SourcePath ->
+  Syntax.TargetPath ->
+  m ()
 copyFromStage stage source dest = copy $ Syntax.CopyArgs source dest Syntax.NoChown stage
 
 -- | Create an ADD instruction. This is often used as a shorthand version
@@ -312,38 +310,38 @@ udpPortRange a b = Syntax.PortRange a b Syntax.UDP
 
 check :: Syntax.Arguments args -> Syntax.Check args
 check command =
-    Syntax.Check
-        Syntax.CheckArgs
-        { Syntax.checkCommand = command
-        , Syntax.interval = Nothing
-        , Syntax.timeout = Nothing
-        , Syntax.startPeriod = Nothing
-        , Syntax.retries = Nothing
-        }
+  Syntax.Check
+    Syntax.CheckArgs
+      { Syntax.checkCommand = command,
+        Syntax.interval = Nothing,
+        Syntax.timeout = Nothing,
+        Syntax.startPeriod = Nothing,
+        Syntax.retries = Nothing
+      }
 
 interval :: Syntax.Check args -> Integer -> Syntax.Check args
 interval ch secs =
-    case ch of
-        Syntax.NoCheck -> Syntax.NoCheck
-        Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.interval = Just $ fromInteger secs}
+  case ch of
+    Syntax.NoCheck -> Syntax.NoCheck
+    Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.interval = Just $ fromInteger secs}
 
 timeout :: Syntax.Check args -> Integer -> Syntax.Check args
 timeout ch secs =
-    case ch of
-        Syntax.NoCheck -> Syntax.NoCheck
-        Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.timeout = Just $ fromInteger secs}
+  case ch of
+    Syntax.NoCheck -> Syntax.NoCheck
+    Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.timeout = Just $ fromInteger secs}
 
 startPeriod :: Syntax.Check args -> Integer -> Syntax.Check args
 startPeriod ch secs =
-    case ch of
-        Syntax.NoCheck -> Syntax.NoCheck
-        Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.startPeriod = Just $ fromInteger secs}
+  case ch of
+    Syntax.NoCheck -> Syntax.NoCheck
+    Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.startPeriod = Just $ fromInteger secs}
 
 retries :: Syntax.Check args -> Integer -> Syntax.Check args
 retries ch tries =
-    case ch of
-        Syntax.NoCheck -> Syntax.NoCheck
-        Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.retries = Just $ fromInteger tries}
+  case ch of
+    Syntax.NoCheck -> Syntax.NoCheck
+    Syntax.Check chArgs -> Syntax.Check chArgs {Syntax.retries = Just $ fromInteger tries}
 
 noCheck :: Syntax.Check args
 noCheck = Syntax.NoCheck
@@ -374,11 +372,11 @@ toDockerfileTextIO e = fmap snd (runDockerfileTextIO e)
 -- | Just runs the EDSL's writer monad
 runDockerfileIO :: MonadIO m => EDockerfileTM m t -> m (t, Syntax.Dockerfile)
 runDockerfileIO e = do
-    (r, w) <- runWriterT (runDockerWriterIO e)
-    return (r, map instructionPos w)
+  (r, w) <- runWriterT (runDockerWriterIO e)
+  return (r, map instructionPos w)
 
 -- | Runs the EDSL's writer monad and pretty-prints the result
 runDockerfileTextIO :: MonadIO m => EDockerfileTM m t -> m (t, L.Text)
 runDockerfileTextIO e = do
-    (r, w) <- runDockerfileIO e
-    return (r, PrettyPrint.prettyPrint w)
+  (r, w) <- runDockerfileIO e
+  return (r, PrettyPrint.prettyPrint w)
