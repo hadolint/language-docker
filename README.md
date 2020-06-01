@@ -31,6 +31,10 @@ main = do
     print (parseString c)
 ```
 
+## Create Dockerfiles
+
+Use the [dockerfile-creator package](https://github.com/hadolint/dockerfile-creator)
+
 [hackage-img]: https://img.shields.io/hackage/v/language-docker.svg
 [hackage]: https://hackage.haskell.org/package/language-docker
 [travis-img]: https://travis-ci.org/hadolint/language-docker.svg?branch=master
