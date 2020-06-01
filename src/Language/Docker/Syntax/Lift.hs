@@ -6,10 +6,10 @@ module Language.Docker.Syntax.Lift where
 import Data.Fixed (Fixed)
 import Data.Time.Clock (DiffTime)
 import Instances.TH.Lift () -- Defines Lift instances for ByteString and Text
-import Language.Haskell.TH.Lift
-import Language.Haskell.TH.Syntax ()
 
 import Language.Docker.Syntax
+import Language.Haskell.TH.Lift
+import Language.Haskell.TH.Syntax ()
 
 deriveLift ''Fixed
 
@@ -58,3 +58,23 @@ deriveLift ''Retries
 deriveLift ''CheckArgs
 
 deriveLift ''Check
+
+deriveLift ''BindOpts
+
+deriveLift ''CacheSharing
+
+deriveLift ''CacheOpts
+
+deriveLift ''TmpOpts
+
+deriveLift ''SecretOpts
+
+deriveLift ''RunMount
+
+deriveLift ''RunSecurity
+
+deriveLift ''RunNetwork
+
+deriveLift ''RunFlags
+
+deriveLift ''RunArgs

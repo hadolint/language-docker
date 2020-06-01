@@ -68,7 +68,7 @@ imageAlias = do
 baseImage :: Parser BaseImage
 baseImage = try taggedImage <|> untaggedImage
 
-parseFrom :: Parser Instr
+parseFrom :: Parser (Instruction Text)
 parseFrom = do
   reserved "FROM"
   From <$> baseImage

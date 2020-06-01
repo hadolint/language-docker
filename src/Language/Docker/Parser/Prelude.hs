@@ -24,7 +24,6 @@ module Language.Docker.Parser.Prelude
     Parser,
     Error,
     DockerfileError (..),
-    Instr,
     module Megaparsec,
     char,
     string,
@@ -41,7 +40,6 @@ import Data.Maybe (fromMaybe)
 import qualified Data.Set as S
 import Data.Text (Text)
 import qualified Data.Text as T
-import Language.Docker.Syntax
 import Text.Megaparsec as Megaparsec hiding (Label)
 import Text.Megaparsec.Char hiding (eol)
 import qualified Text.Megaparsec.Char.Lexer as L
@@ -64,8 +62,6 @@ type Parser = Parsec DockerfileError Text
 
 type Error = ParseErrorBundle Text DockerfileError
 
-type Instr = Instruction Text
-
 instance ShowErrorComponent DockerfileError where
   showErrorComponent (DuplicateFlagError f) = "duplicate flag: " ++ f
   showErrorComponent (FileListError f) =
@@ -85,7 +81,7 @@ data FoundWhitespace
   | MissingWhitespace
   deriving (Eq, Show)
 
--- There is no need to remember how mamny spaces we found in a line, so we can
+-- There is no need to remember how many spaces we found in a line, so we can
 -- cheaply remmeber that we already whitenessed some significant whitespace while
 -- parsing an expression by concatenating smaller results
 instance Semigroup FoundWhitespace where
@@ -242,8 +238,7 @@ someUnless name predicate = do
               <* notFollowedBy (char '\n')
           ]
 
-comment :: Parser Instr
+comment :: Parser Text
 comment = do
   void $ char '#'
-  text <- takeWhileP Nothing (not . isNl)
-  return $ Comment text
+  takeWhileP Nothing (not . isNl)

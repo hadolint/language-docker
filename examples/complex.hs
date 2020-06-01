@@ -23,6 +23,8 @@ main =
 
     RUN cd ${DIR} && npm install stylus && npm install eslint-plugin-jsx-a11y
 
+    RUN --mount=type=cache,target=/foo,sharing=shared npm install
+
     COPY . $DIR
 
     WORKDIR $DIR

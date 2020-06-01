@@ -20,7 +20,7 @@ data CheckFlag
   | FlagRetries Retries
   | CFlagInvalid (Text, Text)
 
-parseHealthcheck :: Parser Instr
+parseHealthcheck :: Parser (Instruction Text)
 parseHealthcheck = do
   reserved "HEALTHCHECK"
   Healthcheck <$> (fullCheck <|> noCheck)

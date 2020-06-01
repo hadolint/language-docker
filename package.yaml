@@ -53,7 +53,6 @@ library:
   - Language.Docker
   - Language.Docker.Parser
   - Language.Docker.PrettyPrint
-  - Language.Docker.Normalize
   - Language.Docker.Syntax
   - Language.Docker.Syntax.Lift
   - Language.Docker.EDSL

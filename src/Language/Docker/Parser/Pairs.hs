@@ -56,12 +56,12 @@ pair = do
 pairs :: Parser Pairs
 pairs = (pair <?> "a key value pair (key=value)") `sepEndBy1` requiredWhitespace
 
-parseLabel :: Parser Instr
+parseLabel :: Parser (Instruction Text)
 parseLabel = do
   reserved "LABEL"
   Label <$> pairs
 
-parseEnv :: Parser Instr
+parseEnv :: Parser (Instruction Text)
 parseEnv = do
   reserved "ENV"
   Env <$> pairs

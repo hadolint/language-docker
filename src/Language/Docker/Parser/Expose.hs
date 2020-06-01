@@ -9,7 +9,7 @@ import qualified Data.Text as T
 import Language.Docker.Parser.Prelude
 import Language.Docker.Syntax
 
-parseExpose :: Parser Instr
+parseExpose :: Parser (Instruction Text)
 parseExpose = do
   reserved "EXPOSE"
   Expose <$> ports

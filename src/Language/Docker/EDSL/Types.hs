@@ -36,6 +36,7 @@ data EInstruction next
                Syntax.CopySource
                next
     | RunArgs (Syntax.Arguments Text)
+              Syntax.RunFlags
               next
     | CmdArgs (Syntax.Arguments Text)
               next

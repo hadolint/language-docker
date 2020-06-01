@@ -1,5 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 
 module Language.Docker.Parser.Run
   ( parseRun,
@@ -40,15 +41,14 @@ data MountType
   | Secret
   | Ssh
 
-parseRun :: Parser Instr
+parseRun :: Parser (Instruction Text)
 parseRun = do
   reserved "RUN"
   Run <$> runArguments
 
 runArguments :: Parser (RunArgs Text)
 runArguments = do
-  presentFlags <- choice [runFlags, pure (RunFlags Nothing Nothing Nothing)]
-  requiredWhitespace
+  presentFlags <- choice [runFlags <* requiredWhitespace, pure (RunFlags Nothing Nothing Nothing)]
   args <- arguments
   return $ RunArgs args presentFlags
 
@@ -89,14 +89,14 @@ runFlagMount = do
               Just Cache <$ string "cache",
               Just Tmpfs <$ string "tmpfs",
               Just Secret <$ string "secret",
-              Just Ssh <$ "ssh"
+              Just Ssh <$ string "ssh"
             ],
         pure Nothing
       ]
   (mountType, args) <- return $
     case maybeType of
       Nothing -> (Bind, argsParser Bind)
-      Just Ssh -> (Ssh, choice [argsParser Ssh, pure []])
+      Just Ssh -> (Ssh, choice [string "," *> argsParser Ssh, pure []])
       Just t -> (t, string "," *> argsParser t)
   case mountType of
     Bind -> BindMount <$> (bindMount =<< args)
@@ -117,10 +117,10 @@ bindMount args =
     allowed = Set.fromList ["target", "source", "from", "ro"]
     required = Set.singleton "target"
     bindOpts :: RunMountArg -> BindOpts -> BindOpts
-    bindOpts (MountArgTarget path) bo = bo {target = path}
-    bindOpts (MountArgSource path) bo = bo {source = Just path}
-    bindOpts (MountArgFromImage img) bo = bo {fromImage = Just img}
-    bindOpts (MountArgReadOnly ro) bo = bo {readOnly = Just ro}
+    bindOpts (MountArgTarget path) bo = bo {bTarget = path}
+    bindOpts (MountArgSource path) bo = bo {bSource = Just path}
+    bindOpts (MountArgFromImage img) bo = bo {bFromImage = Just img}
+    bindOpts (MountArgReadOnly ro) bo = bo {bReadOnly = Just ro}
     bindOpts invalid _ = error $ "unhandled " <> show invalid <> " please report this bug"
 
 cacheMount :: [RunMountArg] -> Parser CacheOpts
@@ -132,15 +132,15 @@ cacheMount args =
     allowed = Set.fromList ["target", "sharing", "id", "ro", "from", "source", "mode", "uid", "gid"]
     required = Set.fromList ["target", "sharing"]
     cacheOpts :: RunMountArg -> CacheOpts -> CacheOpts
-    cacheOpts (MountArgTarget path) co = co {target = path}
-    cacheOpts (MountArgSharing sh) co = co {sharing = sh}
-    cacheOpts (MountArgId i) co = co {cacheId = Just i}
-    cacheOpts (MountArgReadOnly ro) co = co {readOnly = Just ro}
-    cacheOpts (MountArgFromImage img) co = co {fromImage = Just img}
-    cacheOpts (MountArgSource path) co = co {source = Just path}
-    cacheOpts (MountArgMode m) co = co {mode = Just m}
-    cacheOpts (MountArgUid u) co = co {uid = Just u}
-    cacheOpts (MountArgGid g) co = co {gid = Just g}
+    cacheOpts (MountArgTarget path) co = co {cTarget = path}
+    cacheOpts (MountArgSharing sh) co = co {cSharing = sh}
+    cacheOpts (MountArgId i) co = co {cCacheId = Just i}
+    cacheOpts (MountArgReadOnly ro) co = co {cReadOnly = Just ro}
+    cacheOpts (MountArgFromImage img) co = co {cFromImage = Just img}
+    cacheOpts (MountArgSource path) co = co {cSource = Just path}
+    cacheOpts (MountArgMode m) co = co {cMode = Just m}
+    cacheOpts (MountArgUid u) co = co {cUid = Just u}
+    cacheOpts (MountArgGid g) co = co {cGid = Just g}
     cacheOpts invalid _ = error $ "unhandled " <> show invalid <> " please report this bug"
 
 tmpfsMount :: [RunMountArg] -> Parser TmpOpts
@@ -151,7 +151,7 @@ tmpfsMount args =
   where
     required = Set.singleton "target"
     tmpOpts :: RunMountArg -> TmpOpts -> TmpOpts
-    tmpOpts (MountArgTarget path) t = t {target = path}
+    tmpOpts (MountArgTarget path) t = t {tTarget = path}
     tmpOpts invalid _ = error $ "unhandled " <> show invalid <> " please report this bug"
 
 secretMount :: [RunMountArg] -> Parser SecretOpts
@@ -163,12 +163,13 @@ secretMount args =
     allowed = Set.fromList ["target", "id", "required", "source", "mode", "uid", "gid"]
     required = Set.empty
     secretOpts :: RunMountArg -> SecretOpts -> SecretOpts
-    secretOpts (MountArgTarget path) co = co {target = Just path}
-    secretOpts (MountArgId i) co = co {cacheId = Just i}
-    secretOpts (MountArgSource path) co = co {source = Just path}
-    secretOpts (MountArgMode m) co = co {mode = Just m}
-    secretOpts (MountArgUid u) co = co {uid = Just u}
-    secretOpts (MountArgGid g) co = co {gid = Just g}
+    secretOpts (MountArgTarget path) co = co {sTarget = Just path}
+    secretOpts (MountArgId i) co = co {sCacheId = Just i}
+    secretOpts MountArgRequired co = co {sIsRequired = Just True}
+    secretOpts (MountArgSource path) co = co {sSource = Just path}
+    secretOpts (MountArgMode m) co = co {sMode = Just m}
+    secretOpts (MountArgUid u) co = co {sUid = Just u}
+    secretOpts (MountArgGid g) co = co {sGid = Just g}
     secretOpts invalid _ = error $ "unhandled " <> show invalid <> " please report this bug"
 
 validArgs ::
@@ -216,18 +217,11 @@ mountChoices mountType =
           mountArgGid
         ]
       Tmpfs -> [mountArgTarget]
-      Secret ->
+      _ -> -- Secret and Ssh
         [ mountArgTarget,
           mountArgId,
           mountArgRequired,
-          mountArgMode,
-          mountArgUid,
-          mountArgGid
-        ]
-      Ssh ->
-        [ mountArgTarget,
-          mountArgId,
-          mountArgRequired,
+          mountArgSource,
           mountArgMode,
           mountArgUid,
           mountArgGid

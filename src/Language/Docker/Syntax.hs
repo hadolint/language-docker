@@ -209,10 +209,10 @@ data RunMount
 
 data BindOpts
   = BindOpts
-      { target :: !TargetPath,
-        source :: !(Maybe SourcePath),
-        fromImage :: !(Maybe Text),
-        readOnly :: !(Maybe Bool)
+      { bTarget :: !TargetPath,
+        bSource :: !(Maybe SourcePath),
+        bFromImage :: !(Maybe Text),
+        bReadOnly :: !(Maybe Bool)
       }
   deriving (Show, Eq, Ord)
 
@@ -221,35 +221,35 @@ instance Default BindOpts where
 
 data CacheOpts
   = CacheOpts
-      { target :: !TargetPath,
-        sharing :: !CacheSharing,
-        cacheId :: !(Maybe Text),
-        readOnly :: !(Maybe Bool),
-        fromImage :: !(Maybe Text),
-        source :: !(Maybe SourcePath),
-        mode :: !(Maybe Text),
-        uid :: !(Maybe Integer),
-        gid :: !(Maybe Integer)
+      { cTarget :: !TargetPath,
+        cSharing :: !CacheSharing,
+        cCacheId :: !(Maybe Text),
+        cReadOnly :: !(Maybe Bool),
+        cFromImage :: !(Maybe Text),
+        cSource :: !(Maybe SourcePath),
+        cMode :: !(Maybe Text),
+        cUid :: !(Maybe Integer),
+        cGid :: !(Maybe Integer)
       }
   deriving (Show, Eq, Ord)
 
 instance Default CacheOpts where
   def = CacheOpts "" Shared Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
-newtype TmpOpts = TmpOpts {target :: TargetPath} deriving (Eq, Show, Ord)
+newtype TmpOpts = TmpOpts {tTarget :: TargetPath} deriving (Eq, Show, Ord)
 
 instance Default TmpOpts where
   def = TmpOpts ""
 
 data SecretOpts
   = SecretOpts
-      { target :: !(Maybe TargetPath),
-        cacheId :: !(Maybe Text),
-        isRequired :: !(Maybe Bool),
-        source :: !(Maybe SourcePath),
-        mode :: !(Maybe Text),
-        uid :: !(Maybe Integer),
-        gid :: !(Maybe Integer)
+      { sTarget :: !(Maybe TargetPath),
+        sCacheId :: !(Maybe Text),
+        sIsRequired :: !(Maybe Bool),
+        sSource :: !(Maybe SourcePath),
+        sMode :: !(Maybe Text),
+        sUid :: !(Maybe Integer),
+        sGid :: !(Maybe Integer)
       }
   deriving (Eq, Show, Ord)
 
@@ -280,6 +280,9 @@ data RunFlags
         network :: !(Maybe RunNetwork)
       }
   deriving (Show, Eq, Ord)
+
+instance Default RunFlags where
+  def = RunFlags Nothing Nothing Nothing
 
 data RunArgs args = RunArgs (Arguments args) RunFlags
   deriving (Show, Eq, Ord, Functor)

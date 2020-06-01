@@ -9,7 +9,7 @@ import Language.Docker.Parser.Arguments
 import Language.Docker.Parser.Prelude
 import Language.Docker.Syntax
 
-parseCmd :: Parser Instr
+parseCmd :: Parser (Instruction Text)
 parseCmd = do
   reserved "CMD"
   Cmd <$> arguments

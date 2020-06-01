@@ -19,6 +19,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as L
 import qualified Data.Text.Lazy.Encoding as E
+import Data.Default.Class (def)
 
 import qualified Language.Docker.PrettyPrint as PrettyPrint
 import qualified Language.Docker.Syntax as Syntax
@@ -61,7 +62,7 @@ runD (User u n) = runDef Syntax.User u n
 runD (Label ps n) = runDef Syntax.Label ps n
 runD (StopSignal s n) = runDef Syntax.Stopsignal s n
 runD (CopyArgs s d c f n) = runDef Syntax.Copy (Syntax.CopyArgs s d c f) n
-runD (RunArgs as n) = runDef Syntax.Run as n
+runD (RunArgs as fs n) = runDef Syntax.Run (Syntax.RunArgs as fs) n
 runD (Workdir d n) = runDef Syntax.Workdir d n
 runD (Expose ps n) = runDef Syntax.Expose ps n
 runD (Volume v n) = runDef Syntax.Volume v n
@@ -185,7 +186,7 @@ aliased (EBaseImage n t d _ p) a = EBaseImage n t d (Just a) p
 -- run "apt-get install wget"
 -- @
 run :: MonadFree EInstruction m => Syntax.Arguments Text -> m ()
-run = runArgs
+run as = runArgs as def
 
 -- | Create an ENTRYPOINT instruction with the given arguments.
 --

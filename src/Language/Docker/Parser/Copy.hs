@@ -16,7 +16,7 @@ data CopyFlag
   | FlagSource CopySource
   | FlagInvalid (Text, Text)
 
-parseCopy :: Parser Instr
+parseCopy :: Parser (Instruction Text)
 parseCopy = do
   reserved "COPY"
   flags <- copyFlag `sepEndBy` requiredWhitespace
@@ -39,7 +39,7 @@ parseCopy = do
               f : _ -> f
       fileList "COPY" (\src dest -> Copy (CopyArgs src dest ch fr))
 
-parseAdd :: Parser Instr
+parseAdd :: Parser (Instruction Text)
 parseAdd = do
   reserved "ADD"
   flag <- lexeme copyFlag <|> return (FlagChown NoChown)
@@ -49,7 +49,7 @@ parseAdd = do
     FlagSource _ -> customError $ InvalidFlagError "--from"
     FlagInvalid (k, v) -> unexpectedFlag k v
 
-fileList :: Text -> (NonEmpty SourcePath -> TargetPath -> Instr) -> Parser Instr
+fileList :: Text -> (NonEmpty SourcePath -> TargetPath -> Instruction Text) -> Parser (Instruction Text)
 fileList name constr = do
   paths <-
     (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]")

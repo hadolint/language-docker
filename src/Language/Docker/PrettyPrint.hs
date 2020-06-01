@@ -1,35 +1,36 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE RebindableSyntax #-}
-{-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE MultiWayIf #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiWayIf #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RebindableSyntax #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 module Language.Docker.PrettyPrint where
 
-import Data.List.NonEmpty as NonEmpty (NonEmpty(..), toList)
+import Data.List.NonEmpty as NonEmpty (NonEmpty (..), toList)
 import Data.String (fromString)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Lazy as L
 import qualified Data.Text.Lazy.Builder as B
 import Data.Text.Prettyprint.Doc
-import Data.Text.Prettyprint.Doc.Internal (Doc(Empty))
+import Data.Text.Prettyprint.Doc.Internal (Doc (Empty))
 import Data.Text.Prettyprint.Doc.Render.Text (renderLazy)
 import Language.Docker.Syntax
 import Prelude hiding ((<>), (>>))
 
-data EscapeAccum = EscapeAccum
-    { buffer :: !B.Builder
-    , count :: !Int
-    , escaping :: !Bool
-    }
+data EscapeAccum
+  = EscapeAccum
+      { buffer :: !B.Builder,
+        count :: !Int,
+        escaping :: !Bool
+      }
 
 instance Pretty (Arguments Text) where
-    pretty = prettyPrintArguments
+  pretty = prettyPrintArguments
 
 -- | Pretty print a 'Dockerfile' to a 'Text'
 prettyPrint :: Dockerfile -> L.Text
@@ -51,30 +52,30 @@ prettyPrintImage (Image Nothing name) = pretty name
 prettyPrintImage (Image (Just (Registry reg)) name) = pretty reg <> "/" <> pretty name
 
 prettyPrintBaseImage :: BaseImage -> Doc ann
-prettyPrintBaseImage BaseImage{..} = do
-    prettyPlatform platform
-    prettyPrintImage image
-    prettyTag tag
-    prettyDigest digest
-    prettyAlias alias
+prettyPrintBaseImage BaseImage {..} = do
+  prettyPlatform platform
+  prettyPrintImage image
+  prettyTag tag
+  prettyDigest digest
+  prettyAlias alias
   where
     (>>) = (<>)
     prettyPlatform maybePlatform =
-        case maybePlatform of
-            Nothing -> mempty
-            Just p -> "--platform=" <> pretty p <> " "
+      case maybePlatform of
+        Nothing -> mempty
+        Just p -> "--platform=" <> pretty p <> " "
     prettyTag maybeTag =
-        case maybeTag of
-            Nothing -> mempty
-            Just (Tag p) -> ":" <> pretty p
+      case maybeTag of
+        Nothing -> mempty
+        Just (Tag p) -> ":" <> pretty p
     prettyAlias maybeAlias =
-        case maybeAlias of
-            Nothing -> mempty
-            Just (ImageAlias a) -> " AS " <> pretty a
+      case maybeAlias of
+        Nothing -> mempty
+        Just (ImageAlias a) -> " AS " <> pretty a
     prettyDigest maybeDigest =
-        case maybeDigest of
-            Nothing -> mempty
-            Just (Digest d) -> "@" <> pretty d
+      case maybeDigest of
+        Nothing -> mempty
+        Just (Digest d) -> "@" <> pretty d
 
 prettyPrintPairs :: Pairs -> Doc ann
 prettyPrintPairs ps = align $ sepLine $ fmap prettyPrintPair ps
@@ -99,22 +100,22 @@ doubleQoute w = enclose dquote dquote (pretty (escapeQuotes w))
 
 escapeQuotes :: Text -> L.Text
 escapeQuotes text =
-    case Text.foldr accumulate (EscapeAccum mempty 0 False) text of
-        EscapeAccum buffer _ False -> B.toLazyText buffer
-        EscapeAccum buffer count True ->
-            case count `mod` 2 of
-                0 -> B.toLazyText (B.singleton '\\' <> buffer)
-                _ -> B.toLazyText buffer
+  case Text.foldr accumulate (EscapeAccum mempty 0 False) text of
+    EscapeAccum buffer _ False -> B.toLazyText buffer
+    EscapeAccum buffer count True ->
+      case count `mod` 2 of
+        0 -> B.toLazyText (B.singleton '\\' <> buffer)
+        _ -> B.toLazyText buffer
   where
     accumulate '"' EscapeAccum {buffer, escaping = False} =
-        EscapeAccum (B.singleton '"' <> buffer) 0 True
+      EscapeAccum (B.singleton '"' <> buffer) 0 True
     accumulate '\\' EscapeAccum {buffer, escaping = True, count} =
-        EscapeAccum (B.singleton '\\' <> buffer) (count + 1) True
+      EscapeAccum (B.singleton '\\' <> buffer) (count + 1) True
     accumulate c EscapeAccum {buffer, escaping = True, count}
-        | count `mod` 2 == 0 = EscapeAccum (B.singleton c <> B.singleton '\\' <> buffer) 0 False
-        | otherwise = EscapeAccum (B.singleton c <> buffer) 0 False -- It was already escaped
+      | count `mod` 2 == 0 = EscapeAccum (B.singleton c <> B.singleton '\\' <> buffer) 0 False
+      | otherwise = EscapeAccum (B.singleton c <> buffer) 0 False -- It was already escaped
     accumulate c EscapeAccum {buffer, escaping = False} =
-        EscapeAccum (B.singleton c <> buffer) 0 False
+      EscapeAccum (B.singleton c <> buffer) 0 False
 
 prettyPrintPort :: Port -> Doc ann
 prettyPrintPort (PortStr str) = pretty str
@@ -125,24 +126,24 @@ prettyPrintPort (Port num UDP) = pretty num <> "/udp"
 
 prettyPrintFileList :: NonEmpty SourcePath -> TargetPath -> Doc ann
 prettyPrintFileList sources (TargetPath dest) =
-    let ending =
-            case (Text.isSuffixOf "/" dest, sources) of
-                (True, _) -> "" -- If the target ends with / then no extra ending is needed
-                (_, _fst :| _snd:_) -> "/" -- More than one source means that the target should end in /
-                _ -> ""
-    in hsep $ [pretty s | SourcePath s <- toList sources] ++ [pretty dest <> ending]
+  let ending =
+        case (Text.isSuffixOf "/" dest, sources) of
+          (True, _) -> "" -- If the target ends with / then no extra ending is needed
+          (_, _fst :| _snd : _) -> "/" -- More than one source means that the target should end in /
+          _ -> ""
+   in hsep $ [pretty s | SourcePath s <- toList sources] ++ [pretty dest <> ending]
 
 prettyPrintChown :: Chown -> Doc ann
 prettyPrintChown chown =
-    case chown of
-        Chown c -> "--chown=" <> pretty c
-        NoChown -> mempty
+  case chown of
+    Chown c -> "--chown=" <> pretty c
+    NoChown -> mempty
 
 prettyPrintCopySource :: CopySource -> Doc ann
 prettyPrintCopySource source =
-    case source of
-        CopySource c -> "--from=" <> pretty c
-        NoSource -> mempty
+  case source of
+    CopySource c -> "--from=" <> pretty c
+    NoSource -> mempty
 
 prettyPrintDuration :: Text -> Maybe Duration -> Doc ann
 prettyPrintDuration flagName = maybe mempty pp
@@ -154,78 +155,153 @@ prettyPrintRetries = maybe mempty pp
   where
     pp (Retries r) = "--retries=" <> pretty r
 
+prettyPrintRunMount :: Maybe RunMount -> Doc ann
+prettyPrintRunMount Nothing = mempty
+prettyPrintRunMount (Just mount) = "--mount="
+  <> case mount of
+    BindMount BindOpts {..} ->
+      "type=bind"
+        <> printTarget bTarget
+        <> maybe mempty printSource bSource
+        <> maybe mempty printFromImage bFromImage
+        <> maybe mempty printReadOnly bReadOnly
+    CacheMount CacheOpts {..} ->
+      "type=cache"
+        <> printTarget cTarget
+        <> printSharing cSharing
+        <> maybe mempty printId cCacheId
+        <> maybe mempty printFromImage cFromImage
+        <> maybe mempty printSource cSource
+        <> maybe mempty printMode cMode
+        <> maybe mempty printUid cUid
+        <> maybe mempty printGid cGid
+        <> maybe mempty printReadOnly cReadOnly
+    SshMount SecretOpts {..} ->
+      "type=ssh"
+        <> maybe mempty printTarget sTarget
+        <> maybe mempty printId sCacheId
+        <> maybe mempty printSource sSource
+        <> maybe mempty printMode sMode
+        <> maybe mempty printUid sUid
+        <> maybe mempty printGid sGid
+        <> maybe mempty printRequired sIsRequired
+    SecretMount SecretOpts {..} ->
+      "type=secret"
+        <> maybe mempty printTarget sTarget
+        <> maybe mempty printId sCacheId
+        <> maybe mempty printSource sSource
+        <> maybe mempty printMode sMode
+        <> maybe mempty printUid sUid
+        <> maybe mempty printGid sGid
+        <> maybe mempty printRequired sIsRequired
+    TmpfsMount TmpOpts {..} -> "type=tmpfs" <> printTarget tTarget
+  where
+    printQuotable str
+      | Text.any (== '"') str = doubleQoute str
+      | otherwise = pretty str
+    printTarget (TargetPath t) = ",target=" <> printQuotable t
+    printSource (SourcePath s) = ",source=" <> printQuotable s
+    printFromImage f = ",from=" <> printQuotable f
+    printSharing sharing = ",sharing="
+      <> case sharing of
+        Shared -> "shared"
+        Private -> "private"
+        Locked -> "locked"
+    printId i = ",id=" <> printQuotable i
+    printMode m = ",mode=" <> pretty m
+    printUid uid = ",uid=" <> pretty uid
+    printGid gid = ",gid=" <> pretty gid
+    printReadOnly True = ",ro"
+    printReadOnly False = ",rw"
+    printRequired True = ",required"
+    printRequired False = mempty
+
+prettyPrintRunNetwork :: Maybe RunNetwork -> Doc ann
+prettyPrintRunNetwork Nothing = mempty
+prettyPrintRunNetwork (Just NetworkHost) = "--network=host"
+prettyPrintRunNetwork (Just NetworkNone) = "--network=none"
+prettyPrintRunNetwork (Just NetworkDefault) = "--network=default"
+
+prettyPrintRunSecurity :: Maybe RunSecurity -> Doc ann
+prettyPrintRunSecurity Nothing = mempty
+prettyPrintRunSecurity (Just Sandbox) = "--security=sandbox"
+prettyPrintRunSecurity (Just Insecure) = "--security=insecure"
+
 prettyPrintInstruction :: Pretty (Arguments args) => Instruction args -> Doc ann
 prettyPrintInstruction i =
-    case i of
-        Maintainer m -> do
-            "MAINTAINER"
-            pretty m
-        Arg a Nothing -> do
-            "ARG"
-            pretty a
-        Arg k (Just v) -> do
-            "ARG"
-            pretty k <> "=" <> pretty v
-        Entrypoint e -> do
-            "ENTRYPOINT"
-            pretty e
-        Stopsignal s -> do
-            "STOPSIGNAL"
-            pretty s
-        Workdir w -> do
-            "WORKDIR"
-            pretty w
-        Expose (Ports ps) -> do
-            "EXPOSE"
-            hsep (fmap prettyPrintPort ps)
-        Volume dir -> do
-            "VOLUME"
-            pretty dir
-        Run (RunArgs c _f) -> do
-            "RUN"
-            pretty c
-        Copy CopyArgs {sourcePaths, targetPath, chownFlag, sourceFlag} -> do
-            "COPY"
-            prettyPrintChown chownFlag
-            prettyPrintCopySource sourceFlag
-            prettyPrintFileList sourcePaths targetPath
-        Cmd c -> do
-            "CMD"
-            pretty c
-        Label l -> do
-            "LABEL"
-            prettyPrintPairs l
-        Env ps -> do
-            "ENV"
-            prettyPrintPairs ps
-        User u -> do
-            "USER"
-            pretty u
-        Comment s -> do
-            pretty '#'
-            pretty s
-        OnBuild i' -> do
-            "ONBUILD"
-            prettyPrintInstruction i'
-        From b -> do
-            "FROM"
-            prettyPrintBaseImage b
-        Add AddArgs {sourcePaths, targetPath, chownFlag} -> do
-            "ADD"
-            prettyPrintChown chownFlag
-            prettyPrintFileList sourcePaths targetPath
-        Shell args -> do
-            "SHELL"
-            pretty args
-        Healthcheck NoCheck -> "HEALTHCHECK NONE"
-        Healthcheck (Check CheckArgs {..}) -> do
-            "HEALTHCHECK"
-            prettyPrintDuration "--interval=" interval
-            prettyPrintDuration "--timeout=" timeout
-            prettyPrintDuration "--start-period=" startPeriod
-            prettyPrintRetries retries
-            "CMD"
-            pretty checkCommand
+  case i of
+    Maintainer m -> do
+      "MAINTAINER"
+      pretty m
+    Arg a Nothing -> do
+      "ARG"
+      pretty a
+    Arg k (Just v) -> do
+      "ARG"
+      pretty k <> "=" <> pretty v
+    Entrypoint e -> do
+      "ENTRYPOINT"
+      pretty e
+    Stopsignal s -> do
+      "STOPSIGNAL"
+      pretty s
+    Workdir w -> do
+      "WORKDIR"
+      pretty w
+    Expose (Ports ps) -> do
+      "EXPOSE"
+      hsep (fmap prettyPrintPort ps)
+    Volume dir -> do
+      "VOLUME"
+      pretty dir
+    Run (RunArgs c RunFlags {mount, network, security}) -> do
+      "RUN"
+      prettyPrintRunMount mount
+      prettyPrintRunNetwork network
+      prettyPrintRunSecurity security
+      pretty c
+    Copy CopyArgs {sourcePaths, targetPath, chownFlag, sourceFlag} -> do
+      "COPY"
+      prettyPrintChown chownFlag
+      prettyPrintCopySource sourceFlag
+      prettyPrintFileList sourcePaths targetPath
+    Cmd c -> do
+      "CMD"
+      pretty c
+    Label l -> do
+      "LABEL"
+      prettyPrintPairs l
+    Env ps -> do
+      "ENV"
+      prettyPrintPairs ps
+    User u -> do
+      "USER"
+      pretty u
+    Comment s -> do
+      pretty '#'
+      pretty s
+    OnBuild i' -> do
+      "ONBUILD"
+      prettyPrintInstruction i'
+    From b -> do
+      "FROM"
+      prettyPrintBaseImage b
+    Add AddArgs {sourcePaths, targetPath, chownFlag} -> do
+      "ADD"
+      prettyPrintChown chownFlag
+      prettyPrintFileList sourcePaths targetPath
+    Shell args -> do
+      "SHELL"
+      pretty args
+    Healthcheck NoCheck -> "HEALTHCHECK NONE"
+    Healthcheck (Check CheckArgs {..}) -> do
+      "HEALTHCHECK"
+      prettyPrintDuration "--interval=" interval
+      prettyPrintDuration "--timeout=" timeout
+      prettyPrintDuration "--start-period=" startPeriod
+      prettyPrintRetries retries
+      "CMD"
+      pretty checkCommand
   where
     (>>) = spaceCat
 
