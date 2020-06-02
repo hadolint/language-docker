@@ -20,13 +20,6 @@ matrix:
   # Nightly builds are allowed to fail
   - env: ARGS="--resolver nightly"
 
-  # Build on OS X in addition to Linux
-  - env: ARGS="--resolver lts"
-    os: osx
-
-  - env: ARGS="--resolver nightly"
-    os: osx
-
   - env:
       - PURPOSE="Integration tests"
       - ARGS=""

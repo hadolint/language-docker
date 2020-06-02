@@ -5,9 +5,7 @@ set -o nounset
 
 readonly CWD="$PWD"
 readonly TESTS_DIR="integration-tests/Dockerfiles"
-BLACKLIST="./Dockerfiles/dockerfiles/nylas/sync-engine/Dockerfile"
-BLACKLIST=$BLACKLIST" ./Dockerfiles/docker-images/OracleWebLogic/samples/12212-domain/Dockerfile"
-BLACKLIST=$BLACKLIST" ./Dockerfiles/docker-images/OracleWebLogic/samples/12213-domain/Dockerfile"
+BLACKLIST=""
 
 function git_clone() {
     local git_url="$1"
