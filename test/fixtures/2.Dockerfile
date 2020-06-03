@@ -11,3 +11,6 @@ RUN set -ex; \
 		apt-get install -y --no-install-recommends dirmngr; \
 	fi; \
 	rm -rf /var/lib/apt/lists/*
+
+ONBUILD ENV RUNNER_CMD_EXEC=${RUNNER_CMD_EXEC:-"java \$JAVA_OPTS -jar /runtime/server.jar \$JAR_OPTS"}
+ENV BUNDLE_WITHOUT=${bundle_without:-'development test'}

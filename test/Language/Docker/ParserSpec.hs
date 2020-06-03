@@ -479,16 +479,16 @@ spec = do
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
-    it "--mount=type=cache with target and sharing" $
+    it "--mount=type=cache with target" $
       let file =
             Text.unlines
-              [ "RUN --mount=type=cache,target=/foo,sharing=private echo foo",
-                "RUN --mount=type=cache,target=/bar,sharing=shared echo foo",
-                "RUN --mount=type=cache,target=/baz,sharing=locked echo foo"
+              [ "RUN --mount=type=cache,target=/foo echo foo",
+                "RUN --mount=type=cache,target=/bar echo foo",
+                "RUN --mount=type=cache,target=/baz echo foo"
               ]
-          flags1 = def {mount = Just $ CacheMount (def {cTarget = "/foo", cSharing = Private})}
-          flags2 = def {mount = Just $ CacheMount (def {cTarget = "/bar", cSharing = Shared})}
-          flags3 = def {mount = Just $ CacheMount (def {cTarget = "/baz", cSharing = Locked})}
+          flags1 = def {mount = Just $ CacheMount (def {cTarget = "/foo"})}
+          flags2 = def {mount = Just $ CacheMount (def {cTarget = "/bar"})}
+          flags3 = def {mount = Just $ CacheMount (def {cTarget = "/baz"})}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags1,
@@ -507,7 +507,7 @@ spec = do
                     CacheMount
                       ( def
                           { cTarget = "/foo",
-                            cSharing = Private,
+                            cSharing = Just Private,
                             cCacheId = Just "a",
                             cReadOnly = Just True,
                             cFromImage = Just "ubuntu",

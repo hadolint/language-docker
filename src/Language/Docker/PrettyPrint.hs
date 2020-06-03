@@ -168,7 +168,7 @@ prettyPrintRunMount (Just mount) = "--mount="
     CacheMount CacheOpts {..} ->
       "type=cache"
         <> printTarget cTarget
-        <> printSharing cSharing
+        <> maybe mempty printSharing cSharing
         <> maybe mempty printId cCacheId
         <> maybe mempty printFromImage cFromImage
         <> maybe mempty printSource cSource

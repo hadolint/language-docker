@@ -222,7 +222,7 @@ instance Default BindOpts where
 data CacheOpts
   = CacheOpts
       { cTarget :: !TargetPath,
-        cSharing :: !CacheSharing,
+        cSharing :: !(Maybe CacheSharing),
         cCacheId :: !(Maybe Text),
         cReadOnly :: !(Maybe Bool),
         cFromImage :: !(Maybe Text),
@@ -234,7 +234,7 @@ data CacheOpts
   deriving (Show, Eq, Ord)
 
 instance Default CacheOpts where
-  def = CacheOpts "" Shared Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+  def = CacheOpts "" Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 newtype TmpOpts = TmpOpts {tTarget :: TargetPath} deriving (Eq, Show, Ord)
 
