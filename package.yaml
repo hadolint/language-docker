@@ -1,5 +1,5 @@
 name: language-docker
-version: '9.0.1'
+version: '9.1.0'
 synopsis: Dockerfile parser, pretty-printer and embedded DSL
 description: 'All functions for parsing and pretty-printing Dockerfiles are
   exported through @Language.Docker@. For more fine-grained operations look for
@@ -22,6 +22,8 @@ license: GPL-3
 github: hadolint/language-docker
 extra-source-files:
   - README.md
+  - test/fixtures/1.Dockerfile
+  - test/fixtures/2.Dockerfile
 
 dependencies:
   - base >=4.8 && <5

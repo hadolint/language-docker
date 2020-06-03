@@ -130,10 +130,10 @@ cacheMount args =
     Right as -> return $ foldr cacheOpts def as
   where
     allowed = Set.fromList ["target", "sharing", "id", "ro", "from", "source", "mode", "uid", "gid"]
-    required = Set.fromList ["target", "sharing"]
+    required = Set.singleton "target"
     cacheOpts :: RunMountArg -> CacheOpts -> CacheOpts
     cacheOpts (MountArgTarget path) co = co {cTarget = path}
-    cacheOpts (MountArgSharing sh) co = co {cSharing = sh}
+    cacheOpts (MountArgSharing sh) co = co {cSharing = Just sh}
     cacheOpts (MountArgId i) co = co {cCacheId = Just i}
     cacheOpts (MountArgReadOnly ro) co = co {cReadOnly = Just ro}
     cacheOpts (MountArgFromImage img) co = co {cFromImage = Just img}
