@@ -268,7 +268,7 @@ mountArgSource = do
 
 mountArgTarget :: Parser RunMountArg
 mountArgTarget = do
-  label "target=" $ choice [string "target=", string "dest=", string "destination="]
+  label "target=" $ choice [string "target=", string "dst=", string "destination="]
   MountArgTarget . TargetPath <$> stringArg
 
 mountArgUid :: Parser RunMountArg
