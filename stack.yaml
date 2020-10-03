@@ -1,5 +1,7 @@
-resolver: lts-15.13
+resolver: lts-16.16
 packages:
 - '.'
 flags: {}
 extra-package-dbs: []
+ghc-options:
+  "$everything": -haddock
