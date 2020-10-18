@@ -214,56 +214,56 @@ spec = do
       assertAst "CMD true \\\n && true" [Cmd "true  && true"]
     it "quoted command params" $ assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
     it "Parses commas correctly" $ assertAst "CMD [ \"echo\" ,\"-e\" , \"1\"]" [Cmd ["echo", "-e", "1"]]
-  describe "parse SHELL"
-    $ it "quoted shell params"
-    $ assertAst "SHELL [\"/bin/bash\",  \"-c\"]" [Shell ["/bin/bash", "-c"]]
+  describe "parse SHELL" $
+    it "quoted shell params" $
+      assertAst "SHELL [\"/bin/bash\",  \"-c\"]" [Shell ["/bin/bash", "-c"]]
   describe "parse HEALTHCHECK" $ do
     it "parse healthcheck with interval" $
       assertAst
         "HEALTHCHECK --interval=5m \\\nCMD curl -f http://localhost/"
-        [ Healthcheck
-            $ Check
-            $ CheckArgs "curl -f http://localhost/" (Just 300) Nothing Nothing Nothing
+        [ Healthcheck $
+            Check $
+              CheckArgs "curl -f http://localhost/" (Just 300) Nothing Nothing Nothing
         ]
     it "parse healthcheck with retries" $
       assertAst
         "HEALTHCHECK --retries=10 CMD curl -f http://localhost/"
-        [ Healthcheck
-            $ Check
-            $ CheckArgs "curl -f http://localhost/" Nothing Nothing Nothing (Just $ Retries 10)
+        [ Healthcheck $
+            Check $
+              CheckArgs "curl -f http://localhost/" Nothing Nothing Nothing (Just $ Retries 10)
         ]
     it "parse healthcheck with timeout" $
       assertAst
         "HEALTHCHECK --timeout=10s CMD curl -f http://localhost/"
-        [ Healthcheck
-            $ Check
-            $ CheckArgs "curl -f http://localhost/" Nothing (Just 10) Nothing Nothing
+        [ Healthcheck $
+            Check $
+              CheckArgs "curl -f http://localhost/" Nothing (Just 10) Nothing Nothing
         ]
     it "parse healthcheck with start-period" $
       assertAst
         "HEALTHCHECK --start-period=2m CMD curl -f http://localhost/"
-        [ Healthcheck
-            $ Check
-            $ CheckArgs "curl -f http://localhost/" Nothing Nothing (Just 120) Nothing
+        [ Healthcheck $
+            Check $
+              CheckArgs "curl -f http://localhost/" Nothing Nothing (Just 120) Nothing
         ]
     it "parse healthcheck with all flags" $
       assertAst
         "HEALTHCHECK --start-period=2s --timeout=1m --retries=3 --interval=5s    CMD curl -f http://localhost/"
-        [ Healthcheck
-            $ Check
-            $ CheckArgs
-              "curl -f http://localhost/"
-              (Just 5)
-              (Just 60)
-              (Just 2)
-              (Just $ Retries 3)
+        [ Healthcheck $
+            Check $
+              CheckArgs
+                "curl -f http://localhost/"
+                (Just 5)
+                (Just 60)
+                (Just 2)
+                (Just $ Retries 3)
         ]
     it "parse healthcheck with no flags" $
       assertAst
         "HEALTHCHECK CMD curl -f http://localhost/"
-        [ Healthcheck
-            $ Check
-            $ CheckArgs "curl -f http://localhost/" Nothing Nothing Nothing Nothing
+        [ Healthcheck $
+            Check $
+              CheckArgs "curl -f http://localhost/" Nothing Nothing Nothing Nothing
         ]
   describe "parse MAINTAINER" $ do
     it "maintainer of untagged scratch image" $
@@ -456,6 +456,12 @@ spec = do
        in assertAst
             file
             [ Copy $ CopyArgs (fmap SourcePath ["C:\\\\go"]) (TargetPath "C:\\\\go") NoChown NoSource
+            ]
+    it "does not get confused with trailing whitespace" $
+      let file = Text.unlines ["COPY a b  "]
+       in assertAst
+            file
+            [ Copy $ CopyArgs [SourcePath "a"] (TargetPath "b") NoChown NoSource
             ]
   describe "RUN with experimental flags" $ do
     it "--mount=type=bind and target" $

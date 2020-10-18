@@ -20,7 +20,7 @@ import Language.Docker.Syntax
 
 contents :: Parser a -> Parser a
 contents p = do
-  void $ takeWhileP Nothing isSpaceNl
+  void $ takeWhileP Nothing (\c -> c == '\r' || c == '\n' || c == ' ' || c == '\t')
   r <- p
   eof
   return r
@@ -34,15 +34,19 @@ dockerfile =
     return $ InstructionPos i (T.pack . sourceName $ pos) (unPos . sourceLine $ pos)
 
 parseText :: Text -> Either Error Dockerfile
-parseText = parse (contents dockerfile) "<string>"
+parseText = parse (contents dockerfile) "<string>" . dos2unix
 
 parseFile :: FilePath -> IO (Either Error Dockerfile)
 parseFile file = doParse <$> B.readFile file
   where
-    doParse = parse (contents dockerfile) file . E.decodeUtf8With E.lenientDecode
+    doParse = parse (contents dockerfile) file . dos2unix . E.decodeUtf8With E.lenientDecode
 
 -- | Reads the standard input until the end and parses the contents as a Dockerfile
 parseStdin :: IO (Either Error Dockerfile)
 parseStdin = doParse <$> B.getContents
   where
-    doParse = parse (contents dockerfile) "/dev/stdin" . E.decodeUtf8With E.lenientDecode
+    doParse = parse (contents dockerfile) "/dev/stdin" . dos2unix . E.decodeUtf8With E.lenientDecode
+
+-- | Changes crlf line endings to simple line endings
+dos2unix :: T.Text -> T.Text
+dos2unix = T.replace "\r\n" "\n"

@@ -59,7 +59,7 @@ fileList name constr = do
     _ -> return $ constr (SourcePath <$> fromList (init paths)) (TargetPath $ last paths)
   where
     spaceSeparated =
-      anyUnless (== ' ') `sepEndBy1` (try requiredWhitespace <?> "at least another file path")
+      someUnless "a file" (== ' ') `sepEndBy1` (try requiredWhitespace <?> "at least another file path")
     stringList = brackets $ commaSep stringLiteral
 
 unexpectedFlag :: Text -> Text -> Parser a
