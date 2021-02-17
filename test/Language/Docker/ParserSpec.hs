@@ -31,6 +31,8 @@ spec = do
   describe "parse ARG" $ do
     it "no default" $
       assertAst "ARG FOO" [Arg "FOO" Nothing]
+    it "no default with =" $
+      assertAst "ARG FOO=" [Arg "FOO" Nothing]
     it "with default" $
       assertAst "ARG FOO=bar" [Arg "FOO" (Just "bar")]
   describe "parse FROM" $ do
