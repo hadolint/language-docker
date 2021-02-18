@@ -41,8 +41,13 @@ parseArg :: Parser (Instruction Text)
 parseArg = do
   reserved "ARG"
   (try nameWithDefault <?> "the arg name")
+    <|> (try nameWithoutDefault <?> "the arg name")
     <|> Arg <$> untilEol "the argument name" <*> pure Nothing
   where
+    nameWithoutDefault = do
+      name <- someUnless "the argument name" (== '=')
+      void $ untilEol "the rest"
+      return $ Arg name Nothing
     nameWithDefault = do
       name <- someUnless "the argument name" (== '=')
       void $ char '='
