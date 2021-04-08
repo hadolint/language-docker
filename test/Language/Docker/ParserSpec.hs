@@ -544,6 +544,34 @@ spec = do
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
+    it "--mount=type=ssh,required=false" $
+      let file = Text.unlines ["RUN --mount=type=ssh,required=false echo foo"]
+          flags = def {mount = Just $ SshMount def {sIsRequired = Just False}}
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
+    it "--mount=type=ssh,required=False" $
+      let file = Text.unlines ["RUN --mount=type=ssh,required=False echo foo"]
+          flags = def {mount = Just $ SshMount def {sIsRequired = Just False}}
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
+    it "--mount=type=secret,required=true" $
+      let file = Text.unlines ["RUN --mount=type=secret,required=true echo foo"]
+          flags = def {mount = Just $ SecretMount def {sIsRequired = Just True}}
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
+    it "--mount=type=secret,required=True" $
+      let file = Text.unlines ["RUN --mount=type=secret,required=True echo foo"]
+          flags = def {mount = Just $ SecretMount def {sIsRequired = Just True}}
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
     it "--mount=type=ssh all modifiers" $
       let file = Text.unlines ["RUN --mount=type=ssh,target=/foo,id=a,required,source=/bar,mode=0700,uid=0,gid=0 echo foo"]
           flags =
@@ -566,8 +594,52 @@ spec = do
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
+    it "--mount=type=ssh all modifiers, required explicit" $
+      let file = Text.unlines ["RUN --mount=type=ssh,target=/foo,id=a,required=true,source=/bar,mode=0700,uid=0,gid=0 echo foo"]
+          flags =
+            def
+              { mount =
+                  Just $
+                    SshMount
+                      ( def
+                          { sTarget = Just "/foo",
+                            sCacheId = Just "a",
+                            sIsRequired = Just True,
+                            sSource = Just "/bar",
+                            sMode = Just "0700",
+                            sUid = Just 0,
+                            sGid = Just 0
+                          }
+                      )
+              }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
     it "--mount=type=secret all modifiers" $
       let file = Text.unlines ["RUN --mount=type=secret,target=/foo,id=a,required,source=/bar,mode=0700,uid=0,gid=0 echo foo"]
+          flags =
+            def
+              { mount =
+                  Just $
+                    SecretMount
+                      ( def
+                          { sTarget = Just "/foo",
+                            sCacheId = Just "a",
+                            sIsRequired = Just True,
+                            sSource = Just "/bar",
+                            sMode = Just "0700",
+                            sUid = Just 0,
+                            sGid = Just 0
+                          }
+                      )
+              }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
+    it "--mount=type=secret all modifiers, required explicit" $
+      let file = Text.unlines ["RUN --mount=type=secret,target=/foo,id=a,required=true,source=/bar,mode=0700,uid=0,gid=0 echo foo"]
           flags =
             def
               { mount =

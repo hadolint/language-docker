@@ -1,6 +1,5 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TupleSections #-}
 
 module Language.Docker.Parser.Run
   ( parseRun,
@@ -26,7 +25,7 @@ data RunMountArg
   | MountArgId Text
   | MountArgMode Text
   | MountArgReadOnly Bool
-  | MountArgRequired
+  | MountArgRequired Bool
   | MountArgSharing CacheSharing
   | MountArgSource SourcePath
   | MountArgTarget TargetPath
@@ -165,7 +164,7 @@ secretMount args =
     secretOpts :: RunMountArg -> SecretOpts -> SecretOpts
     secretOpts (MountArgTarget path) co = co {sTarget = Just path}
     secretOpts (MountArgId i) co = co {sCacheId = Just i}
-    secretOpts MountArgRequired co = co {sIsRequired = Just True}
+    secretOpts (MountArgRequired r) co = co {sIsRequired = Just r}
     secretOpts (MountArgSource path) co = co {sSource = Just path}
     secretOpts (MountArgMode m) co = co {sMode = Just m}
     secretOpts (MountArgUid u) co = co {sUid = Just u}
@@ -256,7 +255,15 @@ mountArgReadWrite :: Parser RunMountArg
 mountArgReadWrite = MountArgReadOnly <$> (choice ["rw", "readwrite"] $> False)
 
 mountArgRequired :: Parser RunMountArg
-mountArgRequired = MountArgRequired <$ string "required"
+mountArgRequired = MountArgRequired <$> choice
+    [ choice ["required=true",
+              "required=True"
+             ] $> True,
+      choice ["required=false",
+              "required=False"
+             ] $> False,
+      string "required" $> True  -- This must come last in the list!
+    ]
 
 mountArgSharing :: Parser RunMountArg
 mountArgSharing = MountArgSharing <$> key "sharing" cacheSharing
@@ -280,7 +287,7 @@ toArgName (MountArgGid _) = "gid"
 toArgName (MountArgId _) = "id"
 toArgName (MountArgMode _) = "mode"
 toArgName (MountArgReadOnly _) = "ro"
-toArgName MountArgRequired = "required"
+toArgName (MountArgRequired _) = "required"
 toArgName (MountArgSharing _) = "sharing"
 toArgName (MountArgSource _) = "source"
 toArgName (MountArgTarget _) = "target"
