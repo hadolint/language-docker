@@ -128,6 +128,17 @@ instance IsString Chown where
       "" -> NoChown
       _ -> Chown (Text.pack ch)
 
+data Chmod
+  = Chmod !Text
+  | NoChmod
+  deriving (Show, Eq, Ord)
+
+instance IsString Chmod where
+  fromString ch =
+    case ch of
+      "" -> NoChmod
+      _ -> Chmod (Text.pack ch)
+
 data CopySource
   = CopySource !Text
   | NoSource
@@ -156,6 +167,7 @@ data CopyArgs
       { sourcePaths :: NonEmpty SourcePath,
         targetPath :: !TargetPath,
         chownFlag :: !Chown,
+        chmodFlag :: !Chmod,
         sourceFlag :: !CopySource
       }
   deriving (Show, Eq, Ord)
@@ -164,7 +176,8 @@ data AddArgs
   = AddArgs
       { sourcePaths :: NonEmpty SourcePath,
         targetPath :: !TargetPath,
-        chownFlag :: !Chown
+        chownFlag :: !Chown,
+        chmodFlag :: !Chmod
       }
   deriving (Show, Eq, Ord)
 

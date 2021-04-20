@@ -382,88 +382,112 @@ spec = do
       let file = Text.unlines ["ADD . /app", "ADD http://foo.bar/baz ."]
        in assertAst
             file
-            [ Add $ AddArgs [SourcePath "."] (TargetPath "/app") NoChown,
-              Add $ AddArgs [SourcePath "http://foo.bar/baz"] (TargetPath ".") NoChown
+            [ Add $ AddArgs [SourcePath "."] (TargetPath "/app") NoChown NoChmod,
+              Add $ AddArgs [SourcePath "http://foo.bar/baz"] (TargetPath ".") NoChown NoChmod
             ]
     it "multifiles ADD" $
       let file = Text.unlines ["ADD foo bar baz /app"]
        in assertAst
             file
-            [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
+            [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoChmod
             ]
     it "list of quoted files" $
       let file = Text.unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
        in assertAst
             file
-            [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown
+            [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoChmod
             ]
     it "with chown flag" $
       let file = Text.unlines ["ADD --chown=root:root foo bar"]
        in assertAst
             file
-            [ Add $ AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "root:root")
+            [ Add $ AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "root:root") NoChmod
+            ]
+    it "with chmod flag" $
+      let file = Text.unlines ["ADD --chmod=640 foo bar"]
+       in assertAst
+            file
+            [ Add $ AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") NoChown (Chmod "640")
+            ]
+    it "with chown and chmod flag" $
+      let file = Text.unlines ["ADD --chown=root:root --chmod=640 foo bar"]
+       in assertAst
+            file
+            [ Add $ AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "root:root") (Chmod "640")
+            ]
+    it "with chown and chmod flag other order" $
+      let file = Text.unlines ["ADD --chmod=640 --chown=root:root foo bar"]
+       in assertAst
+            file
+            [ Add $ AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "root:root") (Chmod "640")
             ]
     it "list of quoted files and chown" $
       let file = Text.unlines ["ADD --chown=user:group [\"foo\", \"bar\", \"baz\", \"/app\"]"]
        in assertAst
             file
-            [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") (Chown "user:group")
+            [ Add $ AddArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") (Chown "user:group") NoChmod
             ]
   describe "COPY" $ do
     it "simple COPY" $
       let file = Text.unlines ["COPY . /app", "COPY baz /some/long/path"]
        in assertAst
             file
-            [ Copy $ CopyArgs [SourcePath "."] (TargetPath "/app") NoChown NoSource,
-              Copy $ CopyArgs [SourcePath "baz"] (TargetPath "/some/long/path") NoChown NoSource
+            [ Copy $ CopyArgs [SourcePath "."] (TargetPath "/app") NoChown NoChmod NoSource,
+              Copy $ CopyArgs [SourcePath "baz"] (TargetPath "/some/long/path") NoChown NoChmod NoSource
             ]
     it "multifiles COPY" $
       let file = Text.unlines ["COPY foo bar baz /app"]
        in assertAst
             file
-            [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
+            [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoChmod NoSource
             ]
     it "list of quoted files" $
       let file = Text.unlines ["COPY [\"foo\", \"bar\", \"baz\", \"/app\"]"]
        in assertAst
             file
-            [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoSource
+            [ Copy $ CopyArgs (fmap SourcePath ["foo", "bar", "baz"]) (TargetPath "/app") NoChown NoChmod NoSource
             ]
     it "with chown flag" $
       let file = Text.unlines ["COPY --chown=user:group foo bar"]
        in assertAst
             file
-            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") NoSource
+            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") NoChmod NoSource
+            ]
+    it "with chmod flag" $
+      let file = Text.unlines ["COPY --chmod=777 foo bar"]
+       in assertAst
+            file
+            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") NoChown (Chmod "777") NoSource
             ]
     it "with from flag" $
       let file = Text.unlines ["COPY --from=node foo bar"]
        in assertAst
             file
-            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") NoChown (CopySource "node")
+            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") NoChown NoChmod (CopySource "node")
             ]
-    it "with both flags" $
-      let file = Text.unlines ["COPY --from=node --chown=user:group foo bar"]
+    it "with all three flags" $
+      let file = Text.unlines ["COPY --from=node --chmod=751 --chown=user:group foo bar"]
        in assertAst
             file
-            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (CopySource "node")
+            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (Chmod "751") (CopySource "node")
             ]
-    it "with both flags in different order" $
-      let file = Text.unlines ["COPY --chown=user:group --from=node foo bar"]
+    it "with all three flags in different order" $
+      let file = Text.unlines ["COPY --chown=user:group --from=node --chmod=644 foo bar"]
        in assertAst
             file
-            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (CopySource "node")
+            [ Copy $ CopyArgs (fmap SourcePath ["foo"]) (TargetPath "bar") (Chown "user:group") (Chmod "644") (CopySource "node")
             ]
     it "supports windows paths" $
       let file = Text.unlines ["COPY C:\\\\go C:\\\\go"]
        in assertAst
             file
-            [ Copy $ CopyArgs (fmap SourcePath ["C:\\\\go"]) (TargetPath "C:\\\\go") NoChown NoSource
+            [ Copy $ CopyArgs (fmap SourcePath ["C:\\\\go"]) (TargetPath "C:\\\\go") NoChown NoChmod NoSource
             ]
     it "does not get confused with trailing whitespace" $
       let file = Text.unlines ["COPY a b  "]
        in assertAst
             file
-            [ Copy $ CopyArgs [SourcePath "a"] (TargetPath "b") NoChown NoSource
+            [ Copy $ CopyArgs [SourcePath "a"] (TargetPath "b") NoChown NoChmod NoSource
             ]
   describe "RUN with experimental flags" $ do
     it "--mount=type=bind and target" $

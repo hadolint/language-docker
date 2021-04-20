@@ -13,6 +13,7 @@ import Language.Docker.Syntax
 
 data CopyFlag
   = FlagChown Chown
+  | FlagChmod Chmod
   | FlagSource CopySource
   | FlagInvalid (Text, Text)
 
@@ -21,33 +22,51 @@ parseCopy = do
   reserved "COPY"
   flags <- copyFlag `sepEndBy` requiredWhitespace
   let chownFlags = [c | FlagChown c <- flags]
+  let chmodFlags = [c | FlagChmod c <- flags]
   let sourceFlags = [f | FlagSource f <- flags]
   let invalid = [i | FlagInvalid i <- flags]
   -- Let's do some validation on the flags
-  case (invalid, chownFlags, sourceFlags) of
-    ((k, v) : _, _, _) -> unexpectedFlag k v
-    (_, _ : _ : _, _) -> customError $ DuplicateFlagError "--chown"
-    (_, _, _ : _ : _) -> customError $ DuplicateFlagError "--from"
+  case (invalid, chownFlags, chmodFlags, sourceFlags) of
+    ((k, v) : _, _, _, _) -> unexpectedFlag k v
+    (_, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--chown"
+    (_, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--chmod"
+    (_, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--from"
     _ -> do
-      let ch =
+      let cho =
             case chownFlags of
               [] -> NoChown
+              c : _ -> c
+      let chm =
+            case chmodFlags of
+              [] -> NoChmod
               c : _ -> c
       let fr =
             case sourceFlags of
               [] -> NoSource
               f : _ -> f
-      fileList "COPY" (\src dest -> Copy (CopyArgs src dest ch fr))
+      fileList "COPY" (\src dest -> Copy (CopyArgs src dest cho chm fr))
 
 parseAdd :: Parser (Instruction Text)
 parseAdd = do
   reserved "ADD"
-  flag <- lexeme copyFlag <|> return (FlagChown NoChown)
-  notFollowedBy (string "--") <?> "only the --chown flag or the src and dest paths"
-  case flag of
-    FlagChown ch -> fileList "ADD" (\src dest -> Add (AddArgs src dest ch))
-    FlagSource _ -> customError $ InvalidFlagError "--from"
-    FlagInvalid (k, v) -> unexpectedFlag k v
+  flags <- copyFlag `sepEndBy` requiredWhitespace
+  let chownFlags = [c | FlagChown c <- flags]
+  let chmodFlags = [c | FlagChmod c <- flags]
+  let invalidFlags = [i | FlagInvalid i <- flags]
+  notFollowedBy (string "--") <?>
+    "only the --chown flag, the --chmod flag or the src and dest paths"
+  case (invalidFlags, chownFlags, chmodFlags) of
+    ((k, v) : _, _, _) -> unexpectedFlag k v
+    (_, _ : _ : _, _) -> customError $ DuplicateFlagError "--chown"
+    (_, _, _ : _ : _) -> customError $ DuplicateFlagError "--chmod"
+    _ -> do
+      let cho = case chownFlags of
+                  [] -> NoChown
+                  c : _ -> c
+      let chm = case chmodFlags of
+                  [] -> NoChmod
+                  c : _ -> c
+      fileList "ADD" (\src dest -> Add (AddArgs src dest cho chm))
 
 fileList :: Text -> (NonEmpty SourcePath -> TargetPath -> Instruction Text) -> Parser (Instruction Text)
 fileList name constr = do
@@ -69,14 +88,21 @@ unexpectedFlag name _ = customFailure $ InvalidFlagError (T.unpack name)
 copyFlag :: Parser CopyFlag
 copyFlag =
   (FlagChown <$> try chown <?> "only one --chown")
+    <|> (FlagChmod <$> try chmod <?> "only one --chmod")
     <|> (FlagSource <$> try copySource <?> "only one --from")
     <|> (FlagInvalid <$> try anyFlag <?> "no other flags")
 
 chown :: Parser Chown
 chown = do
   void $ string "--chown="
-  ch <- someUnless "the user and group for chown" (== ' ')
-  return $ Chown ch
+  cho <- someUnless "the user and group for chown" (== ' ')
+  return $ Chown cho
+
+chmod :: Parser Chmod
+chmod = do
+  void $ string "--chmod="
+  chm <- someUnless "the mode for chmod" (== ' ')
+  return $ Chmod chm
 
 copySource :: Parser CopySource
 copySource = do

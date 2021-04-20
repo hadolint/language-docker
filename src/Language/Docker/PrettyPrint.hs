@@ -1,7 +1,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE MultiWayIf #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RebindableSyntax #-}
@@ -112,7 +111,7 @@ escapeQuotes text =
     accumulate '\\' EscapeAccum {buffer, escaping = True, count} =
       EscapeAccum (B.singleton '\\' <> buffer) (count + 1) True
     accumulate c EscapeAccum {buffer, escaping = True, count}
-      | count `mod` 2 == 0 = EscapeAccum (B.singleton c <> B.singleton '\\' <> buffer) 0 False
+      | even count = EscapeAccum (B.singleton c <> B.singleton '\\' <> buffer) 0 False
       | otherwise = EscapeAccum (B.singleton c <> buffer) 0 False -- It was already escaped
     accumulate c EscapeAccum {buffer, escaping = False} =
       EscapeAccum (B.singleton c <> buffer) 0 False
@@ -138,6 +137,12 @@ prettyPrintChown chown =
   case chown of
     Chown c -> "--chown=" <> pretty c
     NoChown -> mempty
+
+prettyPrintChmod :: Chmod -> Doc ann
+prettyPrintChmod chmod =
+  case chmod of
+    Chmod c -> "--chmod=" <> pretty c
+    NoChmod -> mempty
 
 prettyPrintCopySource :: CopySource -> Doc ann
 prettyPrintCopySource source =
@@ -260,9 +265,10 @@ prettyPrintInstruction i =
       prettyPrintRunNetwork network
       prettyPrintRunSecurity security
       pretty c
-    Copy CopyArgs {sourcePaths, targetPath, chownFlag, sourceFlag} -> do
+    Copy CopyArgs {sourcePaths, targetPath, chownFlag, chmodFlag, sourceFlag} -> do
       "COPY"
       prettyPrintChown chownFlag
+      prettyPrintChmod chmodFlag
       prettyPrintCopySource sourceFlag
       prettyPrintFileList sourcePaths targetPath
     Cmd c -> do
@@ -286,9 +292,10 @@ prettyPrintInstruction i =
     From b -> do
       "FROM"
       prettyPrintBaseImage b
-    Add AddArgs {sourcePaths, targetPath, chownFlag} -> do
+    Add AddArgs {sourcePaths, targetPath, chownFlag, chmodFlag} -> do
       "ADD"
       prettyPrintChown chownFlag
+      prettyPrintChmod chmodFlag
       prettyPrintFileList sourcePaths targetPath
     Shell args -> do
       "SHELL"
