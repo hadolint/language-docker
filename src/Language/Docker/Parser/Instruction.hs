@@ -1,17 +1,18 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Language.Docker.Parser.Instruction
-  ( parseInstruction,
-    parseShell,
-    parseStopSignal,
-    parseArg,
-    parseUser,
-    parseWorkdir,
-    parseVolume,
+  ( parseArg,
+    parseComment,
     parseEntryPoint,
+    parseEscapePragma,
+    parseInstruction,
     parseMaintainer,
     parseOnbuild,
-    parseComment,
+    parsePragma,
+    parseShell,
+    parseStopSignal,
+    parseSyntaxPragma,
+    parseUser,
+    parseVolume,
+    parseWorkdir,
   )
 where
 
@@ -26,18 +27,18 @@ import Language.Docker.Parser.Prelude
 import Language.Docker.Parser.Run (parseRun)
 import Language.Docker.Syntax
 
-parseShell :: Parser (Instruction Text)
+parseShell :: (?esc :: Char) => Parser (Instruction Text)
 parseShell = do
   reserved "SHELL"
   Shell <$> arguments
 
-parseStopSignal :: Parser (Instruction Text)
+parseStopSignal :: (?esc :: Char) => Parser (Instruction Text)
 parseStopSignal = do
   reserved "STOPSIGNAL"
   args <- untilEol "the stop signal"
   return $ Stopsignal args
 
-parseArg :: Parser (Instruction Text)
+parseArg :: (?esc :: Char) => Parser (Instruction Text)
 parseArg = do
   reserved "ARG"
   (try nameWithDefault <?> "the arg name")
@@ -54,44 +55,74 @@ parseArg = do
       df <- untilEol "the argument value"
       return $ Arg name (Just df)
 
-parseUser :: Parser (Instruction Text)
+parseUser :: (?esc :: Char) => Parser (Instruction Text)
 parseUser = do
   reserved "USER"
   username <- untilEol "the user"
   return $ User username
 
-parseWorkdir :: Parser (Instruction Text)
+parseWorkdir :: (?esc :: Char) => Parser (Instruction Text)
 parseWorkdir = do
   reserved "WORKDIR"
   directory <- untilEol "the workdir path"
   return $ Workdir directory
 
-parseVolume :: Parser (Instruction Text)
+parseVolume :: (?esc :: Char) => Parser (Instruction Text)
 parseVolume = do
   reserved "VOLUME"
   directory <- untilEol "the volume path"
   return $ Volume directory
 
-parseMaintainer :: Parser (Instruction Text)
+parseMaintainer :: (?esc :: Char) => Parser (Instruction Text)
 parseMaintainer = do
   reserved "MAINTAINER"
   name <- untilEol "the maintainer name"
   return $ Maintainer name
 
-parseEntryPoint :: Parser (Instruction Text)
+parseEntryPoint :: (?esc :: Char) => Parser (Instruction Text)
 parseEntryPoint = do
   reserved "ENTRYPOINT"
   Entrypoint <$> arguments
 
-parseOnbuild :: Parser (Instruction Text)
+parseOnbuild :: (?esc :: Char) => Parser (Instruction Text)
 parseOnbuild = do
   reserved "ONBUILD"
   OnBuild <$> parseInstruction
 
-parseComment :: Parser (Instruction Text)
-parseComment = Comment <$> comment
+parsePragma :: (?esc :: Char) => Parser (Instruction Text)
+parsePragma = do
+  void $ lexeme' (char '#')
+  choice
+    [ parseEscapePragma <?> "an escape",
+      parseSyntaxPragma <?> "a syntax"
+    ]
 
-parseInstruction :: Parser (Instruction Text)
+parseEscapePragma :: Parser (Instruction Text)
+parseEscapePragma = do
+  void $ lexeme' (string "escape")
+  void $ lexeme' (string "=")
+  Pragma . Escape . EscapeChar <$> charLiteral
+
+parseSyntaxPragma :: (?esc :: Char) => Parser (Instruction Text)
+parseSyntaxPragma = do
+  void $ lexeme' (string "syntax")
+  void $ lexeme' (string "=")
+  img <- untilEol "the syntax"
+  return $ Pragma
+      ( Syntax
+          ( SyntaxImage
+              ( Image
+                  { registryName = Nothing,
+                    imageName = img
+                  }
+              )
+          )
+      )
+
+parseComment :: (?esc :: Char) => Parser (Instruction Text)
+parseComment = (try parsePragma <?> "a pragma") <|> Comment <$> comment
+
+parseInstruction :: (?esc :: Char) => Parser (Instruction Text)
 parseInstruction =
   choice
     [ parseOnbuild,

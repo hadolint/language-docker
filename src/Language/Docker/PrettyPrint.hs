@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RebindableSyntax #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
@@ -232,6 +231,10 @@ prettyPrintRunSecurity Nothing = mempty
 prettyPrintRunSecurity (Just Sandbox) = "--security=sandbox"
 prettyPrintRunSecurity (Just Insecure) = "--security=insecure"
 
+prettyPrintPragma :: PragmaDirective -> Doc ann
+prettyPrintPragma (Escape (EscapeChar esc)) = "escape = " <> pretty esc
+prettyPrintPragma (Syntax (SyntaxImage img)) = "syntax = " <> prettyPrintImage img
+
 prettyPrintInstruction :: Pretty (Arguments args) => Instruction args -> Doc ann
 prettyPrintInstruction i =
   case i of
@@ -283,6 +286,9 @@ prettyPrintInstruction i =
     User u -> do
       "USER"
       pretty u
+    Pragma p -> do
+      pretty '#'
+      prettyPrintPragma p
     Comment s -> do
       pretty '#'
       pretty s

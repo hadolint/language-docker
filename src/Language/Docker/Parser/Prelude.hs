@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Language.Docker.Parser.Prelude
   ( customError,
@@ -14,9 +13,12 @@ module Language.Docker.Parser.Prelude
     requiredWhitespace,
     untilEol,
     symbol,
+    onlySpaces,
+    onlyWhitespaces,
     caseInsensitiveString,
     stringWithEscaped,
     lexeme,
+    lexeme',
     isNl,
     isSpaceNl,
     anyUnless,
@@ -26,6 +28,7 @@ module Language.Docker.Parser.Prelude
     DockerfileError (..),
     module Megaparsec,
     char,
+    L.charLiteral,
     string,
     void,
     when,
@@ -103,20 +106,24 @@ castToSpace :: FoundWhitespace -> Text
 castToSpace FoundWhitespace = " "
 castToSpace MissingWhitespace = ""
 
-eol :: Parser ()
+eol :: (?esc :: Char) => Parser ()
 eol = void ws <?> "end of line"
   where
     ws =
       some $
-        choice [void onlySpaces1, void $ takeWhile1P Nothing (== '\n'), void escapedLineBreaks]
+        choice
+          [ void onlySpaces1,
+            void $ takeWhile1P Nothing (== '\n'),
+            void escapedLineBreaks
+          ]
 
-reserved :: Text -> Parser ()
+reserved :: (?esc :: Char) => Text -> Parser ()
 reserved name = void (lexeme (string' name) <?> T.unpack name)
 
 natural :: Parser Integer
 natural = L.decimal <?> "positive number"
 
-commaSep :: Parser a -> Parser [a]
+commaSep :: (?esc :: Char) => Parser a -> Parser [a]
 commaSep p = sepBy (p <* whitespace) (symbol ",")
 
 stringLiteral :: Parser Text
@@ -125,7 +132,7 @@ stringLiteral = do
   lit <- manyTill L.charLiteral (char '"')
   return (T.pack lit)
 
-brackets :: Parser a -> Parser a
+brackets :: (?esc :: Char) => Parser a -> Parser a
 brackets = between (symbol "[" *> whitespace) (whitespace *> symbol "]")
 
 onlySpaces :: Parser Text
@@ -134,27 +141,32 @@ onlySpaces = takeWhileP (Just "spaces") (\c -> c == ' ' || c == '\t')
 onlySpaces1 :: Parser Text
 onlySpaces1 = takeWhile1P (Just "at least one space") (\c -> c == ' ' || c == '\t')
 
-escapedLineBreaks :: Parser FoundWhitespace
+onlyWhitespaces :: Parser Text
+onlyWhitespaces = takeWhileP
+    (Just "whitespaces")
+    (\c -> c == ' ' || c == '\t' || c == '\n' || c == '\r')
+
+escapedLineBreaks :: (?esc :: Char) => Parser FoundWhitespace
 escapedLineBreaks = mconcat <$> breaks
   where
     breaks =
       some $ do
-        try (char '\\' *> onlySpaces *> newlines)
+        try (char ?esc *> onlySpaces *> newlines)
         skipMany . try $ onlySpaces *> comment *> newlines
         -- Spaces before the next '\' have a special significance
         -- so we remembeer the fact that we found some
         FoundWhitespace <$ onlySpaces1 <|> pure MissingWhitespace
     newlines = takeWhile1P Nothing isNl
 
-foundWhitespace :: Parser FoundWhitespace
+foundWhitespace :: (?esc :: Char) => Parser FoundWhitespace
 foundWhitespace = mconcat <$> found
   where
     found = many $ choice [FoundWhitespace <$ onlySpaces1, escapedLineBreaks]
 
-whitespace :: Parser ()
+whitespace :: (?esc :: Char) => Parser ()
 whitespace = void foundWhitespace
 
-requiredWhitespace :: Parser ()
+requiredWhitespace :: (?esc :: Char) => Parser ()
 requiredWhitespace = do
   ws <- foundWhitespace
   case ws of
@@ -163,7 +175,7 @@ requiredWhitespace = do
 
 -- Parse value until end of line is reached
 -- after consuming all escaped newlines
-untilEol :: String -> Parser Text
+untilEol :: (?esc :: Char) => String -> Parser Text
 untilEol name = do
   res <- mconcat <$> predicate
   when (res == "") $ fail ("expecting " ++ name)
@@ -173,11 +185,11 @@ untilEol name = do
       many $
         choice
           [ castToSpace <$> escapedLineBreaks,
-            takeWhile1P (Just name) (\c -> c /= '\n' && c /= '\\'),
-            takeWhile1P Nothing (== '\\') <* notFollowedBy (char '\n')
+            takeWhile1P (Just name) (\c -> c /= '\n' && c /= ?esc),
+            takeWhile1P Nothing (== ?esc) <* notFollowedBy (char '\n')
           ]
 
-symbol :: Text -> Parser Text
+symbol :: (?esc :: Char) => Text -> Parser Text
 symbol name = do
   x <- string name
   whitespace
@@ -186,15 +198,15 @@ symbol name = do
 caseInsensitiveString :: Text -> Parser Text
 caseInsensitiveString = string'
 
-stringWithEscaped :: [Char] -> Maybe (Char -> Bool) -> Parser Text
+stringWithEscaped :: (?esc :: Char) => [Char] -> Maybe (Char -> Bool) -> Parser Text
 stringWithEscaped quoteChars maybeAcceptCondition = mconcat <$> sequences
   where
     sequences =
       many $
         choice
           [ mconcat <$> inner,
-            try $ takeWhile1P Nothing (== '\\') <* notFollowedBy quoteParser,
-            string "\\" *> quoteParser
+            try $ takeWhile1P Nothing (== ?esc) <* notFollowedBy quoteParser,
+            string (T.singleton ?esc) *> quoteParser
           ]
     inner =
       some $
@@ -202,27 +214,33 @@ stringWithEscaped quoteChars maybeAcceptCondition = mconcat <$> sequences
           [ castToSpace <$> escapedLineBreaks,
             takeWhile1P
               Nothing
-              (\c -> c /= '\\' && c /= '\n' && c `notElem` quoteChars && acceptCondition c)
+              (\c -> c /= ?esc && c /= '\n' && c `notElem` quoteChars && acceptCondition c)
           ]
     quoteParser = T.singleton <$> choice (fmap char quoteChars)
     acceptCondition = fromMaybe (const True) maybeAcceptCondition
 
-lexeme :: Parser a -> Parser a
+lexeme :: (?esc :: Char) => Parser a -> Parser a
 lexeme p = do
   x <- p
   requiredWhitespace
   return x
 
+lexeme' :: Parser a -> Parser a
+lexeme' p = do
+  x <- p
+  void onlySpaces
+  return x
+
 isNl :: Char -> Bool
 isNl c = c == '\n'
 
-isSpaceNl :: Char -> Bool
-isSpaceNl c = c == ' ' || c == '\t' || c == '\n' || c == '\\'
+isSpaceNl :: (?esc :: Char) => Char -> Bool
+isSpaceNl c = c == ' ' || c == '\t' || c == '\n' || c == ?esc
 
-anyUnless :: (Char -> Bool) -> Parser Text
+anyUnless :: (?esc :: Char) => (Char -> Bool) -> Parser Text
 anyUnless predicate = someUnless "" predicate <|> pure ""
 
-someUnless :: String -> (Char -> Bool) -> Parser Text
+someUnless :: (?esc :: Char) => String -> (Char -> Bool) -> Parser Text
 someUnless name predicate = do
   res <- applyPredicate
   case res of
@@ -234,7 +252,7 @@ someUnless name predicate = do
         choice
           [ castToSpace <$> escapedLineBreaks,
             takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c)),
-            takeWhile1P Nothing (\c -> c == '\\' && not (predicate c))
+            takeWhile1P Nothing (\c -> c == ?esc && not (predicate c))
               <* notFollowedBy (char '\n')
           ]
 

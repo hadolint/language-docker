@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Language.Docker.Parser.Copy
   ( parseCopy,
     parseAdd,
@@ -17,7 +15,7 @@ data CopyFlag
   | FlagSource CopySource
   | FlagInvalid (Text, Text)
 
-parseCopy :: Parser (Instruction Text)
+parseCopy :: (?esc :: Char) => Parser (Instruction Text)
 parseCopy = do
   reserved "COPY"
   flags <- copyFlag `sepEndBy` requiredWhitespace
@@ -46,7 +44,7 @@ parseCopy = do
               f : _ -> f
       fileList "COPY" (\src dest -> Copy (CopyArgs src dest cho chm fr))
 
-parseAdd :: Parser (Instruction Text)
+parseAdd :: (?esc :: Char) => Parser (Instruction Text)
 parseAdd = do
   reserved "ADD"
   flags <- copyFlag `sepEndBy` requiredWhitespace
@@ -68,7 +66,9 @@ parseAdd = do
                   c : _ -> c
       fileList "ADD" (\src dest -> Add (AddArgs src dest cho chm))
 
-fileList :: Text -> (NonEmpty SourcePath -> TargetPath -> Instruction Text) -> Parser (Instruction Text)
+fileList :: (?esc :: Char) => Text ->
+            (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->
+            Parser (Instruction Text)
 fileList name constr = do
   paths <-
     (try stringList <?> "an array of strings [\"src_file\", \"dest_file\"]")
@@ -85,32 +85,32 @@ unexpectedFlag :: Text -> Text -> Parser a
 unexpectedFlag name "" = customFailure $ NoValueFlagError (T.unpack name)
 unexpectedFlag name _ = customFailure $ InvalidFlagError (T.unpack name)
 
-copyFlag :: Parser CopyFlag
+copyFlag :: (?esc :: Char) => Parser CopyFlag
 copyFlag =
   (FlagChown <$> try chown <?> "only one --chown")
     <|> (FlagChmod <$> try chmod <?> "only one --chmod")
     <|> (FlagSource <$> try copySource <?> "only one --from")
     <|> (FlagInvalid <$> try anyFlag <?> "no other flags")
 
-chown :: Parser Chown
+chown :: (?esc :: Char) => Parser Chown
 chown = do
   void $ string "--chown="
   cho <- someUnless "the user and group for chown" (== ' ')
   return $ Chown cho
 
-chmod :: Parser Chmod
+chmod :: (?esc :: Char) => Parser Chmod
 chmod = do
   void $ string "--chmod="
   chm <- someUnless "the mode for chmod" (== ' ')
   return $ Chmod chm
 
-copySource :: Parser CopySource
+copySource :: (?esc :: Char) => Parser CopySource
 copySource = do
   void $ string "--from="
   src <- someUnless "the copy source path" isNl
   return $ CopySource src
 
-anyFlag :: Parser (Text, Text)
+anyFlag :: (?esc :: Char) => Parser (Text, Text)
 anyFlag = do
   void $ string "--"
   name <- someUnless "the flag value" (== '=')

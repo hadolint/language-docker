@@ -1,5 +1,4 @@
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Language.Docker.Parser.Run
   ( parseRun,
@@ -40,18 +39,18 @@ data MountType
   | Secret
   | Ssh
 
-parseRun :: Parser (Instruction Text)
+parseRun :: (?esc :: Char) => Parser (Instruction Text)
 parseRun = do
   reserved "RUN"
   Run <$> runArguments
 
-runArguments :: Parser (RunArgs Text)
+runArguments :: (?esc :: Char) => Parser (RunArgs Text)
 runArguments = do
   presentFlags <- choice [runFlags <* requiredWhitespace, pure (RunFlags Nothing Nothing Nothing)]
   args <- arguments
   return $ RunArgs args presentFlags
 
-runFlags :: Parser RunFlags
+runFlags :: (?esc :: Char) => Parser RunFlags
 runFlags = do
   flags <- runFlag `sepBy` flagSeparator
   return $ foldr toRunFlags emptyFlags flags
@@ -62,10 +61,13 @@ runFlags = do
     toRunFlags (RunFlagNetwork n) rf = rf {network = Just n}
     toRunFlags (RunFlagSecurity s) rf = rf {security = Just s}
 
-runFlag :: Parser RunFlag
+runFlag :: (?esc :: Char) => Parser RunFlag
 runFlag =
   choice
-    [RunFlagMount <$> runFlagMount, RunFlagSecurity <$> runFlagSecurity, RunFlagNetwork <$> runFlagNetwork]
+    [ RunFlagMount <$> runFlagMount,
+      RunFlagSecurity <$> runFlagSecurity,
+      RunFlagNetwork <$> runFlagNetwork
+    ]
 
 runFlagSecurity :: Parser RunSecurity
 runFlagSecurity = do
@@ -77,7 +79,7 @@ runFlagNetwork = do
   void $ string "--network="
   choice [NetworkNone <$ string "none", NetworkHost <$ string "host", NetworkDefault <$ string "default"]
 
-runFlagMount :: Parser RunMount
+runFlagMount :: (?esc :: Char) => Parser RunMount
 runFlagMount = do
   void $ string "--mount="
   maybeType <-
@@ -104,7 +106,7 @@ runFlagMount = do
     Secret -> SecretMount <$> (secretMount =<< args)
     Ssh -> SshMount <$> (secretMount =<< args)
 
-argsParser :: MountType -> Parser [RunMountArg]
+argsParser :: (?esc :: Char) => MountType -> Parser [RunMountArg]
 argsParser mountType = mountChoices mountType `sepBy1` string ","
 
 bindMount :: [RunMountArg] -> Parser BindOpts
@@ -192,7 +194,7 @@ validArgs typeName allowed required args =
             (_, True) -> (Left (DuplicateArgument name), seen)
             (True, False) -> (Right (a : as), Set.insert name seen)
 
-mountChoices :: MountType -> Parser RunMountArg
+mountChoices :: (?esc :: Char) => MountType -> Parser RunMountArg
 mountChoices mountType =
   choice $
     case mountType of
@@ -226,7 +228,7 @@ mountChoices mountType =
           mountArgGid
         ]
 
-stringArg :: Parser Text
+stringArg :: (?esc :: Char) => Parser Text
 stringArg = choice [stringLiteral, someUnless "a string" (== ',')]
 
 key :: Text -> Parser a -> Parser a
@@ -236,16 +238,16 @@ cacheSharing :: Parser CacheSharing
 cacheSharing =
   choice [Private <$ string "private", Shared <$ string "shared", Locked <$ string "locked"]
 
-mountArgFromImage :: Parser RunMountArg
+mountArgFromImage :: (?esc :: Char) => Parser RunMountArg
 mountArgFromImage = MountArgFromImage <$> key "from" stringArg
 
 mountArgGid :: Parser RunMountArg
 mountArgGid = MountArgGid <$> key "gid" natural
 
-mountArgId :: Parser RunMountArg
+mountArgId :: (?esc :: Char) => Parser RunMountArg
 mountArgId = MountArgId <$> key "id" stringArg
 
-mountArgMode :: Parser RunMountArg
+mountArgMode :: (?esc :: Char) => Parser RunMountArg
 mountArgMode = MountArgMode <$> key "mode" stringArg
 
 mountArgReadOnly :: Parser RunMountArg
@@ -268,12 +270,12 @@ mountArgRequired = MountArgRequired <$> choice
 mountArgSharing :: Parser RunMountArg
 mountArgSharing = MountArgSharing <$> key "sharing" cacheSharing
 
-mountArgSource :: Parser RunMountArg
+mountArgSource :: (?esc :: Char) => Parser RunMountArg
 mountArgSource = do
   label "source=" $ choice [string "source=", string "src="]
   MountArgSource . SourcePath <$> stringArg
 
-mountArgTarget :: Parser RunMountArg
+mountArgTarget :: (?esc :: Char) => Parser RunMountArg
 mountArgTarget = do
   label "target=" $ choice [string "target=", string "dst=", string "destination="]
   MountArgTarget . TargetPath <$> stringArg

@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Language.Docker.Parser
   ( parseText,
     parseFile,
@@ -14,18 +12,18 @@ import qualified Data.ByteString as B
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as E
 import qualified Data.Text.Encoding.Error as E
-import Language.Docker.Parser.Instruction (parseInstruction)
+import Language.Docker.Parser.Instruction (parseInstruction, parseComment)
 import Language.Docker.Parser.Prelude
 import Language.Docker.Syntax
 
 contents :: Parser a -> Parser a
 contents p = do
-  void $ takeWhileP Nothing (\c -> c == '\r' || c == '\n' || c == ' ' || c == '\t')
+  void onlyWhitespaces
   r <- p
   eof
   return r
 
-dockerfile :: Parser Dockerfile
+dockerfile :: (?esc :: Char) => Parser Dockerfile
 dockerfile =
   many $ do
     pos <- getSourcePos
@@ -34,19 +32,42 @@ dockerfile =
     return $ InstructionPos i (T.pack . sourceName $ pos) (unPos . sourceLine $ pos)
 
 parseText :: Text -> Either Error Dockerfile
-parseText = parse (contents dockerfile) "<string>" . dos2unix
+parseText txt = do
+  let ?esc = findEscapePragma (T.lines (dos2unix txt))
+   in parse (contents dockerfile) "<string>" (dos2unix txt)
 
 parseFile :: FilePath -> IO (Either Error Dockerfile)
-parseFile file = doParse <$> B.readFile file
-  where
-    doParse = parse (contents dockerfile) file . dos2unix . E.decodeUtf8With E.lenientDecode
+parseFile file = doParse file <$> B.readFile file
 
 -- | Reads the standard input until the end and parses the contents as a Dockerfile
 parseStdin :: IO (Either Error Dockerfile)
-parseStdin = doParse <$> B.getContents
+parseStdin = doParse "/dev/stdin" <$> B.getContents
+
+-- | Parses a list of lines from a dockerfile one by one until either the escape
+-- | pragma has been found, or pragmas are no longer expected.
+-- | Pragmas can occur only until a comment, an empty line or another
+-- | instruction occurs (i.e. they have to be the first lines of a Dockerfile).
+findEscapePragma :: [Text] -> Char
+findEscapePragma [] = defaultEsc
+findEscapePragma (l:ls) =
+  case parse (contents parseComment) "<line>" l of
+    Left _ -> defaultEsc
+    Right (Pragma (Escape (EscapeChar c))) -> c
+    Right (Pragma _) -> findEscapePragma ls
+    Right _ -> defaultEsc
   where
-    doParse = parse (contents dockerfile) "/dev/stdin" . dos2unix . E.decodeUtf8With E.lenientDecode
+    ?esc = defaultEsc
+
+doParse :: FilePath -> B.ByteString -> Either Error Dockerfile
+doParse path txt = do
+  let ?esc = findEscapePragma (T.lines src)
+   in parse (contents dockerfile) path src
+  where
+    src = dos2unix (E.decodeUtf8With E.lenientDecode txt)
 
 -- | Changes crlf line endings to simple line endings
 dos2unix :: T.Text -> T.Text
 dos2unix = T.replace "\r\n" "\n"
+
+defaultEsc :: Char
+defaultEsc = '\\'

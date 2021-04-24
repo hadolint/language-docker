@@ -2,7 +2,6 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Language.Docker.Syntax where
@@ -16,6 +15,7 @@ import Data.Text (Text)
 import qualified Data.Text as Text
 import Data.Time.Clock (DiffTime)
 import GHC.Exts (IsList (..))
+import Text.Printf
 
 data Image
   = Image
@@ -310,6 +310,28 @@ instance IsString (RunArgs Text) where
           mount = Nothing
         }
 
+newtype EscapeChar
+  = EscapeChar
+      { escape :: Char
+      }
+  deriving (Show, Eq, Ord)
+
+instance IsChar EscapeChar where
+  fromChar c =
+    EscapeChar {escape = c}
+  toChar e = escape e
+
+newtype SyntaxImage
+  = SyntaxImage
+      { syntax :: Image
+      }
+  deriving (Show, Eq, Ord)
+
+data PragmaDirective
+  = Escape !EscapeChar
+  | Syntax !SyntaxImage
+  deriving (Show, Eq, Ord)
+
 -- | All commands available in Dockerfiles
 data Instruction args
   = From !BaseImage
@@ -331,6 +353,7 @@ data Instruction args
       !Text
       !(Maybe Text)
   | Healthcheck !(Check args)
+  | Pragma !PragmaDirective
   | Comment !Text
   | OnBuild !(Instruction args)
   deriving (Eq, Ord, Show, Functor)

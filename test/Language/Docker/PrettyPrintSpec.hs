@@ -1,7 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE OverloadedLists #-}
-{-# LANGUAGE OverloadedStrings #-}
 
 module Language.Docker.PrettyPrintSpec where
 
@@ -118,7 +116,26 @@ spec = do
                       (CopySource "baseimage")
                   )
        in assertPretty "COPY --chown=root:root --chmod=751 --from=baseimage foo bar" copy
-
+  describe "pretty print # escape" $ do
+    it "# escape = \\" $ do
+      let esc = Pragma (Escape (EscapeChar '\\'))
+       in assertPretty "# escape = \\" esc
+    it "# escape = `" $ do
+      let esc = Pragma (Escape (EscapeChar '`'))
+       in assertPretty "# escape = `" esc
+  describe "pretty print # syntax" $ do
+    it "# syntax = docker/dockerfile:1.0" $ do
+      let img = Pragma
+                  ( Syntax
+                    ( SyntaxImage
+                        ( Image
+                            { registryName = Nothing,
+                              imageName = "docker/dockerfile:1.0"
+                            }
+                        )
+                    )
+                  )
+       in assertPretty "# syntax = docker/dockerfile:1.0" img
 
 assertPretty :: Text.Text -> Instruction Text.Text -> Assertion
 assertPretty expected instruction = assertEqual

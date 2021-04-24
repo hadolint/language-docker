@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Language.Docker.Parser.Healthcheck
@@ -20,7 +19,7 @@ data CheckFlag
   | FlagRetries Retries
   | CFlagInvalid (Text, Text)
 
-parseHealthcheck :: Parser (Instruction Text)
+parseHealthcheck :: (?esc :: Char) => Parser (Instruction Text)
 parseHealthcheck = do
   reserved "HEALTHCHECK"
   Healthcheck <$> (fullCheck <|> noCheck)
@@ -60,7 +59,7 @@ parseHealthcheck = do
           let retries = listToMaybe retriesD
           return $ Check CheckArgs {..}
 
-checkFlag :: Parser CheckFlag
+checkFlag :: (?esc :: Char) => Parser CheckFlag
 checkFlag =
   (FlagInterval <$> durationFlag "--interval=" <?> "--interval")
     <|> (FlagTimeout <$> durationFlag "--timeout=" <?> "--timeout")
@@ -85,7 +84,7 @@ retriesFlag = do
   n <- try natural <?> "the number of retries"
   return $ Retries (fromIntegral n)
 
-anyFlag :: Parser (Text, Text)
+anyFlag :: (?esc :: Char) => Parser (Text, Text)
 anyFlag = do
   void $ string "--"
   name <- someUnless "the flag value" (== '=')
