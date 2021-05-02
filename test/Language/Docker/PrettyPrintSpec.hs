@@ -145,4 +145,7 @@ assertPretty expected instruction = assertEqual
 
 prettyPrintStrict :: Instruction Text.Text -> Text.Text
 prettyPrintStrict =
-  renderStrict . layoutPretty (LayoutOptions Unbounded) . prettyPrintInstruction
+  let ?esc = defaultEsc
+   in renderStrict
+      . layoutPretty (LayoutOptions Unbounded)
+      . prettyPrintInstruction

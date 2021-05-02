@@ -27,22 +27,29 @@ data EscapeAccum
         escaping :: !Bool
       }
 
-instance Pretty (Arguments Text) where
-  pretty = prettyPrintArguments
-
 -- | Pretty print a 'Dockerfile' to a 'Text'
 prettyPrint :: Dockerfile -> L.Text
 prettyPrint = renderLazy . layoutPretty opts . prettyPrintDockerfile
   where
     opts = LayoutOptions Unbounded
 
-prettyPrintDockerfile :: Pretty (Arguments args) => [InstructionPos args] -> Doc ann
+prettyPrintDockerfile :: [InstructionPos Text] -> Doc ann
 prettyPrintDockerfile instr = doPrint instr <> "\n"
   where
-    doPrint = vsep . fmap prettyPrintInstructionPos
+    doPrint ips =
+      let ?esc = findEscapeChar ips
+       in (vsep . fmap prettyPrintInstructionPos ) ips
+
+findEscapeChar ::  [InstructionPos args] -> Char
+findEscapeChar [] = defaultEsc
+findEscapeChar (i:is) =
+  case i of
+    InstructionPos {instruction = (Pragma (Escape (EscapeChar c)))} -> c
+    InstructionPos {instruction = (Pragma _)} -> findEscapeChar is
+    _ -> defaultEsc
 
 -- | Pretty print a 'InstructionPos' to a 'Doc'
-prettyPrintInstructionPos :: Pretty (Arguments args) => InstructionPos args -> Doc ann
+prettyPrintInstructionPos :: (?esc :: Char) => InstructionPos Text -> Doc ann
 prettyPrintInstructionPos (InstructionPos i _ _) = prettyPrintInstruction i
 
 prettyPrintImage :: Image -> Doc ann
@@ -75,42 +82,41 @@ prettyPrintBaseImage BaseImage {..} = do
         Nothing -> mempty
         Just (Digest d) -> "@" <> pretty d
 
-prettyPrintPairs :: Pairs -> Doc ann
+prettyPrintPairs :: (?esc :: Char) => Pairs -> Doc ann
 prettyPrintPairs ps = align $ sepLine $ fmap prettyPrintPair ps
   where
-    sepLine = concatWith (\x y -> x <> " \\" <> line <> y)
+    sepLine = concatWith (\x y -> x <> " " <> pretty ?esc <> line <> y)
 
-prettyPrintPair :: (Text, Text) -> Doc ann
+prettyPrintPair :: (?esc :: Char) => (Text, Text) -> Doc ann
 prettyPrintPair (k, v) = pretty k <> pretty '=' <> doubleQoute v
 
-prettyPrintArguments :: Arguments Text -> Doc ann
+prettyPrintArguments :: (?esc :: Char) => Arguments Text -> Doc ann
 prettyPrintArguments (ArgumentsList as) = prettyPrintJSON (Text.words as)
 prettyPrintArguments (ArgumentsText as) = hsep (fmap helper (Text.words as))
   where
-    helper "&&" = "\\\n &&"
+    helper "&&" = pretty ?esc <> "\n &&"
     helper a = pretty a
 
-prettyPrintJSON :: [Text] -> Doc ann
+prettyPrintJSON :: (?esc :: Char) => [Text] -> Doc ann
 prettyPrintJSON args = list (fmap doubleQoute args)
 
-doubleQoute :: Text -> Doc ann
+doubleQoute :: (?esc :: Char) => Text -> Doc ann
 doubleQoute w = enclose dquote dquote (pretty (escapeQuotes w))
 
-escapeQuotes :: Text -> L.Text
+escapeQuotes :: (?esc :: Char) => Text -> L.Text
 escapeQuotes text =
   case Text.foldr accumulate (EscapeAccum mempty 0 False) text of
     EscapeAccum buffer _ False -> B.toLazyText buffer
     EscapeAccum buffer count True ->
       case count `mod` 2 of
-        0 -> B.toLazyText (B.singleton '\\' <> buffer)
+        0 -> B.toLazyText (B.singleton ?esc <> buffer)
         _ -> B.toLazyText buffer
   where
     accumulate '"' EscapeAccum {buffer, escaping = False} =
       EscapeAccum (B.singleton '"' <> buffer) 0 True
-    accumulate '\\' EscapeAccum {buffer, escaping = True, count} =
-      EscapeAccum (B.singleton '\\' <> buffer) (count + 1) True
     accumulate c EscapeAccum {buffer, escaping = True, count}
-      | even count = EscapeAccum (B.singleton c <> B.singleton '\\' <> buffer) 0 False
+      | c == ?esc = EscapeAccum (B.singleton ?esc <> buffer) (count + 1) True
+      | even count = EscapeAccum (B.singleton c <> B.singleton ?esc <> buffer) 0 False
       | otherwise = EscapeAccum (B.singleton c <> buffer) 0 False -- It was already escaped
     accumulate c EscapeAccum {buffer, escaping = False} =
       EscapeAccum (B.singleton c <> buffer) 0 False
@@ -159,7 +165,7 @@ prettyPrintRetries = maybe mempty pp
   where
     pp (Retries r) = "--retries=" <> pretty r
 
-prettyPrintRunMount :: Maybe RunMount -> Doc ann
+prettyPrintRunMount :: (?esc :: Char) => Maybe RunMount -> Doc ann
 prettyPrintRunMount Nothing = mempty
 prettyPrintRunMount (Just mount) = "--mount="
   <> case mount of
@@ -235,7 +241,7 @@ prettyPrintPragma :: PragmaDirective -> Doc ann
 prettyPrintPragma (Escape (EscapeChar esc)) = "escape = " <> pretty esc
 prettyPrintPragma (Syntax (SyntaxImage img)) = "syntax = " <> prettyPrintImage img
 
-prettyPrintInstruction :: Pretty (Arguments args) => Instruction args -> Doc ann
+prettyPrintInstruction :: (?esc :: Char) => Instruction Text -> Doc ann
 prettyPrintInstruction i =
   case i of
     Maintainer m -> do
@@ -249,7 +255,7 @@ prettyPrintInstruction i =
       pretty k <> "=" <> pretty v
     Entrypoint e -> do
       "ENTRYPOINT"
-      pretty e
+      prettyPrintArguments e
     Stopsignal s -> do
       "STOPSIGNAL"
       pretty s
@@ -267,7 +273,7 @@ prettyPrintInstruction i =
       prettyPrintRunMount mount
       prettyPrintRunNetwork network
       prettyPrintRunSecurity security
-      pretty c
+      prettyPrintArguments c
     Copy CopyArgs {sourcePaths, targetPath, chownFlag, chmodFlag, sourceFlag} -> do
       "COPY"
       prettyPrintChown chownFlag
@@ -276,7 +282,7 @@ prettyPrintInstruction i =
       prettyPrintFileList sourcePaths targetPath
     Cmd c -> do
       "CMD"
-      pretty c
+      prettyPrintArguments c
     Label l -> do
       "LABEL"
       prettyPrintPairs l
@@ -305,7 +311,7 @@ prettyPrintInstruction i =
       prettyPrintFileList sourcePaths targetPath
     Shell args -> do
       "SHELL"
-      pretty args
+      prettyPrintArguments args
     Healthcheck NoCheck -> "HEALTHCHECK NONE"
     Healthcheck (Check CheckArgs {..}) -> do
       "HEALTHCHECK"
@@ -314,7 +320,7 @@ prettyPrintInstruction i =
       prettyPrintDuration "--start-period=" startPeriod
       prettyPrintRetries retries
       "CMD"
-      pretty checkCommand
+      prettyPrintArguments checkCommand
   where
     (>>) = spaceCat
 

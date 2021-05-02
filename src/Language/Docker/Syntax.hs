@@ -371,3 +371,6 @@ data InstructionPos args
         lineNumber :: !Linenumber
       }
   deriving (Eq, Ord, Show, Functor)
+
+defaultEsc :: Char
+defaultEsc = '\\'

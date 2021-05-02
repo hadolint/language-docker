@@ -68,6 +68,3 @@ doParse path txt = do
 -- | Changes crlf line endings to simple line endings
 dos2unix :: T.Text -> T.Text
 dos2unix = T.replace "\r\n" "\n"
-
-defaultEsc :: Char
-defaultEsc = '\\'

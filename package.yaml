@@ -1,5 +1,5 @@
 name: language-docker
-version: '9.4.0'
+version: '10.0.0'
 synopsis: Dockerfile parser, pretty-printer and embedded DSL
 description: 'All functions for parsing and pretty-printing Dockerfiles are
   exported through @Language.Docker@. For more fine-grained operations look for
@@ -26,6 +26,8 @@ extra-source-files:
   - test/fixtures/2.Dockerfile
 default-extensions:
   - OverloadedStrings
+  - ImplicitParams
+  - Rank2Types
 
 dependencies:
   - base >=4.8 && <5
@@ -48,9 +50,6 @@ library:
   - -Wredundant-constraints
   - -fno-warn-unused-do-bind
   - -fno-warn-orphans
-  default-extensions:
-    - ImplicitParams
-    - Rank2Types
   exposed-modules:
   - Language.Docker
   - Language.Docker.Parser
@@ -62,7 +61,6 @@ tests:
     main: Spec.hs
     source-dirs: test
     default-extensions:
-      - OverloadedStrings
       - OverloadedLists
     dependencies:
     - hspec
