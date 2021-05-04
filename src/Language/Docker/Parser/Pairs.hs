@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Language.Docker.Parser.Pairs
   ( parseEnv,
     parseLabel,
@@ -12,13 +10,13 @@ import Language.Docker.Syntax
 
 -- We cannot use string literal because it swallows space
 -- and therefore have to implement quoted values by ourselves
-doubleQuotedValue :: Parser Text
+doubleQuotedValue :: (?esc :: Char) => Parser Text
 doubleQuotedValue = between (string "\"") (string "\"") (stringWithEscaped ['"'] Nothing)
 
-singleQuotedValue :: Parser Text
+singleQuotedValue :: (?esc :: Char) => Parser Text
 singleQuotedValue = between (string "'") (string "'") (stringWithEscaped ['\''] Nothing)
 
-unquotedString :: (Char -> Bool) -> Parser Text
+unquotedString :: (?esc :: Char) => (Char -> Bool) -> Parser Text
 unquotedString acceptCondition = do
   str <- stringWithEscaped [' ', '\t'] (Just (\c -> acceptCondition c && c /= '"' && c /= '\''))
   checkFaults str
@@ -29,7 +27,7 @@ unquotedString acceptCondition = do
       | T.head str == '\"' = customError $ QuoteError "double" (T.unpack str)
       | otherwise = return str
 
-singleValue :: (Char -> Bool) -> Parser Text
+singleValue :: (?esc :: Char) => (Char -> Bool) -> Parser Text
 singleValue acceptCondition = mconcat <$> variants
   where
     variants =
@@ -40,7 +38,7 @@ singleValue acceptCondition = mconcat <$> variants
             unquotedString acceptCondition <?> "a string with no quotes"
           ]
 
-pair :: Parser (Text, Text)
+pair :: (?esc :: Char) => Parser (Text, Text)
 pair = do
   key <- singleValue (/= '=')
   value <- withEqualSign <|> withoutEqualSign
@@ -53,15 +51,15 @@ pair = do
       requiredWhitespace
       untilEol "value"
 
-pairs :: Parser Pairs
+pairs :: (?esc :: Char) => Parser Pairs
 pairs = (pair <?> "a key value pair (key=value)") `sepEndBy1` requiredWhitespace
 
-parseLabel :: Parser (Instruction Text)
+parseLabel :: (?esc :: Char) => Parser (Instruction Text)
 parseLabel = do
   reserved "LABEL"
   Label <$> pairs
 
-parseEnv :: Parser (Instruction Text)
+parseEnv :: (?esc :: Char) => Parser (Instruction Text)
 parseEnv = do
   reserved "ENV"
   Env <$> pairs

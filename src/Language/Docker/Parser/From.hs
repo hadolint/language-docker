@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-
 module Language.Docker.Parser.From
   ( parseFrom,
   )
@@ -9,7 +7,7 @@ import qualified Data.Text as T
 import Language.Docker.Parser.Prelude
 import Language.Docker.Syntax
 
-parseRegistry :: Parser Registry
+parseRegistry :: (?esc :: Char) => Parser Registry
 parseRegistry = do
   domain <- someUnless "a domain name" (== '.')
   void $ char '.'
@@ -17,14 +15,14 @@ parseRegistry = do
   void $ char '/'
   return $ Registry (domain <> "." <> tld)
 
-parsePlatform :: Parser Platform
+parsePlatform :: (?esc :: Char) => Parser Platform
 parsePlatform = do
   void $ string "--platform="
   p <- someUnless "the platform for the FROM image" (== ' ')
   requiredWhitespace
   return p
 
-parseBaseImage :: (Text -> Parser (Maybe Tag)) -> Parser BaseImage
+parseBaseImage :: (?esc :: Char) => (Text -> Parser (Maybe Tag)) -> Parser BaseImage
 parseBaseImage tagParser = do
   maybePlatform <- (Just <$> try parsePlatform) <|> return Nothing
   notFollowedBy (string "--")
@@ -35,7 +33,7 @@ parseBaseImage tagParser = do
   maybeAlias <- (Just <$> try (requiredWhitespace *> imageAlias)) <|> return Nothing
   return $ BaseImage (Image regName name) maybeTag maybeDigest maybeAlias maybePlatform
 
-taggedImage :: Parser BaseImage
+taggedImage :: (?esc :: Char) => Parser BaseImage
 taggedImage = parseBaseImage tagParser
   where
     tagParser _ = do
@@ -43,13 +41,13 @@ taggedImage = parseBaseImage tagParser
       t <- someUnless "the image tag" (\c -> c == '@' || c == ':')
       return (Just . Tag $ t)
 
-parseDigest :: Parser Digest
+parseDigest :: (?esc :: Char) => Parser Digest
 parseDigest = do
   void $ char '@'
   d <- someUnless "the image digest" (== '@')
   return $ Digest d
 
-untaggedImage :: Parser BaseImage
+untaggedImage :: (?esc :: Char) => Parser BaseImage
 untaggedImage = parseBaseImage notInvalidTag
   where
     notInvalidTag :: Text -> Parser (Maybe Tag)
@@ -59,16 +57,16 @@ untaggedImage = parseBaseImage notInvalidTag
         ++ ":valid-tag)"
       return Nothing
 
-imageAlias :: Parser ImageAlias
+imageAlias :: (?esc :: Char) => Parser ImageAlias
 imageAlias = do
   void (try (reserved "AS") <?> "'AS' followed by the image alias")
   aka <- someUnless "the image alias" (== '\n')
   return $ ImageAlias aka
 
-baseImage :: Parser BaseImage
+baseImage :: (?esc :: Char) => Parser BaseImage
 baseImage = try taggedImage <|> untaggedImage
 
-parseFrom :: Parser (Instruction Text)
+parseFrom :: (?esc :: Char) => Parser (Instruction Text)
 parseFrom = do
   reserved "FROM"
   From <$> baseImage
