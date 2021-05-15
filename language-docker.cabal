@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2c9caaab990151b5cf17795136674a3655d2422f22f1e4c84806741c1309e5bd
+-- hash: af4559ced7a852d3a1a2be4244a310d3e5522f9ea8d48a1f0f4e81f8a293a1c7
 
 name:           language-docker
 version:        10.0.0
@@ -28,6 +28,12 @@ extra-source-files:
     README.md
     test/fixtures/1.Dockerfile
     test/fixtures/2.Dockerfile
+    test/fixtures/3.Dockerfile
+    test/fixtures/4.Dockerfile
+    test/fixtures/5.Dockerfile
+    test/fixtures/6.Dockerfile
+    test/fixtures/7.Dockerfile
+    test/fixtures/8.Dockerfile
 
 source-repository head
   type: git
