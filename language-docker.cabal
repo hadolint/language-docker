@@ -1,13 +1,13 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.33.0.
+-- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: af4559ced7a852d3a1a2be4244a310d3e5522f9ea8d48a1f0f4e81f8a293a1c7
+-- hash: be22c1fce0b44e319fb3f3074bc1842d248590c1834772b7b85f184f88634f45
 
 name:           language-docker
-version:        10.0.0
+version:        10.0.1
 synopsis:       Dockerfile parser, pretty-printer and embedded DSL
 description:    All functions for parsing and pretty-printing Dockerfiles are exported through @Language.Docker@. For more fine-grained operations look for specific modules that implement a certain functionality.
                 See the <https://github.com/hadolint/language-docker GitHub project> for the source-code and examples.
@@ -59,7 +59,10 @@ library
       Paths_language_docker
   hs-source-dirs:
       src
-  default-extensions: OverloadedStrings ImplicitParams Rank2Types
+  default-extensions:
+      OverloadedStrings
+      ImplicitParams
+      Rank2Types
   ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-unused-do-bind -fno-warn-orphans
   build-depends:
       base >=4.8 && <5
@@ -85,7 +88,11 @@ test-suite hspec
       Paths_language_docker
   hs-source-dirs:
       test
-  default-extensions: OverloadedStrings ImplicitParams Rank2Types OverloadedLists
+  default-extensions:
+      OverloadedStrings
+      ImplicitParams
+      Rank2Types
+      OverloadedLists
   build-depends:
       HUnit >=1.2
     , QuickCheck
