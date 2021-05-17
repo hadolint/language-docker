@@ -1,5 +1,5 @@
 name: language-docker
-version: '10.0.0'
+version: '10.0.1'
 synopsis: Dockerfile parser, pretty-printer and embedded DSL
 description: 'All functions for parsing and pretty-printing Dockerfiles are
   exported through @Language.Docker@. For more fine-grained operations look for
