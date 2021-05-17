@@ -24,6 +24,12 @@ extra-source-files:
   - README.md
   - test/fixtures/1.Dockerfile
   - test/fixtures/2.Dockerfile
+  - test/fixtures/3.Dockerfile
+  - test/fixtures/4.Dockerfile
+  - test/fixtures/5.Dockerfile
+  - test/fixtures/6.Dockerfile
+  - test/fixtures/7.Dockerfile
+  - test/fixtures/8.Dockerfile
 default-extensions:
   - OverloadedStrings
   - ImplicitParams
