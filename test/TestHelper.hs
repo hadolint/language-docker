@@ -1,5 +1,6 @@
 module TestHelper
   ( assertAst,
+    expectFail,
     taggedImage,
     withAlias,
     withDigest,
@@ -13,6 +14,7 @@ import Language.Docker.Parser
 import Language.Docker.Syntax
 import Test.HUnit hiding (Label)
 import Test.Hspec
+import Test.Hspec.Megaparsec
 import Text.Megaparsec hiding (Label)
 
 
@@ -36,3 +38,7 @@ assertAst s ast =
   case parseText s of
     Left err -> assertFailure $ errorBundlePretty err
     Right dockerfile -> assertEqual "ASTs are not equal" ast $ map instruction dockerfile
+
+expectFail :: HasCallStack => Text.Text -> Assertion
+expectFail input =
+  parseText `shouldFailOn` input
