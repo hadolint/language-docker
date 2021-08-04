@@ -70,6 +70,7 @@ tests:
       - OverloadedLists
     dependencies:
     - hspec
+    - hspec-megaparsec
     - QuickCheck
     - language-docker
     - HUnit >=1.2

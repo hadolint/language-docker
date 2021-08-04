@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: be22c1fce0b44e319fb3f3074bc1842d248590c1834772b7b85f184f88634f45
+-- hash: ab4c06001671d36b01309d824973b5091572cb86d27f7e4eef1201243f07e453
 
 name:           language-docker
 version:        10.0.1
@@ -101,6 +101,7 @@ test-suite hspec
     , containers
     , data-default-class
     , hspec
+    , hspec-megaparsec
     , language-docker
     , megaparsec >=8.0
     , prettyprinter

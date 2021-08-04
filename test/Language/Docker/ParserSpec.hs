@@ -357,6 +357,9 @@ spec = do
                     ]
                 )
             ]
+    it "should fail with wrong protocol" $
+      let content = "EXPOSE 80/ip"
+       in expectFail content
   describe "syntax" $ do
     it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $
       let content = "from ubuntu"

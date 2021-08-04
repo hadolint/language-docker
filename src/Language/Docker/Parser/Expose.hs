@@ -13,11 +13,10 @@ parseExpose = do
   Expose <$> ports
 
 port :: (?esc :: Char) => Parser Port
-port =
-  (try portVariable <?> "a variable")
+port = (try portVariable <?> "a variable")
     <|> (try portRange <?> "a port range optionally followed by the protocol (udp/tcp)") -- There a many valid representations of ports
     <|> (try portWithProtocol <?> "a port with its protocol (udp/tcp)")
-    <|> (try portInt <?> "a valid port number")
+    <|> (portInt <?> "a valid port number")
 
 ports :: (?esc :: Char) => Parser Ports
 ports = Ports <$> port `sepEndBy` requiredWhitespace
@@ -33,7 +32,7 @@ portRange = do
 protocol :: Parser Protocol
 protocol = do
   void (char '/')
-  tcp <|> udp
+  try (tcp <|> udp) <|> fail "invalid protocol"
   where
     tcp = caseInsensitiveString "tcp" >> return TCP
     udp = caseInsensitiveString "udp" >> return UDP
