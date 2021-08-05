@@ -9,6 +9,7 @@ module Language.Docker.Parser.Prelude
     commaSep,
     stringLiteral,
     brackets,
+    heredoc,
     whitespace,
     requiredWhitespace,
     untilEol,
@@ -134,6 +135,22 @@ stringLiteral = do
 
 brackets :: (?esc :: Char) => Parser a -> Parser a
 brackets = between (symbol "[" *> whitespace) (whitespace *> symbol "]")
+
+justWhitespace :: Parser Text
+justWhitespace = do
+  c <- choice
+    [ char ' ',
+      char '\t',
+      char '\n'
+    ]
+  return (T.pack [c])
+
+heredoc :: Parser Text
+heredoc = do
+  void $ string "<<"
+  m <- manyTill L.charLiteral justWhitespace
+  doc <- manyTill L.charLiteral (string (T.pack m))
+  return $ T.strip $ T.pack doc
 
 onlySpaces :: Parser Text
 onlySpaces = takeWhileP (Just "spaces") (\c -> c == ' ' || c == '\t')
