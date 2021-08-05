@@ -128,10 +128,13 @@ commaSep :: (?esc :: Char) => Parser a -> Parser [a]
 commaSep p = sepBy (p <* whitespace) (symbol ",")
 
 stringLiteral :: Parser Text
-stringLiteral = do
-  void (char '"')
-  lit <- manyTill L.charLiteral (char '"')
-  return (T.pack lit)
+stringLiteral = stringLiteral' '"'
+
+stringLiteral' :: Char -> Parser Text
+stringLiteral' c = do
+  void $ char c
+  lit <- manyTill L.charLiteral (char c)
+  return $ T.pack lit
 
 brackets :: (?esc :: Char) => Parser a -> Parser a
 brackets = between (symbol "[" *> whitespace) (whitespace *> symbol "]")
@@ -145,11 +148,19 @@ justWhitespace = do
     ]
   return (T.pack [c])
 
+untilWS :: Parser Text
+untilWS = do
+  s <- manyTill L.charLiteral justWhitespace
+  return $ T.pack s
+
 heredoc :: Parser Text
 heredoc = do
   void $ string "<<"
-  m <- manyTill L.charLiteral justWhitespace
-  doc <- manyTill L.charLiteral (string (T.pack m))
+  void $ takeWhileP (Just "dash") (== '-')
+  m <- try stringLiteral
+    <|> try (stringLiteral' '\'')
+    <|> untilWS
+  doc <- manyTill L.charLiteral (string m)
   return $ T.strip $ T.pack doc
 
 onlySpaces :: Parser Text

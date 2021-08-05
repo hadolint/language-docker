@@ -284,6 +284,26 @@ spec = do
       let file = Text.unlines [ "RUN <<FOO", "foo", "FOO"]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
+    it "foo heredoc quoted marker" $
+      let file = Text.unlines [ "RUN <<\"FOO\"", "foo", "FOO"]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
+    it "foo heredoc single quoted marker" $
+      let file = Text.unlines [ "RUN <<\'FOO\'", "foo", "FOO"]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
+    it "foo heredoc +dash" $
+      let file = Text.unlines [ "RUN <<-FOO", "foo", "FOO"]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
+    it "foo heredoc quoted +dash" $
+      let file = Text.unlines [ "RUN <<-\"FOO\"", "foo", "FOO"]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
+    it "foo heredoc single quoted +dash" $
+      let file = Text.unlines [ "RUN <<-\'FOO\'", "foo", "FOO"]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "multiline foo heredoc" $
       let file = Text.unlines [ "RUN <<EOF", "foo", "bar", "", "dodo", "EOF"]
           flags = def { security = Nothing }
