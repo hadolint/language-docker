@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 725eef8e53e8a586054f6819febd9d78bf32dcced729e715439053b7fc70f2a2
+-- hash: 3b38c6eec0fc0543e696e51fa5a654074e9718ae41bd50f4114824964938c535
 
 name:           language-docker
 version:        10.1.0
@@ -81,6 +81,7 @@ test-suite hspec
   main-is: Spec.hs
   other-modules:
       Language.Docker.IntegrationSpec
+      Language.Docker.ParseCopySpec
       Language.Docker.ParsePragmaSpec
       Language.Docker.ParserSpec
       Language.Docker.ParseRunSpec

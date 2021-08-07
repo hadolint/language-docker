@@ -42,12 +42,13 @@ parseCopy = do
             case sourceFlags of
               [] -> NoSource
               f : _ -> f
-      fileList "COPY" (\src dest -> Copy (CopyArgs src dest cho chm fr))
+      try (heredocList (\src dest -> Copy (CopyArgs src dest cho chm fr)))
+        <|> fileList "COPY" (\src dest -> Copy (CopyArgs src dest cho chm fr))
 
 parseAdd :: (?esc :: Char) => Parser (Instruction Text)
 parseAdd = do
   reserved "ADD"
-  flags <- copyFlag `sepEndBy` requiredWhitespace
+  flags <- addFlag `sepEndBy` requiredWhitespace
   let chownFlags = [c | FlagChown c <- flags]
   let chmodFlags = [c | FlagChmod c <- flags]
   let invalidFlags = [i | FlagInvalid i <- flags]
@@ -65,6 +66,15 @@ parseAdd = do
                   [] -> NoChmod
                   c : _ -> c
       fileList "ADD" (\src dest -> Add (AddArgs src dest cho chm))
+
+heredocList :: (?esc :: Char) =>
+               (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->
+               Parser (Instruction Text)
+heredocList constr = do
+  sources <- spaceSep1 heredocMarker
+  target <- untilEol "target path"
+  void $ heredocContent (last sources)
+  return $ constr (SourcePath <$> fromList sources) (TargetPath target)
 
 fileList :: (?esc :: Char) => Text ->
             (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->
@@ -86,11 +96,12 @@ unexpectedFlag name "" = customFailure $ NoValueFlagError (T.unpack name)
 unexpectedFlag name _ = customFailure $ InvalidFlagError (T.unpack name)
 
 copyFlag :: (?esc :: Char) => Parser CopyFlag
-copyFlag =
-  (FlagChown <$> try chown <?> "only one --chown")
-    <|> (FlagChmod <$> try chmod <?> "only one --chmod")
-    <|> (FlagSource <$> try copySource <?> "only one --from")
-    <|> (FlagInvalid <$> try anyFlag <?> "no other flags")
+copyFlag = (FlagSource <$> try copySource <?> "only one --from") <|> addFlag
+
+addFlag :: (?esc :: Char) => Parser CopyFlag
+addFlag = (FlagChown <$> try chown <?> "--chown")
+  <|> (FlagChmod <$> try chmod <?> "--chmod")
+  <|> (FlagInvalid <$> try anyFlag <?> "other flag")
 
 chown :: (?esc :: Char) => Parser Chown
 chown = do

@@ -7,9 +7,12 @@ module Language.Docker.Parser.Prelude
     reserved,
     natural,
     commaSep,
+    spaceSep1,
     stringLiteral,
     brackets,
     heredoc,
+    heredocMarker,
+    heredocContent,
     whitespace,
     requiredWhitespace,
     untilEol,
@@ -127,11 +130,21 @@ natural = L.decimal <?> "positive number"
 commaSep :: (?esc :: Char) => Parser a -> Parser [a]
 commaSep p = sepBy (p <* whitespace) (symbol ",")
 
-stringLiteral :: Parser Text
-stringLiteral = stringLiteral' '"'
+spaceSep1 :: Parser a -> Parser [a]
+spaceSep1 p = sepEndBy1 p onlySpaces
 
-stringLiteral' :: Char -> Parser Text
-stringLiteral' c = do
+-- | Not this is just an alias for compatibility
+stringLiteral :: Parser Text
+stringLiteral = doubleQuotedString
+
+singleQuotedString :: Parser Text
+singleQuotedString = quotedString '\''
+
+doubleQuotedString :: Parser Text
+doubleQuotedString = quotedString '\"'
+
+quotedString :: Char -> Parser Text
+quotedString c = do
   void $ char c
   lit <- manyTill L.charLiteral (char c)
   return $ T.pack lit
@@ -153,15 +166,21 @@ untilWS = do
   s <- manyTill L.charLiteral justWhitespace
   return $ T.pack s
 
-heredoc :: Parser Text
-heredoc = do
+heredocMarker :: Parser Text
+heredocMarker = do
   void $ string "<<"
   void $ takeWhileP (Just "dash") (== '-')
-  m <- try stringLiteral
-    <|> try (stringLiteral' '\'')
-    <|> untilWS
-  doc <- manyTill L.charLiteral (string m)
+  try doubleQuotedString <|> try singleQuotedString <|> untilWS
+
+heredocContent :: Text -> Parser Text
+heredocContent marker = do
+  doc <- manyTill L.charLiteral (string marker)
   return $ T.strip $ T.pack doc
+
+heredoc :: Parser Text
+heredoc = do
+  m <- heredocMarker
+  heredocContent m
 
 onlySpaces :: Parser Text
 onlySpaces = takeWhileP (Just "spaces") (\c -> c == ' ' || c == '\t')
