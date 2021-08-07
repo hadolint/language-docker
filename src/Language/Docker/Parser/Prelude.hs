@@ -16,6 +16,7 @@ module Language.Docker.Parser.Prelude
     whitespace,
     requiredWhitespace,
     untilEol,
+    untilHeredoc,
     symbol,
     onlySpaces,
     onlyWhitespaces,
@@ -170,7 +171,14 @@ heredocMarker :: Parser Text
 heredocMarker = do
   void $ string "<<"
   void $ takeWhileP (Just "dash") (== '-')
-  try doubleQuotedString <|> try singleQuotedString <|> untilWS
+  m <- try doubleQuotedString <|> try singleQuotedString <|> untilWS
+  optional heredocRedirect
+  pure m
+
+heredocRedirect :: Parser Text
+heredocRedirect = do
+  void $ char '>'
+  takeWhileP (Just "heredoc path") (/= '\n')
 
 heredocContent :: Text -> Parser Text
 heredocContent marker = do
@@ -181,6 +189,12 @@ heredoc :: Parser Text
 heredoc = do
   m <- heredocMarker
   heredocContent m
+
+-- | Parses text until a heredoc is found. Will also consume the heredoc.
+untilHeredoc :: Parser Text
+untilHeredoc = do
+  txt <- manyTill L.charLiteral heredoc
+  return $ T.strip $ T.pack txt
 
 onlySpaces :: Parser Text
 onlySpaces = takeWhileP (Just "spaces") (\c -> c == ' ' || c == '\t')

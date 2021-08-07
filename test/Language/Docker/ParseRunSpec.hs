@@ -320,3 +320,15 @@ spec = do
       let file = Text.unlines [ "RUN <<EOF foo", "bar EOF"]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo\nbar") flags ]
+    it "heredoc with redirection to file" $
+      let file = Text.unlines [ "RUN <<EOF > /file", "foo", "EOF" ]
+          flags = def {security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
+    it "heredoc to program stdin" $
+      let file = Text.unlines [ "RUN python <<EOF", "print(\"foo\")", "EOF" ]
+          flags = def {security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "python") flags ]
+    it "heredoc to program stdin with redirect to file" $
+      let file = Text.unlines [ "RUN python <<EOF > /file", "print(\"foo\")", "EOF" ]
+          flags = def {security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "python") flags ]

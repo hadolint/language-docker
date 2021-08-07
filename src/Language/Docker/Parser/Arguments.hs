@@ -15,7 +15,9 @@ argumentsExec = do
 
 -- Parse arguments of a command in the shell form
 argumentsShell :: (?esc :: Char) => Parser (Arguments Text)
-argumentsShell = ArgumentsText <$> toEnd
+argumentsShell =
+  try (ArgumentsText <$> untilHeredoc)
+    <|> (ArgumentsText <$> toEnd)
   where
     toEnd = untilEol "the shell arguments"
 
