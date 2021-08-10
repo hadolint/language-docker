@@ -71,10 +71,12 @@ heredocList :: (?esc :: Char) =>
                (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->
                Parser (Instruction Text)
 heredocList constr = do
-  sources <- spaceSep1 heredocMarker
+  markers <- try (spaceSep1 heredocMarker) <?> "a list of heredoc markers"
   target <- untilEol "target path"
-  void $ heredocContent (last sources)
-  return $ constr (SourcePath <$> fromList sources) (TargetPath target)
+  case reverse markers of
+    [] -> customError $ FileListError "empty list of heredoc markers"
+    m:_ -> void $ heredocContent m
+  return $ constr (SourcePath <$> fromList markers) (TargetPath target)
 
 fileList :: (?esc :: Char) => Text ->
             (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->

@@ -134,7 +134,7 @@ commaSep p = sepBy (p <* whitespace) (symbol ",")
 spaceSep1 :: Parser a -> Parser [a]
 spaceSep1 p = sepEndBy1 p onlySpaces
 
--- | Not this is just an alias for compatibility
+-- | Note this is just an alias for compatibility
 stringLiteral :: Parser Text
 stringLiteral = doubleQuotedString
 
