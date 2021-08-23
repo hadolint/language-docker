@@ -28,5 +28,5 @@ jobs:
       - name: Haskell Lint
         uses: rwe/actions-hlint-run@v2
         with:
-          path: '["src/", "test/", ]'
+          path: '["src/", "test/"]'
           fail-on: warning

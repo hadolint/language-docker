@@ -7,11 +7,16 @@ module Language.Docker.Parser.Prelude
     reserved,
     natural,
     commaSep,
+    spaceSep1,
     stringLiteral,
     brackets,
+    heredoc,
+    heredocMarker,
+    heredocContent,
     whitespace,
     requiredWhitespace,
     untilEol,
+    untilHeredoc,
     symbol,
     onlySpaces,
     onlyWhitespaces,
@@ -126,14 +131,70 @@ natural = L.decimal <?> "positive number"
 commaSep :: (?esc :: Char) => Parser a -> Parser [a]
 commaSep p = sepBy (p <* whitespace) (symbol ",")
 
+spaceSep1 :: Parser a -> Parser [a]
+spaceSep1 p = sepEndBy1 p onlySpaces
+
+-- | Note this is just an alias for compatibility
 stringLiteral :: Parser Text
-stringLiteral = do
-  void (char '"')
-  lit <- manyTill L.charLiteral (char '"')
-  return (T.pack lit)
+stringLiteral = doubleQuotedString
+
+singleQuotedString :: Parser Text
+singleQuotedString = quotedString '\''
+
+doubleQuotedString :: Parser Text
+doubleQuotedString = quotedString '\"'
+
+quotedString :: Char -> Parser Text
+quotedString c = do
+  void $ char c
+  lit <- manyTill L.charLiteral (char c)
+  return $ T.pack lit
 
 brackets :: (?esc :: Char) => Parser a -> Parser a
 brackets = between (symbol "[" *> whitespace) (whitespace *> symbol "]")
+
+justWhitespace :: Parser Text
+justWhitespace = do
+  c <- choice
+    [ char ' ',
+      char '\t',
+      char '\n'
+    ]
+  return (T.pack [c])
+
+untilWS :: Parser Text
+untilWS = do
+  s <- manyTill L.charLiteral justWhitespace
+  return $ T.pack s
+
+heredocMarker :: Parser Text
+heredocMarker = do
+  void $ string "<<"
+  void $ takeWhileP (Just "dash") (== '-')
+  m <- try doubleQuotedString <|> try singleQuotedString <|> untilWS
+  optional heredocRedirect
+  pure m
+
+heredocRedirect :: Parser Text
+heredocRedirect = do
+  void $ char '>'
+  takeWhileP (Just "heredoc path") (/= '\n')
+
+heredocContent :: Text -> Parser Text
+heredocContent marker = do
+  doc <- manyTill L.charLiteral (string marker)
+  return $ T.strip $ T.pack doc
+
+heredoc :: Parser Text
+heredoc = do
+  m <- heredocMarker
+  heredocContent m
+
+-- | Parses text until a heredoc is found. Will also consume the heredoc.
+untilHeredoc :: Parser Text
+untilHeredoc = do
+  txt <- manyTill L.charLiteral heredoc
+  return $ T.strip $ T.pack txt
 
 onlySpaces :: Parser Text
 onlySpaces = takeWhileP (Just "spaces") (\c -> c == ' ' || c == '\t')
