@@ -332,3 +332,14 @@ spec = do
       let file = Text.unlines [ "RUN python <<EOF > /file", "print(\"foo\")", "EOF" ]
           flags = def {security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "python") flags ]
+    it "heredoc with line continuation" $
+      let file = Text.unlines [ "RUN <<EOF", "apt-get update", "apt-get install foo bar \\", "  buzz bar", "EOF" ]
+          flags = def {security = Nothing }
+       in assertAst
+            file
+            [ Run $ RunArgs
+                      ( ArgumentsText
+                          "apt-get update\napt-get install foo bar \\\n  buzz bar"
+                      )
+                      flags
+            ]

@@ -182,7 +182,7 @@ heredocRedirect = do
 
 heredocContent :: Text -> Parser Text
 heredocContent marker = do
-  doc <- manyTill L.charLiteral (string marker)
+  doc <- manyTill anySingle (string marker)
   return $ T.strip $ T.pack doc
 
 heredoc :: Parser Text
@@ -193,7 +193,7 @@ heredoc = do
 -- | Parses text until a heredoc is found. Will also consume the heredoc.
 untilHeredoc :: Parser Text
 untilHeredoc = do
-  txt <- manyTill L.charLiteral heredoc
+  txt <- manyTill anySingle heredoc
   return $ T.strip $ T.pack txt
 
 onlySpaces :: Parser Text

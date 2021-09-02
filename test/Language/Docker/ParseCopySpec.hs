@@ -136,3 +136,9 @@ spec = do
             file
               [ Copy $ CopyArgs [SourcePath "FOO", SourcePath "BAR", SourcePath "FIZZ", SourcePath "BUZZ"] (TargetPath "/target") NoChown NoChmod NoSource
               ]
+    it "foo heredoc with line continuations" $
+      let file = Text.unlines ["COPY <<FOO /target", "foo \\", "bar", "FOO"]
+       in assertAst
+            file
+              [ Copy $ CopyArgs [SourcePath "FOO"] (TargetPath "/target") NoChown NoChmod NoSource
+              ]
