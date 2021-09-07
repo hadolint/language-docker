@@ -317,9 +317,9 @@ spec = do
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "") flags ]
     it "evil heredoc" $
-      let file = Text.unlines [ "RUN <<EOF foo", "bar EOF"]
+      let file = Text.unlines [ "RUN <<EOF foo", "bar EOF", "EOF"]
           flags = def { security = Nothing }
-       in assertAst file [ Run $ RunArgs (ArgumentsText "foo\nbar") flags ]
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo\nbar EOF") flags ]
     it "heredoc with redirection to file" $
       let file = Text.unlines [ "RUN <<EOF > /file", "foo", "EOF" ]
           flags = def {security = Nothing }
@@ -343,3 +343,7 @@ spec = do
                       )
                       flags
             ]
+    it "heredoc correct termination" $
+      let file = Text.unlines [ "RUN <<EOF", "echo $EOF", "EOF" ]
+          flags = def {security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "echo $EOF") flags ]
