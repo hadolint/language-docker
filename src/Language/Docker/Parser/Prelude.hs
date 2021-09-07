@@ -153,18 +153,9 @@ quotedString c = do
 brackets :: (?esc :: Char) => Parser a -> Parser a
 brackets = between (symbol "[" *> whitespace) (whitespace *> symbol "]")
 
-justWhitespace :: Parser Text
-justWhitespace = do
-  c <- choice
-    [ char ' ',
-      char '\t',
-      char '\n'
-    ]
-  return (T.pack [c])
-
 untilWS :: Parser Text
 untilWS = do
-  s <- manyTill L.charLiteral justWhitespace
+  s <- manyTill anySingle spaceChar
   return $ T.pack s
 
 heredocMarker :: Parser Text
@@ -182,7 +173,10 @@ heredocRedirect = do
 
 heredocContent :: Text -> Parser Text
 heredocContent marker = do
-  doc <- manyTill anySingle (string marker)
+  foo <- observing $ string $ marker <> "\n"
+  doc <- case foo of
+    Left _ -> manyTill anySingle (string $ "\n" <> marker <> "\n")
+    Right _ -> pure ""
   return $ T.strip $ T.pack doc
 
 heredoc :: Parser Text
