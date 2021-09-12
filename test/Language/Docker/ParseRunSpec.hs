@@ -88,8 +88,8 @@ spec = do
                             cFromImage = Just "ubuntu",
                             cSource = Just "/bar",
                             cMode = Just "0700",
-                            cUid = Just 0,
-                            cGid = Just 0
+                            cUid = Just "0",
+                            cGid = Just "0"
                           }
                       )
               }
@@ -152,8 +152,8 @@ spec = do
                             sIsRequired = Just True,
                             sSource = Just "/bar",
                             sMode = Just "0700",
-                            sUid = Just 0,
-                            sGid = Just 0
+                            sUid = Just "0",
+                            sGid = Just "0"
                           }
                       )
               }
@@ -174,8 +174,8 @@ spec = do
                             sIsRequired = Just True,
                             sSource = Just "/bar",
                             sMode = Just "0700",
-                            sUid = Just 0,
-                            sGid = Just 0
+                            sUid = Just "0",
+                            sGid = Just "0"
                           }
                       )
               }
@@ -196,8 +196,8 @@ spec = do
                             sIsRequired = Just True,
                             sSource = Just "/bar",
                             sMode = Just "0700",
-                            sUid = Just 0,
-                            sGid = Just 0
+                            sUid = Just "0",
+                            sGid = Just "0"
                           }
                       )
               }
@@ -218,8 +218,26 @@ spec = do
                             sIsRequired = Just True,
                             sSource = Just "/bar",
                             sMode = Just "0700",
-                            sUid = Just 0,
-                            sGid = Just 0
+                            sUid = Just "0",
+                            sGid = Just "0"
+                          }
+                      )
+              }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
+    it "--mount=type=cache uid/gid=$var" $
+      let file = Text.unlines ["RUN --mount=type=cache,target=/foo,uid=$VAR_UID,gid=$VAR_GID echo foo"]
+          flags =
+            def
+              { mount =
+                  Just $
+                    CacheMount
+                      ( def
+                          { cTarget = TargetPath "/foo",
+                            cUid = Just "$VAR_UID",
+                            cGid = Just "$VAR_GID"
                           }
                       )
               }
