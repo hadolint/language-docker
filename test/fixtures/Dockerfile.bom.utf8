@@ -1,0 +1,3 @@
+﻿FROM debian:11
+USER root
+RUN foo bar
