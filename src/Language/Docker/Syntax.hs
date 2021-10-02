@@ -241,8 +241,8 @@ data CacheOpts
         cFromImage :: !(Maybe Text),
         cSource :: !(Maybe SourcePath),
         cMode :: !(Maybe Text),
-        cUid :: !(Maybe Integer),
-        cGid :: !(Maybe Integer)
+        cUid :: !(Maybe Text),
+        cGid :: !(Maybe Text)
       }
   deriving (Show, Eq, Ord)
 
@@ -261,8 +261,8 @@ data SecretOpts
         sIsRequired :: !(Maybe Bool),
         sSource :: !(Maybe SourcePath),
         sMode :: !(Maybe Text),
-        sUid :: !(Maybe Integer),
-        sGid :: !(Maybe Integer)
+        sUid :: !(Maybe Text),
+        sGid :: !(Maybe Text)
       }
   deriving (Eq, Show, Ord)
 

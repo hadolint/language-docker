@@ -20,7 +20,6 @@ data RunFlag
 
 data RunMountArg
   = MountArgFromImage Text
-  | MountArgGid Integer
   | MountArgId Text
   | MountArgMode Text
   | MountArgReadOnly Bool
@@ -29,7 +28,8 @@ data RunMountArg
   | MountArgSource SourcePath
   | MountArgTarget TargetPath
   | MountArgType Text
-  | MountArgUid Integer
+  | MountArgUid Text
+  | MountArgGid Text
   deriving (Show)
 
 data MountType
@@ -241,8 +241,8 @@ cacheSharing =
 mountArgFromImage :: (?esc :: Char) => Parser RunMountArg
 mountArgFromImage = MountArgFromImage <$> key "from" stringArg
 
-mountArgGid :: Parser RunMountArg
-mountArgGid = MountArgGid <$> key "gid" natural
+mountArgGid :: (?esc :: Char) => Parser RunMountArg
+mountArgGid = MountArgGid <$> key "gid" stringArg
 
 mountArgId :: (?esc :: Char) => Parser RunMountArg
 mountArgId = MountArgId <$> key "id" stringArg
@@ -280,8 +280,8 @@ mountArgTarget = do
   label "target=" $ choice [string "target=", string "dst=", string "destination="]
   MountArgTarget . TargetPath <$> stringArg
 
-mountArgUid :: Parser RunMountArg
-mountArgUid = MountArgUid <$> key "uid" natural
+mountArgUid :: (?esc :: Char) => Parser RunMountArg
+mountArgUid = MountArgUid <$> key "uid" stringArg
 
 toArgName :: RunMountArg -> Text
 toArgName (MountArgFromImage _) = "from"
