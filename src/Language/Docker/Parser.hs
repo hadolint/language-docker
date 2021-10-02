@@ -63,7 +63,23 @@ doParse path txt = do
   let ?esc = findEscapePragma (T.lines src)
    in parse (contents dockerfile) path src
   where
-    src = dos2unix (E.decodeUtf8With E.lenientDecode txt)
+    src =
+      case B.take 4 txt of
+        "\255\254\NUL\NUL" ->
+          dos2unix (E.decodeUtf32LEWith E.lenientDecode $ B.drop 4 txt)
+        "\NUL\NUL\254\255" ->
+          dos2unix (E.decodeUtf32BEWith E.lenientDecode $ B.drop 4 txt)
+        _ ->
+          case B.take 2 txt of
+            "\255\254" ->
+              dos2unix (E.decodeUtf16LEWith E.lenientDecode $ B.drop 2 txt)
+            "\254\255" ->
+              dos2unix (E.decodeUtf16BEWith E.lenientDecode $ B.drop 2 txt)
+            _ ->
+              case B.take 3 txt of
+                "\239\187\191" ->
+                  dos2unix (E.decodeUtf8With E.lenientDecode $ B.drop 3 txt)
+                _ -> dos2unix (E.decodeUtf8With E.lenientDecode txt)
 
 -- | Changes crlf line endings to simple line endings
 dos2unix :: T.Text -> T.Text
