@@ -9,16 +9,18 @@
 module Language.Docker.PrettyPrint where
 
 import Data.List.NonEmpty as NonEmpty (NonEmpty (..), toList)
+import Data.Set (Set)
 import Data.String (fromString)
 import Data.Text (Text)
-import qualified Data.Text as Text
-import qualified Data.Text.Lazy as L
-import qualified Data.Text.Lazy.Builder as B
 import Data.Text.Prettyprint.Doc
 import Data.Text.Prettyprint.Doc.Internal (Doc (Empty))
 import Data.Text.Prettyprint.Doc.Render.Text (renderLazy)
 import Language.Docker.Syntax
 import Prelude hiding ((<>), (>>))
+import qualified Data.Set as Set
+import qualified Data.Text as Text
+import qualified Data.Text.Lazy as L
+import qualified Data.Text.Lazy.Builder as B
 
 data EscapeAccum
   = EscapeAccum
@@ -165,47 +167,48 @@ prettyPrintRetries = maybe mempty pp
   where
     pp (Retries r) = "--retries=" <> pretty r
 
-prettyPrintRunMount :: (?esc :: Char) => Maybe RunMount -> Doc ann
-prettyPrintRunMount Nothing = mempty
-prettyPrintRunMount (Just mount) = "--mount="
-  <> case mount of
-    BindMount BindOpts {..} ->
-      "type=bind"
-        <> printTarget bTarget
-        <> maybe mempty printSource bSource
-        <> maybe mempty printFromImage bFromImage
-        <> maybe mempty printReadOnly bReadOnly
-    CacheMount CacheOpts {..} ->
-      "type=cache"
-        <> printTarget cTarget
-        <> maybe mempty printSharing cSharing
-        <> maybe mempty printId cCacheId
-        <> maybe mempty printFromImage cFromImage
-        <> maybe mempty printSource cSource
-        <> maybe mempty printMode cMode
-        <> maybe mempty printUid cUid
-        <> maybe mempty printGid cGid
-        <> maybe mempty printReadOnly cReadOnly
-    SshMount SecretOpts {..} ->
-      "type=ssh"
-        <> maybe mempty printTarget sTarget
-        <> maybe mempty printId sCacheId
-        <> maybe mempty printSource sSource
-        <> maybe mempty printMode sMode
-        <> maybe mempty printUid sUid
-        <> maybe mempty printGid sGid
-        <> maybe mempty printRequired sIsRequired
-    SecretMount SecretOpts {..} ->
-      "type=secret"
-        <> maybe mempty printTarget sTarget
-        <> maybe mempty printId sCacheId
-        <> maybe mempty printSource sSource
-        <> maybe mempty printMode sMode
-        <> maybe mempty printUid sUid
-        <> maybe mempty printGid sGid
-        <> maybe mempty printRequired sIsRequired
-    TmpfsMount TmpOpts {..} -> "type=tmpfs" <> printTarget tTarget
+prettyPrintRunMount :: (?esc :: Char) => Set RunMount -> Doc ann
+prettyPrintRunMount set =
+  foldl (<>) "" (map printSingleMount (Set.toList set))
   where
+    printSingleMount mount = "--mount="
+      <> case mount of
+        BindMount BindOpts {..} ->
+          "type=bind"
+            <> printTarget bTarget
+            <> maybe mempty printSource bSource
+            <> maybe mempty printFromImage bFromImage
+            <> maybe mempty printReadOnly bReadOnly
+        CacheMount CacheOpts {..} ->
+          "type=cache"
+            <> printTarget cTarget
+            <> maybe mempty printSharing cSharing
+            <> maybe mempty printId cCacheId
+            <> maybe mempty printFromImage cFromImage
+            <> maybe mempty printSource cSource
+            <> maybe mempty printMode cMode
+            <> maybe mempty printUid cUid
+            <> maybe mempty printGid cGid
+            <> maybe mempty printReadOnly cReadOnly
+        SshMount SecretOpts {..} ->
+          "type=ssh"
+            <> maybe mempty printTarget sTarget
+            <> maybe mempty printId sCacheId
+            <> maybe mempty printSource sSource
+            <> maybe mempty printMode sMode
+            <> maybe mempty printUid sUid
+            <> maybe mempty printGid sGid
+            <> maybe mempty printRequired sIsRequired
+        SecretMount SecretOpts {..} ->
+          "type=secret"
+            <> maybe mempty printTarget sTarget
+            <> maybe mempty printId sCacheId
+            <> maybe mempty printSource sSource
+            <> maybe mempty printMode sMode
+            <> maybe mempty printUid sUid
+            <> maybe mempty printGid sGid
+            <> maybe mempty printRequired sIsRequired
+        TmpfsMount TmpOpts {..} -> "type=tmpfs" <> printTarget tTarget
     printQuotable str
       | Text.any (== '"') str = doubleQoute str
       | otherwise = pretty str

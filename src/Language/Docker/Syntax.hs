@@ -12,6 +12,7 @@ import Data.List.NonEmpty (NonEmpty)
 import Data.List.Split (endBy)
 import Data.String (IsString (..))
 import Data.Text (Text)
+import Data.Set (Set)
 import qualified Data.Text as Text
 import Data.Time.Clock (DiffTime)
 import GHC.Exts (IsList (..))
@@ -288,14 +289,14 @@ data RunNetwork
 
 data RunFlags
   = RunFlags
-      { mount :: !(Maybe RunMount),
+      { mount :: !(Set RunMount),
         security :: !(Maybe RunSecurity),
         network :: !(Maybe RunNetwork)
       }
   deriving (Show, Eq, Ord)
 
 instance Default RunFlags where
-  def = RunFlags Nothing Nothing Nothing
+  def = RunFlags mempty Nothing Nothing
 
 data RunArgs args = RunArgs (Arguments args) RunFlags
   deriving (Show, Eq, Ord, Functor)
@@ -305,9 +306,9 @@ instance IsString (RunArgs Text) where
     RunArgs
       (ArgumentsText . Text.pack $ s)
       RunFlags
-        { security = Nothing,
-          network = Nothing,
-          mount = Nothing
+        { mount = mempty,
+          security = Nothing,
+          network = Nothing
         }
 
 newtype EscapeChar

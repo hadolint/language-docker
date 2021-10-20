@@ -46,7 +46,7 @@ parseRun = do
 
 runArguments :: (?esc :: Char) => Parser (RunArgs Text)
 runArguments = do
-  presentFlags <- choice [runFlags <* requiredWhitespace, pure (RunFlags Nothing Nothing Nothing)]
+  presentFlags <- choice [runFlags <* requiredWhitespace, pure (RunFlags mempty Nothing Nothing)]
   args <- arguments
   return $ RunArgs args presentFlags
 
@@ -56,8 +56,8 @@ runFlags = do
   return $ foldr toRunFlags emptyFlags flags
   where
     flagSeparator = try (requiredWhitespace *> lookAhead (string "--")) <|> fail "expected flag"
-    emptyFlags = RunFlags Nothing Nothing Nothing
-    toRunFlags (RunFlagMount m) rf = rf {mount = Just m}
+    emptyFlags = RunFlags mempty Nothing Nothing
+    toRunFlags (RunFlagMount m) rf@RunFlags { mount = mnt } = rf {mount = Set.insert m mnt}
     toRunFlags (RunFlagNetwork n) rf = rf {network = Just n}
     toRunFlags (RunFlagSecurity s) rf = rf {security = Just s}
 
