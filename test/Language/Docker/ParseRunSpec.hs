@@ -1,12 +1,13 @@
 module Language.Docker.ParseRunSpec where
 
 import Data.Default.Class (def)
-import qualified Data.Text as Text
 import Language.Docker.Parser
 import Language.Docker.Syntax
-import TestHelper
 import Test.HUnit hiding (Label)
 import Test.Hspec
+import TestHelper
+import qualified Data.Set as Set
+import qualified Data.Text as Text
 
 
 spec :: Spec
@@ -35,21 +36,21 @@ spec = do
   describe "RUN with experimental flags" $ do
     it "--mount=type=bind and target" $
       let file = Text.unlines ["RUN --mount=type=bind,target=/foo echo foo"]
-          flags = def {mount = Just $ BindMount (def {bTarget = "/foo"})}
+          flags = def {mount = Set.singleton $ BindMount (def {bTarget = "/foo"})}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount default to bind" $
       let file = Text.unlines ["RUN --mount=target=/foo echo foo"]
-          flags = def {mount = Just $ BindMount (def {bTarget = "/foo"})}
+          flags = def {mount = Set.singleton $ BindMount (def {bTarget = "/foo"})}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount=type=bind all modifiers" $
       let file = Text.unlines ["RUN --mount=type=bind,target=/foo,source=/bar,from=ubuntu,ro echo foo"]
-          flags = def {mount = Just $ BindMount (BindOpts {bTarget = "/foo", bSource = Just "/bar", bFromImage = Just "ubuntu", bReadOnly = Just True})}
+          flags = def {mount = Set.singleton $ BindMount (BindOpts {bTarget = "/foo", bSource = Just "/bar", bFromImage = Just "ubuntu", bReadOnly = Just True})}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
@@ -61,9 +62,9 @@ spec = do
                 "RUN --mount=type=cache,target=/bar echo foo",
                 "RUN --mount=type=cache,target=/baz echo foo"
               ]
-          flags1 = def {mount = Just $ CacheMount (def {cTarget = "/foo"})}
-          flags2 = def {mount = Just $ CacheMount (def {cTarget = "/bar"})}
-          flags3 = def {mount = Just $ CacheMount (def {cTarget = "/baz"})}
+          flags1 = def {mount = Set.singleton $ CacheMount (def {cTarget = "/foo"})}
+          flags2 = def {mount = Set.singleton $ CacheMount (def {cTarget = "/bar"})}
+          flags3 = def {mount = Set.singleton $ CacheMount (def {cTarget = "/baz"})}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags1,
@@ -78,7 +79,7 @@ spec = do
           flags =
             def
               { mount =
-                  Just $
+                  Set.singleton $
                     CacheMount
                       ( def
                           { cTarget = "/foo",
@@ -99,42 +100,42 @@ spec = do
             ]
     it "--mount=type=tmpfs" $
       let file = Text.unlines ["RUN --mount=type=tmpfs,target=/foo echo foo"]
-          flags = def {mount = Just $ TmpfsMount (def {tTarget = "/foo"})}
+          flags = def {mount = Set.singleton $ TmpfsMount (def {tTarget = "/foo"})}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount=type=ssh" $
       let file = Text.unlines ["RUN --mount=type=ssh echo foo"]
-          flags = def {mount = Just $ SshMount def}
+          flags = def {mount = Set.singleton $ SshMount def}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount=type=ssh,required=false" $
       let file = Text.unlines ["RUN --mount=type=ssh,required=false echo foo"]
-          flags = def {mount = Just $ SshMount def {sIsRequired = Just False}}
+          flags = def {mount = Set.singleton $ SshMount def {sIsRequired = Just False}}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount=type=ssh,required=False" $
       let file = Text.unlines ["RUN --mount=type=ssh,required=False echo foo"]
-          flags = def {mount = Just $ SshMount def {sIsRequired = Just False}}
+          flags = def {mount = Set.singleton $ SshMount def {sIsRequired = Just False}}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount=type=secret,required=true" $
       let file = Text.unlines ["RUN --mount=type=secret,required=true echo foo"]
-          flags = def {mount = Just $ SecretMount def {sIsRequired = Just True}}
+          flags = def {mount = Set.singleton $ SecretMount def {sIsRequired = Just True}}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount=type=secret,required=True" $
       let file = Text.unlines ["RUN --mount=type=secret,required=True echo foo"]
-          flags = def {mount = Just $ SecretMount def {sIsRequired = Just True}}
+          flags = def {mount = Set.singleton $ SecretMount def {sIsRequired = Just True}}
        in assertAst
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
@@ -144,7 +145,7 @@ spec = do
           flags =
             def
               { mount =
-                  Just $
+                  Set.singleton $
                     SshMount
                       ( def
                           { sTarget = Just "/foo",
@@ -166,7 +167,7 @@ spec = do
           flags =
             def
               { mount =
-                  Just $
+                  Set.singleton $
                     SshMount
                       ( def
                           { sTarget = Just "/foo",
@@ -188,7 +189,7 @@ spec = do
           flags =
             def
               { mount =
-                  Just $
+                  Set.singleton $
                     SecretMount
                       ( def
                           { sTarget = Just "/foo",
@@ -210,7 +211,7 @@ spec = do
           flags =
             def
               { mount =
-                  Just $
+                  Set.singleton $
                     SecretMount
                       ( def
                           { sTarget = Just "/foo",
@@ -232,7 +233,7 @@ spec = do
           flags =
             def
               { mount =
-                  Just $
+                  Set.singleton $
                     CacheMount
                       ( def
                           { cTarget = TargetPath "/foo",
@@ -240,6 +241,42 @@ spec = do
                             cGid = Just "$VAR_GID"
                           }
                       )
+              }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
+    it "multiple --mount=type=cache flags" $
+      let file = Text.unlines
+                  [ "RUN --mount=type=cache,target=/foo \\",
+                    "    --mount=type=cache,target=/bar \\",
+                    "    echo foo"
+                  ]
+          flags =
+            def
+              { mount =
+                  Set.fromList
+                    [ CacheMount ( def { cTarget = TargetPath "/foo" } ),
+                      CacheMount ( def { cTarget = TargetPath "/bar" } )
+                    ]
+              }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags
+            ]
+    it "multiple different --mount flags" $
+      let file = Text.unlines
+                  [ "RUN --mount=type=cache,target=/foo \\",
+                    "    --mount=type=secret,target=/bar \\",
+                    "    echo foo"
+                  ]
+          flags =
+            def
+              { mount =
+                  Set.fromList
+                    [ CacheMount ( def { cTarget = TargetPath "/foo" } ),
+                      SecretMount ( def { sTarget = Just "/bar" } )
+                    ]
               }
        in assertAst
             file
@@ -286,7 +323,7 @@ spec = do
             def
               { security = Just Sandbox,
                 network = Just NetworkNone,
-                mount = Just $ BindMount $ def {bTarget = "/foo"}
+                mount = Set.singleton $ BindMount $ def {bTarget = "/foo"}
               }
        in assertAst
             file

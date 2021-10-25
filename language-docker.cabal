@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1819127237c882c67c2cc100efbbd0bdc47dd9b03cf32e6381901974028706ab
+-- hash: 797bec50cbf30bc384022e539dd06b34fb833631112f23eba227db63e7463312
 
 name:           language-docker
-version:        10.2.0
+version:        10.3.0
 synopsis:       Dockerfile parser, pretty-printer and embedded DSL
 description:    All functions for parsing and pretty-printing Dockerfiles are exported through @Language.Docker@. For more fine-grained operations look for specific modules that implement a certain functionality.
                 See the <https://github.com/hadolint/language-docker GitHub project> for the source-code and examples.
