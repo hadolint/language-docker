@@ -30,6 +30,11 @@ extra-source-files:
   - test/fixtures/6.Dockerfile
   - test/fixtures/7.Dockerfile
   - test/fixtures/8.Dockerfile
+  - test/fixtures/Dockerfile.bom.utf32be
+  - test/fixtures/Dockerfile.bom.utf32le
+  - test/fixtures/Dockerfile.bom.utf16be
+  - test/fixtures/Dockerfile.bom.utf16le
+  - test/fixtures/Dockerfile.bom.utf8
 default-extensions:
   - OverloadedStrings
   - ImplicitParams
