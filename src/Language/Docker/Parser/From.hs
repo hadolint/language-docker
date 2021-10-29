@@ -9,11 +9,9 @@ import Language.Docker.Syntax
 
 parseRegistry :: (?esc :: Char) => Parser Registry
 parseRegistry = do
-  domain <- someUnless "a domain name" (== '.')
-  void $ char '.'
-  tld <- someUnless "a TLD" (== '/')
+  registry <- someUnless "a registry" (== '/')
   void $ char '/'
-  return $ Registry (domain <> "." <> tld)
+  return $ Registry (registry)
 
 parsePlatform :: (?esc :: Char) => Parser Platform
 parsePlatform = do
