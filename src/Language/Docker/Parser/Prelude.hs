@@ -173,11 +173,35 @@ heredocRedirect = do
 
 heredocContent :: Text -> Parser Text
 heredocContent marker = do
-  foo <- observing $ string $ marker <> "\n"
-  doc <- case foo of
-    Left _ -> manyTill anySingle (string $ "\n" <> marker <> "\n")
+  emptyHeredoc <- observing delimiter
+  doc <- case emptyHeredoc of
+    Left _ -> manyTill anySingle termination
     Right _ -> pure ""
   return $ T.strip $ T.pack doc
+  where
+    termination :: Parser Text
+    termination = try terEOL <|> terEOF
+
+    terEOL :: Parser Text
+    terEOL = string $ "\n" <> marker <> "\n"
+
+    terEOF :: Parser Text
+    terEOF = do
+      t <- string $ "\n" <> marker
+      hidden eof
+      pure t
+
+    delimiter :: Parser Text
+    delimiter = try delEOL <|> delEOF
+
+    delEOL :: Parser Text
+    delEOL = string $ marker <> "\n"
+
+    delEOF :: Parser Text
+    delEOF = do
+      t <- string marker
+      hidden eof
+      pure t
 
 heredoc :: Parser Text
 heredoc = do
