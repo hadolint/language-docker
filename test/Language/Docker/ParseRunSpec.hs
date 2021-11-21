@@ -332,35 +332,39 @@ spec = do
 
   describe "parse RUN in heredocs format" $ do
     it "foo heredoc" $
-      let file = Text.unlines [ "RUN <<EOF", "foo", "EOF"]
+      let file = Text.unlines [ "RUN <<EOF", "foo", "EOF" ]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
+    it "foo heredoc without newline at end" $
+      let file = "RUN <<EOF\nfoo\nEOF"
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "foo heredoc marker" $
-      let file = Text.unlines [ "RUN <<FOO", "foo", "FOO"]
+      let file = Text.unlines [ "RUN <<FOO", "foo", "FOO" ]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "foo heredoc quoted marker" $
-      let file = Text.unlines [ "RUN <<\"FOO\"", "foo", "FOO"]
+      let file = Text.unlines [ "RUN <<\"FOO\"", "foo", "FOO" ]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "foo heredoc single quoted marker" $
-      let file = Text.unlines [ "RUN <<\'FOO\'", "foo", "FOO"]
+      let file = Text.unlines [ "RUN <<\'FOO\'", "foo", "FOO" ]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "foo heredoc +dash" $
-      let file = Text.unlines [ "RUN <<-FOO", "foo", "FOO"]
+      let file = Text.unlines [ "RUN <<-FOO", "foo", "FOO" ]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "foo heredoc quoted +dash" $
-      let file = Text.unlines [ "RUN <<-\"FOO\"", "foo", "FOO"]
+      let file = Text.unlines [ "RUN <<-\"FOO\"", "foo", "FOO" ]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "foo heredoc single quoted +dash" $
-      let file = Text.unlines [ "RUN <<-\'FOO\'", "foo", "FOO"]
+      let file = Text.unlines [ "RUN <<-\'FOO\'", "foo", "FOO" ]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "multiline foo heredoc" $
-      let file = Text.unlines [ "RUN <<EOF", "foo", "bar", "", "dodo", "EOF"]
+      let file = Text.unlines [ "RUN <<EOF", "foo", "bar", "", "dodo", "EOF" ]
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo\nbar\n\ndodo") flags ]
     it "heredoc with shebang/commend" $
@@ -368,7 +372,11 @@ spec = do
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "#/usr/bin/env python\n\n#print foo\nprint(\"foo\")") flags ]
     it "empty heredoc" $
-      let file = Text.unlines [ "RUN <<EOF", "EOF"]
+      let file = Text.unlines [ "RUN <<EOF", "EOF" ]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "") flags ]
+    it "empty heredoc not followed by newline" $
+      let file = "RUN <<EOF\nEOF"
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "") flags ]
     it "evil heredoc" $
@@ -400,5 +408,9 @@ spec = do
             ]
     it "heredoc correct termination" $
       let file = Text.unlines [ "RUN <<EOF", "echo $EOF", "EOF" ]
+          flags = def {security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "echo $EOF") flags ]
+    it "heredoc correct termination without newline" $
+      let file = "RUN <<EOF\necho $EOF\nEOF"
           flags = def {security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "echo $EOF") flags ]
