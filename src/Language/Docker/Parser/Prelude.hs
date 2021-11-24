@@ -35,6 +35,7 @@ module Language.Docker.Parser.Prelude
     char,
     L.charLiteral,
     string,
+    string',
     void,
     when,
     Text,

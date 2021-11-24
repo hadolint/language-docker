@@ -330,6 +330,124 @@ spec = do
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
 
+  describe "RUN with --mount flag and different ways to write ro/rw" $ do
+    let flagsRo = def { mount = Set.singleton $
+                                BindMount
+                                  ( def
+                                      { bTarget = "/foo",
+                                        bSource = Just "/bar",
+                                        bReadOnly = Just True
+                                      }
+                                  )
+                    }
+        flagsRw = def { mount = Set.singleton $
+                                BindMount
+                                  ( def
+                                      { bTarget = "/foo",
+                                        bSource = Just "/bar",
+                                        bReadOnly = Just False
+                                      }
+                                  )
+                    }
+     in do
+      it "--mount=type=bind,ro" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,ro echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,RO" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,RO echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,readonly" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readonly echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,Readonly" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,Readonly echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,ro=true" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,ro=true echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,RO=TRUE" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,RO=TRUE echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,readonly=true" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readonly=true echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,Readonly=True" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,Readonly=True echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,ro=True" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,ro=True echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,readonly=True" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readonly=True echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,rw=false" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,rw=false echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,readwrite=false" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readwrite=false echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,rw=False" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,rw=False echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+      it "--mount=type=bind,readwrite=False" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readwrite=False echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRo ]
+
+      it "--mount=type=bind,rw" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,rw echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,readwrite" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readwrite echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,rw=true" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,rw=true echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,readwrite=true" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readwrite=true echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,rw=True" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,rw=True echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,readwrite=True" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readwrite=True echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,ro=false" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,ro=false echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,readonly=false" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readonly=false echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,ro=False" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,ro=False echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+      it "--mount=type=bind,readonly=False" $
+        let file = Text.unlines
+              [ "RUN --mount=type=bind,target=/foo,source=/bar,readonly=False echo foo" ]
+         in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRw ]
+
   describe "parse RUN in heredocs format" $ do
     it "foo heredoc" $
       let file = Text.unlines [ "RUN <<EOF", "foo", "EOF" ]

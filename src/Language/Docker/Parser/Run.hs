@@ -202,15 +202,13 @@ mountChoices mountType =
         [ mountArgTarget,
           mountArgSource,
           mountArgFromImage,
-          mountArgReadOnly,
-          mountArgReadWrite
+          mountArgReadOnly
         ]
       Cache ->
         [ mountArgTarget,
           mountArgSource,
           mountArgFromImage,
           mountArgReadOnly,
-          mountArgReadWrite,
           mountArgId,
           mountArgSharing,
           mountArgMode,
@@ -234,6 +232,9 @@ stringArg = choice [stringLiteral, someUnless "a string" (== ',')]
 key :: Text -> Parser a -> Parser a
 key name p = string (name <> "=") *> p
 
+tryKeyValue' :: Text -> Text -> Parser Text
+tryKeyValue' k v = try $ string' (k <> "=") *> string' v
+
 cacheSharing :: Parser CacheSharing
 cacheSharing =
   choice [Private <$ string "private", Shared <$ string "shared", Locked <$ string "locked"]
@@ -251,10 +252,42 @@ mountArgMode :: (?esc :: Char) => Parser RunMountArg
 mountArgMode = MountArgMode <$> key "mode" stringArg
 
 mountArgReadOnly :: Parser RunMountArg
-mountArgReadOnly = MountArgReadOnly <$> (choice ["ro", "readonly"] $> True)
+mountArgReadOnly =
+  MountArgReadOnly
+    <$> choice
+          [ choiceRoExplicit,
+            choiceRwExplicit,
+            choiceRo,  -- these two must come last and be separate
+            choiceRw
+          ]
+  where
+    choiceRoExplicit =
+      choice
+        [ tryKeyValue' "ro" "true",
+          tryKeyValue' "rw" "false",
+          tryKeyValue' "readonly" "true",
+          tryKeyValue' "readwrite" "false"
+        ] $> True
 
-mountArgReadWrite :: Parser RunMountArg
-mountArgReadWrite = MountArgReadOnly <$> (choice ["rw", "readwrite"] $> False)
+    choiceRwExplicit =
+      choice
+        [ tryKeyValue' "rw" "true",
+          tryKeyValue' "ro" "false",
+          tryKeyValue' "readwrite" "true",
+          tryKeyValue' "readonly" "false"
+        ] $> False
+
+    choiceRo =
+      choice
+        [ string' "ro",
+          string' "readonly"
+        ] $> True
+
+    choiceRw =
+      choice
+        [ string' "rw",
+          string' "readwrite"
+        ] $> False
 
 mountArgRequired :: Parser RunMountArg
 mountArgRequired = MountArgRequired <$> choice
