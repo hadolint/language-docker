@@ -211,7 +211,12 @@ data CheckArgs args
       }
   deriving (Show, Eq, Ord, Functor)
 
-type Pairs = [(Text, Text)]
+data Pair kv
+  = KeyEqValuePair kv
+  | KeySpValuePair kv
+  deriving (Show, Eq, Ord, Functor)
+
+type Pairs kv = [Pair kv]
 
 data RunMount
   = BindMount !BindOpts
@@ -338,7 +343,7 @@ data Instruction args
   = From !BaseImage
   | Add !AddArgs
   | User !Text
-  | Label !Pairs
+  | Label !(Pairs (args, args))
   | Stopsignal !Text
   | Copy !CopyArgs
   | Run !(RunArgs args)
@@ -349,7 +354,7 @@ data Instruction args
   | Volume !Text
   | Entrypoint !(Arguments args)
   | Maintainer !Text
-  | Env !Pairs
+  | Env !(Pairs (args, args))
   | Arg
       !Text
       !(Maybe Text)

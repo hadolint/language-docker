@@ -38,20 +38,24 @@ singleValue acceptCondition = mconcat <$> variants
             unquotedString acceptCondition <?> "a string with no quotes"
           ]
 
-pair :: (?esc :: Char) => Parser (Text, Text)
+pair :: (?esc :: Char) => Parser (Pair (Text, Text))
 pair = do
   key <- singleValue (/= '=')
-  value <- withEqualSign <|> withoutEqualSign
-  return (key, value)
+  choice
+    [ withEqualSign key <?> "key=value pair",
+      withoutEqualSign key <?> "`key value` pair"
+    ]
   where
-    withEqualSign = do
+    withEqualSign key = do
       void $ char '='
-      singleValue (\c -> c /= ' ' && c /= '\t')
-    withoutEqualSign = do
+      value <- singleValue (\c -> c /= ' ' && c /= '\t')
+      return $ KeyEqValuePair (key, value)
+    withoutEqualSign key = do
       requiredWhitespace
-      untilEol "value"
+      value <- untilEol "value"
+      return $ KeySpValuePair (key, value)
 
-pairs :: (?esc :: Char) => Parser Pairs
+pairs :: (?esc :: Char) => Parser (Pairs (Text, Text))
 pairs = (pair <?> "a key value pair (key=value)") `sepEndBy1` requiredWhitespace
 
 parseLabel :: (?esc :: Char) => Parser (Instruction Text)
