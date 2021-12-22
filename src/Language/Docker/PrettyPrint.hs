@@ -84,13 +84,14 @@ prettyPrintBaseImage BaseImage {..} = do
         Nothing -> mempty
         Just (Digest d) -> "@" <> pretty d
 
-prettyPrintPairs :: (?esc :: Char) => Pairs -> Doc ann
+prettyPrintPairs :: (?esc :: Char) => Pairs (Text, Text) -> Doc ann
 prettyPrintPairs ps = align $ sepLine $ fmap prettyPrintPair ps
   where
     sepLine = concatWith (\x y -> x <> " " <> pretty ?esc <> line <> y)
 
-prettyPrintPair :: (?esc :: Char) => (Text, Text) -> Doc ann
-prettyPrintPair (k, v) = pretty k <> pretty '=' <> doubleQoute v
+prettyPrintPair :: (?esc :: Char) => Pair (Text, Text) -> Doc ann
+prettyPrintPair (KeyEqValuePair (k, v)) = pretty k <> pretty '=' <> doubleQoute v
+prettyPrintPair (KeySpValuePair (k, v)) = pretty k <> pretty ' ' <> doubleQoute v
 
 prettyPrintArguments :: (?esc :: Char) => Arguments Text -> Doc ann
 prettyPrintArguments (ArgumentsList as) = prettyPrintJSON (Text.words as)

@@ -3,8 +3,6 @@ cabal-version: 1.12
 -- This file has been generated from package.yaml by hpack version 0.34.4.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 309a0c933f6e5edbdfbe096391f0b79e6a6f9218347d912f390d58a9c7c7c475
 
 name:           language-docker
 version:        10.4.0
@@ -87,6 +85,8 @@ test-suite hspec
   other-modules:
       Language.Docker.IntegrationSpec
       Language.Docker.ParseCopySpec
+      Language.Docker.ParseEnvSpec
+      Language.Docker.ParseLabelSpec
       Language.Docker.ParsePragmaSpec
       Language.Docker.ParserSpec
       Language.Docker.ParseRunSpec

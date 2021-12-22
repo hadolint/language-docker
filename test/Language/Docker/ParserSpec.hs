@@ -67,113 +67,6 @@ spec = do
       assertAst
         "FROM myfolder/imagename:5.12-dev"
         [From (taggedImage (Image Nothing "myfolder/imagename") "5.12-dev")]
-  describe "parse LABEL" $ do
-    it "parse label" $ assertAst "LABEL foo=bar" [Label [("foo", "bar")]]
-    it "parse space separated label" $ assertAst "LABEL foo bar baz" [Label [("foo", "bar baz")]]
-    it "parse quoted labels" $ assertAst "LABEL \"foo bar\"=baz" [Label [("foo bar", "baz")]]
-    it "parses multiline labels" $
-      let dockerfile = Text.unlines ["LABEL foo=bar \\", "hobo=mobo"]
-          ast = [Label [("foo", "bar"), ("hobo", "mobo")]]
-       in assertAst dockerfile ast
-  describe "parse ENV" $ do
-    it "parses unquoted pair" $ assertAst "ENV foo=bar" [Env [("foo", "bar")]]
-    it "parse with space between key and value" $
-      assertAst "ENV foo bar" [Env [("foo", "bar")]]
-    it "parse with more then one (white)space between key and value" $
-      let dockerfile = "ENV          NODE_VERSION  \t   v5.7.1"
-       in assertAst dockerfile [Env [("NODE_VERSION", "v5.7.1")]]
-    it "parse quoted value pair" $ assertAst "ENV foo=\"bar\"" [Env [("foo", "bar")]]
-    it "parse multiple unquoted pairs" $
-      assertAst "ENV foo=bar baz=foo" [Env [("foo", "bar"), ("baz", "foo")]]
-    it "parse multiple quoted pairs" $
-      assertAst "ENV foo=\"bar\" baz=\"foo\"" [Env [("foo", "bar"), ("baz", "foo")]]
-    it "env works before cmd" $
-      let dockerfile = "ENV PATH=\"/root\"\nCMD [\"hadolint\",\"-i\"]"
-          ast = [Env [("PATH", "/root")], Cmd ["hadolint", "-i"]]
-       in assertAst dockerfile ast
-    it "parse with two spaces between" $
-      let dockerfile = "ENV NODE_VERSION=v5.7.1  DEBIAN_FRONTEND=noninteractive"
-       in assertAst dockerfile [Env [("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]]
-    it "have envs on multiple lines" $
-      let dockerfile =
-            Text.unlines
-              [ "FROM busybox",
-                "ENV NODE_VERSION=v5.7.1 \\",
-                "DEBIAN_FRONTEND=noninteractive"
-              ]
-          ast =
-            [ From (untaggedImage "busybox"),
-              Env [("NODE_VERSION", "v5.7.1"), ("DEBIAN_FRONTEND", "noninteractive")]
-            ]
-       in assertAst dockerfile ast
-    it "parses long env over multiple lines" $
-      let dockerfile =
-            Text.unlines
-              [ "ENV LD_LIBRARY_PATH=\"/usr/lib/\" \\",
-                "APACHE_RUN_USER=\"www-data\" APACHE_RUN_GROUP=\"www-data\""
-              ]
-          ast =
-            [ Env
-                [ ("LD_LIBRARY_PATH", "/usr/lib/"),
-                  ("APACHE_RUN_USER", "www-data"),
-                  ("APACHE_RUN_GROUP", "www-data")
-                ]
-            ]
-       in assertAst dockerfile ast
-    it "parse single var list" $
-      assertAst "ENV foo val1 val2 val3 val4" [Env [("foo", "val1 val2 val3 val4")]]
-    it "parses many env lines with an equal sign in the value" $
-      let dockerfile =
-            Text.unlines
-              [ "ENV TOMCAT_VERSION 9.0.2",
-                "ENV TOMCAT_URL foo.com?q=1"
-              ]
-          ast =
-            [ Env [("TOMCAT_VERSION", "9.0.2")],
-              Env [("TOMCAT_URL", "foo.com?q=1")]
-            ]
-       in assertAst dockerfile ast
-    it "parses many env lines in mixed style" $
-      let dockerfile =
-            Text.unlines
-              [ "ENV myName=\"John Doe\" myDog=Rex\\ The\\ Dog \\",
-                "    myCat=fluffy"
-              ]
-          ast =
-            [ Env
-                [ ("myName", "John Doe"),
-                  ("myDog", "Rex The Dog"),
-                  ("myCat", "fluffy")
-                ]
-            ]
-       in assertAst dockerfile ast
-    it "parses many env with backslashes" $
-      let dockerfile =
-            Text.unlines
-              [ "ENV JAVA_HOME=C:\\\\jdk1.8.0_112"
-              ]
-          ast =
-            [ Env [("JAVA_HOME", "C:\\\\jdk1.8.0_112")]
-            ]
-       in assertAst dockerfile ast
-    it "parses env with % in them" $
-      let dockerfile =
-            Text.unlines
-              [ "ENV PHP_FPM_ACCESS_FORMAT=\"prefix \\\"quoted\\\" suffix\""
-              ]
-          ast =
-            [ Env [("PHP_FPM_ACCESS_FORMAT", "prefix \"quoted\" suffix")]
-            ]
-       in assertAst dockerfile ast
-    it "parses env with % in them" $
-      let dockerfile =
-            Text.unlines
-              [ "ENV PHP_FPM_ACCESS_FORMAT=\"%R - %u %t \\\"%m %r\\\" %s\""
-              ]
-          ast =
-            [ Env [("PHP_FPM_ACCESS_FORMAT", "%R - %u %t \"%m %r\" %s")]
-            ]
-       in assertAst dockerfile ast
   describe "parse CMD" $ do
     it "one line cmd" $ assertAst "CMD true" [Cmd "true"]
     it "cmd over several lines" $
@@ -265,8 +158,12 @@ spec = do
               ]
        in assertAst
             dockerfile
-            [ Env [("A", "a.sh"), ("B", "b.sh"), ("c", "true")]
-            ]
+              [ Env
+                  [ KeyEqValuePair ("A", "a.sh"),
+                    KeyEqValuePair ("B", "b.sh"),
+                    KeyEqValuePair ("c", "true")
+                  ]
+              ]
     it "accepts backslash inside string" $
       let dockerfile = "RUN grep 'foo \\.'"
        in assertAst dockerfile [Run $ RunArgs (ArgumentsText "grep 'foo \\.'") def]
