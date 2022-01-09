@@ -6,6 +6,7 @@ import Language.Docker.Syntax
 import Test.HUnit hiding (Label)
 import Test.Hspec
 import TestHelper
+import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 
@@ -532,3 +533,47 @@ spec = do
       let file = "RUN <<EOF\necho $EOF\nEOF"
           flags = def {security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "echo $EOF") flags ]
+
+    -- This one is neccessary to make sure that we can both parse
+    -- RUN something <<EOF
+    -- bla
+    -- EOF
+    --
+    -- and not overshoot while parsing that `something` and accidentally parse
+    -- some docker instructions as well.
+    it "heredoc no overzealous parsing" $
+      let file =
+            Text.unlines
+              [ "RUN foo bar",
+                "FROM something",
+                "COPY <<EOF /foobar.sh",
+                "#!/bin/bash",
+                "echo foobar",
+                "EOF"
+              ]
+          flags = def
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "foo bar") flags,
+              From
+                ( BaseImage
+                    { image =
+                        Image
+                          { registryName = Nothing,
+                            imageName = "something"
+                          },
+                      tag = Nothing,
+                      digest = Nothing,
+                      alias = Nothing,
+                      platform = Nothing
+                    }
+                ),
+              Copy
+                ( CopyArgs
+                    [ SourcePath "EOF" ]
+                    (TargetPath "/foobar.sh")
+                    NoChown
+                    NoChmod
+                    NoSource
+                )
+            ]
