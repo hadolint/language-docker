@@ -209,10 +209,11 @@ heredoc = do
   m <- heredocMarker
   heredocContent m
 
--- | Parses text until a heredoc is found. Will also consume the heredoc.
+-- | Parses text until a heredoc or newline is found. Will also consume the
+-- heredoc.
 untilHeredoc :: Parser Text
 untilHeredoc = do
-  txt <- manyTill anySingle heredoc
+  txt <- manyTill (anySingleBut '\n') heredoc
   return $ T.strip $ T.pack txt
 
 onlySpaces :: Parser Text
