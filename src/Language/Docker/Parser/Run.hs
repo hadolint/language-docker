@@ -227,7 +227,7 @@ mountChoices mountType =
         ]
 
 stringArg :: (?esc :: Char) => Parser Text
-stringArg = choice [stringLiteral, someUnless "a string" (== ',')]
+stringArg = choice [doubleQuotedString, someUnless "a string" (== ',')]
 
 key :: Text -> Parser a -> Parser a
 key name p = string (name <> "=") *> p

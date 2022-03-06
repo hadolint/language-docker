@@ -10,7 +10,7 @@ import Language.Docker.Syntax
 -- Parse arguments of a command in the exec form
 argumentsExec :: (?esc :: Char) => Parser (Arguments Text)
 argumentsExec = do
-  args <- brackets $ commaSep stringLiteral
+  args <- brackets $ commaSep doubleQuotedStringUnescaped
   return $ ArgumentsList (T.unwords args)
 
 -- Parse arguments of a command in the shell form
