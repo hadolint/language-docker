@@ -91,7 +91,7 @@ fileList name constr = do
   where
     spaceSeparated =
       someUnless "a file" (== ' ') `sepEndBy1` (try requiredWhitespace <?> "at least another file path")
-    stringList = brackets $ commaSep stringLiteral
+    stringList = brackets $ commaSep doubleQuotedString
 
 unexpectedFlag :: Text -> Text -> Parser a
 unexpectedFlag name "" = customFailure $ NoValueFlagError (T.unpack name)

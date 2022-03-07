@@ -1,36 +1,39 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 
 module Language.Docker.Parser.Prelude
-  ( customError,
-    comment,
-    eol,
-    reserved,
-    natural,
-    commaSep,
-    spaceSep1,
-    stringLiteral,
+  (
+    DockerfileError (..),
+    Error,
+    Parser,
+    anyUnless,
     brackets,
-    heredoc,
-    heredocMarker,
-    heredocContent,
-    whitespace,
-    requiredWhitespace,
-    untilEol,
-    untilHeredoc,
-    symbol,
-    onlySpaces,
-    onlyWhitespaces,
     caseInsensitiveString,
-    stringWithEscaped,
-    lexeme,
-    lexeme',
+    commaSep,
+    comment,
+    customError,
+    doubleQuotedString,
+    doubleQuotedStringUnescaped,
+    eol,
+    heredoc,
+    heredocContent,
+    heredocMarker,
     isNl,
     isSpaceNl,
-    anyUnless,
+    lexeme',
+    lexeme,
+    natural,
+    onlySpaces,
+    onlyWhitespaces,
+    requiredWhitespace,
+    reserved,
+    singleQuotedString,
     someUnless,
-    Parser,
-    Error,
-    DockerfileError (..),
+    spaceSep1,
+    stringWithEscaped,
+    symbol,
+    untilEol,
+    untilHeredoc,
+    whitespace,
     module Megaparsec,
     char,
     L.charLiteral,
@@ -135,20 +138,24 @@ commaSep p = sepBy (p <* whitespace) (symbol ",")
 spaceSep1 :: Parser a -> Parser [a]
 spaceSep1 p = sepEndBy1 p onlySpaces
 
--- | Note this is just an alias for compatibility
-stringLiteral :: Parser Text
-stringLiteral = doubleQuotedString
-
 singleQuotedString :: Parser Text
 singleQuotedString = quotedString '\''
 
 doubleQuotedString :: Parser Text
 doubleQuotedString = quotedString '\"'
 
+-- | Special variant of the doubleQuotedString parser.
+-- This removes escaped newlines from the quoted string.
+-- When using the exec form for CMD, RUN and ENTRYPOINT, this mirrors the
+-- behavior of Docker.
+doubleQuotedStringUnescaped :: (?esc :: Char) => Parser Text
+doubleQuotedStringUnescaped = do
+  let needle = T.pack [ ?esc, '\n' ]
+   in T.replace needle "" <$> doubleQuotedString
+
 quotedString :: Char -> Parser Text
 quotedString c = do
-  void $ char c
-  lit <- manyTill L.charLiteral (char c)
+  lit <- char c >> manyTill anySingle (char c)
   return $ T.pack lit
 
 brackets :: (?esc :: Char) => Parser a -> Parser a
