@@ -12,9 +12,9 @@ import Data.List.NonEmpty as NonEmpty (NonEmpty (..), toList)
 import Data.Set (Set)
 import Data.String (fromString)
 import Data.Text (Text)
-import Data.Text.Prettyprint.Doc
-import Data.Text.Prettyprint.Doc.Internal (Doc (Empty))
-import Data.Text.Prettyprint.Doc.Render.Text (renderLazy)
+import Prettyprinter
+import Prettyprinter.Internal (Doc (Empty))
+import Prettyprinter.Render.Text (renderLazy)
 import Language.Docker.Syntax
 import Prelude hiding ((<>), (>>))
 import qualified Data.Set as Set

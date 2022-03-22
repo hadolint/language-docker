@@ -36,7 +36,7 @@ withPlatform i p = i {platform = Just p}
 assertAst :: HasCallStack => Text.Text -> [Instruction Text.Text] -> Assertion
 assertAst s ast =
   case parseText s of
-    Left err -> assertFailure $ errorBundlePretty err
+    Left errmsg -> assertFailure $ errorBundlePretty errmsg
     Right dockerfile -> assertEqual "ASTs are not equal" ast $ map instruction dockerfile
 
 expectFail :: HasCallStack => Text.Text -> Assertion

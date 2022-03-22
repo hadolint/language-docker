@@ -12,7 +12,7 @@ module Language.Docker.Parser.Prelude
     comment,
     customError,
     doubleQuotedString,
-    doubleQuotedStringUnescaped,
+    doubleQuotedStringEscaped,
     eol,
     heredoc,
     heredocContent,
@@ -27,6 +27,7 @@ module Language.Docker.Parser.Prelude
     requiredWhitespace,
     reserved,
     singleQuotedString,
+    singleQuotedStringEscaped,
     someUnless,
     spaceSep1,
     stringWithEscaped,
@@ -144,19 +145,22 @@ singleQuotedString = quotedString '\''
 doubleQuotedString :: Parser Text
 doubleQuotedString = quotedString '\"'
 
--- | Special variant of the doubleQuotedString parser.
--- This removes escaped newlines from the quoted string.
--- When using the exec form for CMD, RUN and ENTRYPOINT, this mirrors the
--- behavior of Docker.
-doubleQuotedStringUnescaped :: (?esc :: Char) => Parser Text
-doubleQuotedStringUnescaped = do
-  let needle = T.pack [ ?esc, '\n' ]
-   in T.replace needle "" <$> doubleQuotedString
+-- | Special variants of the string parsers dealing with escaped line breaks
+-- and escaped quote characters well.
+singleQuotedStringEscaped :: (?esc :: Char) => Parser Text
+singleQuotedStringEscaped = quotedStringEscaped '\''
+
+doubleQuotedStringEscaped :: (?esc :: Char) => Parser Text
+doubleQuotedStringEscaped = quotedStringEscaped '\"'
 
 quotedString :: Char -> Parser Text
 quotedString c = do
-  lit <- char c >> manyTill anySingle (char c)
+  lit <- char c >> manyTill L.charLiteral (char c)
   return $ T.pack lit
+
+quotedStringEscaped :: (?esc :: Char) => Char -> Parser Text
+quotedStringEscaped q =
+  between (char q) (char q) $ stringWithEscaped [q] Nothing
 
 brackets :: (?esc :: Char) => Parser a -> Parser a
 brackets = between (symbol "[" *> whitespace) (whitespace *> symbol "]")

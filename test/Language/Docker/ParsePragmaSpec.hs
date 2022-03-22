@@ -1,10 +1,8 @@
 module Language.Docker.ParsePragmaSpec where
 
 import qualified Data.Text as Text
-import Language.Docker.Parser
 import Language.Docker.Syntax
 import TestHelper
-import Test.HUnit hiding (Label)
 import Test.Hspec
 
 

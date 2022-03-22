@@ -2,12 +2,9 @@ module Language.Docker.ParserSpec where
 
 import Data.Default.Class (def)
 import qualified Data.Text as Text
-import Language.Docker.Parser
 import Language.Docker.Syntax
 import TestHelper
-import Test.HUnit hiding (Label)
 import Test.Hspec
-import Text.Megaparsec hiding (Label)
 
 
 spec :: Spec

@@ -8,13 +8,6 @@ import qualified Data.Text as T
 import Language.Docker.Parser.Prelude
 import Language.Docker.Syntax
 
--- We cannot use string literal because it swallows space
--- and therefore have to implement quoted values by ourselves
-doubleQuotedValue :: (?esc :: Char) => Parser Text
-doubleQuotedValue = between (string "\"") (string "\"") (stringWithEscaped ['"'] Nothing)
-
-singleQuotedValue :: (?esc :: Char) => Parser Text
-singleQuotedValue = between (string "'") (string "'") (stringWithEscaped ['\''] Nothing)
 
 unquotedString :: (?esc :: Char) => (Char -> Bool) -> Parser Text
 unquotedString acceptCondition = do
@@ -33,8 +26,8 @@ singleValue acceptCondition = mconcat <$> variants
     variants =
       many $
         choice
-          [ doubleQuotedValue <?> "a string inside double quotes",
-            singleQuotedValue <?> "a string inside single quotes",
+          [ doubleQuotedStringEscaped <?> "a string inside double quotes",
+            singleQuotedStringEscaped <?> "a string inside single quotes",
             unquotedString acceptCondition <?> "a string with no quotes"
           ]
 
