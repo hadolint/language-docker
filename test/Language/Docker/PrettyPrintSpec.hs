@@ -3,17 +3,13 @@
 
 module Language.Docker.PrettyPrintSpec where
 
-
-import Data.Default.Class (def)
 import qualified Data.Text as Text
-import Data.Text.Prettyprint.Doc
-import Data.Text.Prettyprint.Doc.Render.Text
-import Language.Docker.Parser
+import Prettyprinter
+import Prettyprinter.Render.Text
 import Language.Docker.Syntax
 import Language.Docker.PrettyPrint
 import Test.HUnit hiding (Label)
 import Test.Hspec
-import Text.Megaparsec hiding (Label)
 
 
 spec :: Spec
@@ -138,10 +134,10 @@ spec = do
        in assertPretty "# syntax = docker/dockerfile:1.0" img
 
 assertPretty :: Text.Text -> Instruction Text.Text -> Assertion
-assertPretty expected instruction = assertEqual
+assertPretty expected inst = assertEqual
     "prettyfied instruction not pretty enough"
     expected
-    (prettyPrintStrict instruction)
+    (prettyPrintStrict inst)
 
 prettyPrintStrict :: Instruction Text.Text -> Text.Text
 prettyPrintStrict =

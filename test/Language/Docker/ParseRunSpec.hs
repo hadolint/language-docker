@@ -1,12 +1,9 @@
 module Language.Docker.ParseRunSpec where
 
 import Data.Default.Class (def)
-import Language.Docker.Parser
 import Language.Docker.Syntax
-import Test.HUnit hiding (Label)
 import Test.Hspec
 import TestHelper
-import qualified Data.List.NonEmpty as NonEmpty
 import qualified Data.Set as Set
 import qualified Data.Text as Text
 

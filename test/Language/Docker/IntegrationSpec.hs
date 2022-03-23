@@ -135,29 +135,29 @@ spec = do
     it "Dockerfile UTF-8 with BOM" $ do
       parsed <- parseFile "test/fixtures/Dockerfile.bom.utf8"
       case parsed of
-        Right a -> return ()
+        Right _ -> return ()
         Left err -> assertFailure $ errorBundlePretty err
 
     it "Dockerfile UTF-16 Little Endian with BOM" $ do
       parsed <- parseFile "test/fixtures/Dockerfile.bom.utf16le"
       case parsed of
-        Right a -> return ()
+        Right _ -> return ()
         Left err -> assertFailure $ errorBundlePretty err
 
     it "Dockerfile UTF-16 Big Endian with BOM" $ do
       parsed <- parseFile "test/fixtures/Dockerfile.bom.utf16be"
       case parsed of
-        Right a -> return ()
+        Right _ -> return ()
         Left err -> assertFailure $ errorBundlePretty err
 
     it "Dockerfile UTF-32 Little Endian with BOM" $ do
       parsed <- parseFile "test/fixtures/Dockerfile.bom.utf32le"
       case parsed of
-        Right a -> return ()
+        Right _ -> return ()
         Left err -> assertFailure $ errorBundlePretty err
 
     it "Dockerfile UTF-32 Big Endian with BOM" $ do
       parsed <- parseFile "test/fixtures/Dockerfile.bom.utf32be"
       case parsed of
-        Right a -> return ()
+        Right _ -> return ()
         Left err -> assertFailure $ errorBundlePretty err
