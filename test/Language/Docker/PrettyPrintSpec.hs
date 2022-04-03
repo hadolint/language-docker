@@ -3,6 +3,7 @@
 
 module Language.Docker.PrettyPrintSpec where
 
+import Data.Default
 import qualified Data.Text as Text
 import Prettyprinter
 import Prettyprinter.Render.Text
@@ -17,101 +18,79 @@ spec = do
   describe "pretty print ADD" $ do
     it "with just copy" $ do
       let add = Add
-                  ( AddArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      NoChown
-                      NoChmod
-                  )
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( def :: AddFlags )
        in assertPretty "ADD foo bar" add
     it "with just chown" $ do
       let add = Add
-                  ( AddArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      (Chown "root:root")
-                      NoChmod
-                  )
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags ( Chown "root:root" ) NoChmod NoLink )
        in assertPretty "ADD --chown=root:root foo bar" add
     it "with just chmod" $ do
       let add = Add
-                  ( AddArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      NoChown
-                      (Chmod "751")
-                  )
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChown ( Chmod "751" ) NoLink )
        in assertPretty "ADD --chmod=751 foo bar" add
-    it "with both chown and chmod" $ do
+    it "with just link" $ do
       let add = Add
-                  ( AddArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      (Chown "root:root")
-                      (Chmod "751")
-                  )
-       in assertPretty "ADD --chown=root:root --chmod=751 foo bar" add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChown NoChmod Link )
+       in assertPretty "ADD --link foo bar" add
+    it "with chown, chmod and link" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags ( Chown "root:root" ) ( Chmod "751" ) Link )
+       in assertPretty "ADD --chown=root:root --chmod=751 --link foo bar" add
+
   describe "pretty print COPY" $ do
     it "with just copy" $ do
       let copy = Copy
-                  ( CopyArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      NoChown
-                      NoChmod
-                      NoSource
-                  )
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( def :: CopyFlags )
        in assertPretty "COPY foo bar" copy
     it "with just chown" $ do
       let copy = Copy
-                  ( CopyArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      (Chown "root:root")
-                      NoChmod
-                      NoSource
-                  )
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags ( Chown "root:root" ) NoChmod NoLink NoSource )
        in assertPretty "COPY --chown=root:root foo bar" copy
     it "with just chmod" $ do
       let copy = Copy
-                  ( CopyArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      NoChown
-                      (Chmod "751")
-                      NoSource
-                  )
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags NoChown ( Chmod "751" ) NoLink NoSource )
        in assertPretty "COPY --chmod=751 foo bar" copy
-    it "with source baseimage" $ do
+    it "with just link" $ do
       let copy = Copy
-                  ( CopyArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      NoChown
-                      NoChmod
-                      (CopySource "baseimage")
-                  )
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags NoChown NoChmod Link NoSource )
+       in assertPretty "COPY --link foo bar" copy
+    it "with source baseimage" $ do
+      let copy =
+            Copy
+              ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+              ( CopyFlags NoChown NoChmod NoLink ( CopySource "baseimage" ) )
        in assertPretty "COPY --from=baseimage foo bar" copy
     it "with both chown and chmod" $ do
-      let copy = Copy
-                  ( CopyArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      (Chown "root:root")
-                      (Chmod "751")
-                      NoSource
-                  )
+      let copy =
+            Copy
+              ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+              ( CopyFlags
+                  ( Chown "root:root" ) ( Chmod "751" ) NoLink NoSource
+              )
        in assertPretty "COPY --chown=root:root --chmod=751 foo bar" copy
-    it "with all three: from, chown and chmod" $ do
-      let copy = Copy
-                  ( CopyArgs
-                      [SourcePath "foo"]
-                      (TargetPath "bar")
-                      (Chown "root:root")
-                      (Chmod "751")
-                      (CopySource "baseimage")
-                  )
-       in assertPretty "COPY --chown=root:root --chmod=751 --from=baseimage foo bar" copy
+    it "with all flags" $ do
+      let copy =
+            Copy
+              ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+              ( CopyFlags
+                  ( Chown "root:root")
+                  ( Chmod "751")
+                  Link
+                  ( CopySource "baseimage" )
+              )
+       in assertPretty
+            "COPY --chown=root:root --chmod=751 --link --from=baseimage foo bar"
+            copy
+
   describe "pretty print # escape" $ do
     it "# escape = \\" $ do
       let esc = Pragma (Escape (EscapeChar '\\'))
@@ -119,6 +98,7 @@ spec = do
     it "# escape = `" $ do
       let esc = Pragma (Escape (EscapeChar '`'))
        in assertPretty "# escape = `" esc
+
   describe "pretty print # syntax" $ do
     it "# syntax = docker/dockerfile:1.0" $ do
       let img = Pragma
@@ -132,6 +112,7 @@ spec = do
                     )
                   )
        in assertPretty "# syntax = docker/dockerfile:1.0" img
+
 
 assertPretty :: Text.Text -> Instruction Text.Text -> Assertion
 assertPretty expected inst = assertEqual

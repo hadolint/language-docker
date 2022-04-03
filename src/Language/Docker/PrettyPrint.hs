@@ -151,6 +151,12 @@ prettyPrintChmod chmod =
     Chmod c -> "--chmod=" <> pretty c
     NoChmod -> mempty
 
+prettyPrintLink :: Link -> Doc ann
+prettyPrintLink link =
+  case link of
+    Link -> "--link"
+    NoLink -> mempty
+
 prettyPrintCopySource :: CopySource -> Doc ann
 prettyPrintCopySource source =
   case source of
@@ -277,12 +283,15 @@ prettyPrintInstruction i =
       prettyPrintRunNetwork network
       prettyPrintRunSecurity security
       prettyPrintArguments c
-    Copy CopyArgs {sourcePaths, targetPath, chownFlag, chmodFlag, sourceFlag} -> do
-      "COPY"
-      prettyPrintChown chownFlag
-      prettyPrintChmod chmodFlag
-      prettyPrintCopySource sourceFlag
-      prettyPrintFileList sourcePaths targetPath
+    Copy
+      CopyArgs {sourcePaths, targetPath}
+      CopyFlags {chmodFlag, chownFlag, linkFlag, sourceFlag} -> do
+        "COPY"
+        prettyPrintChown chownFlag
+        prettyPrintChmod chmodFlag
+        prettyPrintLink linkFlag
+        prettyPrintCopySource sourceFlag
+        prettyPrintFileList sourcePaths targetPath
     Cmd c -> do
       "CMD"
       prettyPrintArguments c
@@ -307,11 +316,14 @@ prettyPrintInstruction i =
     From b -> do
       "FROM"
       prettyPrintBaseImage b
-    Add AddArgs {sourcePaths, targetPath, chownFlag, chmodFlag} -> do
-      "ADD"
-      prettyPrintChown chownFlag
-      prettyPrintChmod chmodFlag
-      prettyPrintFileList sourcePaths targetPath
+    Add
+      AddArgs {sourcePaths, targetPath}
+      AddFlags {chownFlag, chmodFlag, linkFlag} -> do
+        "ADD"
+        prettyPrintChown chownFlag
+        prettyPrintChmod chmodFlag
+        prettyPrintLink linkFlag
+        prettyPrintFileList sourcePaths targetPath
     Shell args -> do
       "SHELL"
       prettyPrintArguments args

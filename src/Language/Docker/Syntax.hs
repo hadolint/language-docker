@@ -140,6 +140,11 @@ instance IsString Chmod where
       "" -> NoChmod
       _ -> Chmod (Text.pack ch)
 
+data Link
+  = Link
+  | NoLink
+  deriving (Show, Eq, Ord)
+
 data CopySource
   = CopySource !Text
   | NoSource
@@ -166,21 +171,39 @@ newtype Retries
 data CopyArgs
   = CopyArgs
       { sourcePaths :: NonEmpty SourcePath,
-        targetPath :: !TargetPath,
-        chownFlag :: !Chown,
+        targetPath :: !TargetPath
+      }
+  deriving (Show, Eq, Ord)
+
+data CopyFlags
+  = CopyFlags
+      { chownFlag :: !Chown,
         chmodFlag :: !Chmod,
+        linkFlag :: !Link,
         sourceFlag :: !CopySource
       }
   deriving (Show, Eq, Ord)
 
+instance Default CopyFlags where
+  def = CopyFlags NoChown NoChmod NoLink NoSource
+
 data AddArgs
   = AddArgs
       { sourcePaths :: NonEmpty SourcePath,
-        targetPath :: !TargetPath,
-        chownFlag :: !Chown,
-        chmodFlag :: !Chmod
+        targetPath :: !TargetPath
       }
   deriving (Show, Eq, Ord)
+
+data AddFlags
+  = AddFlags
+      { chownFlag :: !Chown,
+        chmodFlag :: !Chmod,
+        linkFlag :: !Link
+      }
+  deriving (Show, Eq, Ord)
+
+instance Default AddFlags where
+  def = AddFlags NoChown NoChmod NoLink
 
 data Check args
   = Check !(CheckArgs args)
@@ -336,11 +359,11 @@ data PragmaDirective
 -- | All commands available in Dockerfiles
 data Instruction args
   = From !BaseImage
-  | Add !AddArgs
+  | Add !AddArgs !AddFlags
   | User !Text
   | Label !Pairs
   | Stopsignal !Text
-  | Copy !CopyArgs
+  | Copy !CopyArgs !CopyFlags
   | Run !(RunArgs args)
   | Cmd !(Arguments args)
   | Shell !(Arguments args)

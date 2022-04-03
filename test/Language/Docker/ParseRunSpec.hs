@@ -569,8 +569,6 @@ spec = do
                 ( CopyArgs
                     [ SourcePath "EOF" ]
                     (TargetPath "/foobar.sh")
-                    NoChown
-                    NoChmod
-                    NoSource
                 )
+                ( def :: CopyFlags )
             ]
