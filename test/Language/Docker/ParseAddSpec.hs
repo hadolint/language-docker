@@ -1,0 +1,105 @@
+module Language.Docker.ParseAddSpec (spec) where
+
+import Data.Default
+import qualified Data.Text as Text
+import Language.Docker.Syntax
+import TestHelper
+import Test.Hspec
+
+
+spec :: Spec
+spec = do
+  describe "ADD" $ do
+    it "simple ADD" $
+      let file = Text.unlines ["ADD . /app", "ADD http://foo.bar/baz ."]
+       in assertAst
+            file
+            [ Add ( AddArgs [SourcePath "."] (TargetPath "/app") ) def,
+              Add
+                ( AddArgs [SourcePath "http://foo.bar/baz"] (TargetPath ".") )
+                def
+            ]
+    it "multifiles ADD" $
+      let file = Text.unlines ["ADD foo bar baz /app"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs
+                    (fmap SourcePath ["foo", "bar", "baz"])
+                    (TargetPath "/app")
+                )
+                def
+            ]
+    it "list of quoted files" $
+      let file = Text.unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs
+                    (fmap SourcePath ["foo", "bar", "baz"])
+                    (TargetPath "/app")
+                )
+                def
+            ]
+    it "with chown flag" $
+      let file = Text.unlines ["ADD --chown=root:root foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags (Chown "root:root") NoChmod NoLink )
+            ]
+    it "with chmod flag" $
+      let file = Text.unlines ["ADD --chmod=640 foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChown (Chmod "640") NoLink )
+            ]
+    it "with link flag" $
+      let file = Text.unlines ["ADD --link foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChown NoChmod Link )
+            ]
+    it "with chown and chmod flag" $
+      let file = Text.unlines ["ADD --chown=root:root --chmod=640 foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags (Chown "root:root") (Chmod "640") NoLink )
+            ]
+    it "with chown and chmod flag other order" $
+      let file = Text.unlines ["ADD --chmod=640 --chown=root:root foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags (Chown "root:root") (Chmod "640") NoLink )
+            ]
+    it "with all flags" $
+      let file =
+            Text.unlines ["ADD --chmod=640 --chown=root:root --link foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags (Chown "root:root") (Chmod "640") Link )
+            ]
+    it "list of quoted files and chown" $
+      let file =
+            Text.unlines
+              [ "ADD --chown=user:group [\"foo\", \"bar\", \"baz\", \"/app\"]" ]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs
+                    (fmap SourcePath ["foo", "bar", "baz"])
+                    (TargetPath "/app")
+                )
+                ( AddFlags (Chown "user:group") NoChmod NoLink )
+            ]

@@ -4,10 +4,10 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 45d12a07b59b5903ce169f73c62a7e76c05e07f20c8a859dd83b4b7aaaa0b081
+-- hash: 1dcabc3e868541acb7c49590054c62c6637d1deaefc81e4b39de64333bc9d239
 
 name:           language-docker
-version:        10.4.3
+version:        11.0.0
 synopsis:       Dockerfile parser, pretty-printer and embedded DSL
 description:    All functions for parsing and pretty-printing Dockerfiles are exported through @Language.Docker@. For more fine-grained operations look for specific modules that implement a certain functionality.
                 See the <https://github.com/hadolint/language-docker GitHub project> for the source-code and examples.
@@ -73,6 +73,7 @@ library
       base >=4.8 && <5
     , bytestring >=0.10
     , containers
+    , data-default
     , data-default-class
     , megaparsec >=9.0.0
     , prettyprinter
@@ -86,6 +87,7 @@ test-suite hspec
   main-is: Spec.hs
   other-modules:
       Language.Docker.IntegrationSpec
+      Language.Docker.ParseAddSpec
       Language.Docker.ParseCmdSpec
       Language.Docker.ParseCopySpec
       Language.Docker.ParsePragmaSpec
@@ -108,6 +110,7 @@ test-suite hspec
     , base >=4.8 && <5
     , bytestring >=0.10
     , containers
+    , data-default
     , data-default-class
     , hspec
     , hspec-megaparsec
