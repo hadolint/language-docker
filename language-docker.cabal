@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 1dcabc3e868541acb7c49590054c62c6637d1deaefc81e4b39de64333bc9d239
+-- hash: a394b69278ce4abd1df296283529d199d15067771ffc9736193bba7ae2bef2b4
 
 name:           language-docker
 version:        11.0.0
@@ -61,6 +61,9 @@ library
       Language.Docker.Parser.Pairs
       Language.Docker.Parser.Prelude
       Language.Docker.Parser.Run
+      Language.Docker.Syntax.Port
+      Language.Docker.Syntax.PortRange
+      Language.Docker.Syntax.Protocol
       Paths_language_docker
   hs-source-dirs:
       src
@@ -90,6 +93,7 @@ test-suite hspec
       Language.Docker.ParseAddSpec
       Language.Docker.ParseCmdSpec
       Language.Docker.ParseCopySpec
+      Language.Docker.ParseExposeSpec
       Language.Docker.ParsePragmaSpec
       Language.Docker.ParserSpec
       Language.Docker.ParseRunSpec

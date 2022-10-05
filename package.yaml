@@ -1,3 +1,4 @@
+---
 name: language-docker
 version: '11.0.0'
 synopsis: Dockerfile parser, pretty-printer and embedded DSL
@@ -63,10 +64,10 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
-  - Language.Docker
-  - Language.Docker.Parser
-  - Language.Docker.PrettyPrint
-  - Language.Docker.Syntax
+    - Language.Docker
+    - Language.Docker.Parser
+    - Language.Docker.PrettyPrint
+    - Language.Docker.Syntax
 
 tests:
   hspec:

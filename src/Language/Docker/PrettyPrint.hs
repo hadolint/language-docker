@@ -123,12 +123,9 @@ escapeQuotes text =
     accumulate c EscapeAccum {buffer, escaping = False} =
       EscapeAccum (B.singleton c <> buffer) 0 False
 
-prettyPrintPort :: Port -> Doc ann
-prettyPrintPort (PortStr str) = pretty str
-prettyPrintPort (PortRange start stop TCP) = pretty start <> "-" <> pretty stop
-prettyPrintPort (PortRange start stop UDP) = pretty start <> "-" <> pretty stop <> "/udp"
-prettyPrintPort (Port num TCP) = pretty num <> "/tcp"
-prettyPrintPort (Port num UDP) = pretty num <> "/udp"
+prettyPrintPortSpec :: PortSpec -> Doc ann
+prettyPrintPortSpec (PortSpec port) = pretty port
+prettyPrintPortSpec (PortRangeSpec portrange) = pretty portrange
 
 prettyPrintFileList :: NonEmpty SourcePath -> TargetPath -> Doc ann
 prettyPrintFileList sources (TargetPath dest) =
@@ -273,7 +270,7 @@ prettyPrintInstruction i =
       pretty w
     Expose (Ports ps) -> do
       "EXPOSE"
-      hsep (fmap prettyPrintPort ps)
+      hsep (fmap prettyPrintPortSpec ps)
     Volume dir -> do
       "VOLUME"
       pretty dir

@@ -289,48 +289,6 @@ spec = do
               Comment " This is a comment",
               Run "echo hello"
             ]
-  describe "expose" $ do
-    it "should handle number ports" $
-      let content = "EXPOSE 8080"
-       in assertAst content [Expose (Ports [Port 8080 TCP])]
-    it "should handle many number ports" $
-      let content = "EXPOSE 8080 8081"
-       in assertAst content [Expose (Ports [Port 8080 TCP, Port 8081 TCP])]
-    it "should handle ports with protocol" $
-      let content = "EXPOSE 8080/TCP 8081/UDP"
-       in assertAst content [Expose (Ports [Port 8080 TCP, Port 8081 UDP])]
-    it "should handle ports with protocol and variables" $
-      let content = "EXPOSE $PORT 8080 8081/UDP"
-       in assertAst content [Expose (Ports [PortStr "$PORT", Port 8080 TCP, Port 8081 UDP])]
-    it "should handle port ranges" $
-      let content = "EXPOSE 80 81 8080-8085"
-       in assertAst content [Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 TCP])]
-    it "should handle udp port ranges" $
-      let content = "EXPOSE 80 81 8080-8085/udp"
-       in assertAst content [Expose (Ports [Port 80 TCP, Port 81 TCP, PortRange 8080 8085 UDP])]
-    it "should handle multiline variables" $
-      let content =
-            "EXPOSE  ${PORT} ${PORT_SSL} \\\n\
-            \        ${PORT_HTTP} ${PORT_HTTPS} \\\n\
-            \        ${PORT_REP} \\\n\
-            \        ${PORT_ADMIN} ${PORT_ADMIN_HTTP}"
-       in assertAst
-            content
-            [ Expose
-                ( Ports
-                    [ PortStr "${PORT}",
-                      PortStr "${PORT_SSL}",
-                      PortStr "${PORT_HTTP}",
-                      PortStr "${PORT_HTTPS}",
-                      PortStr "${PORT_REP}",
-                      PortStr "${PORT_ADMIN}",
-                      PortStr "${PORT_ADMIN_HTTP}"
-                    ]
-                )
-            ]
-    it "should fail with wrong protocol" $
-      let content = "EXPOSE 80/ip"
-       in expectFail content
   describe "syntax" $ do
     it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $
       let content = "from ubuntu"
