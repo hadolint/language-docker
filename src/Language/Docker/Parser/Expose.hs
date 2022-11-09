@@ -12,22 +12,48 @@ parseExpose = do
   reserved "EXPOSE"
   Expose <$> ports
 
+ports :: (?esc :: Char) => Parser Ports
+ports = Ports <$> portspec `sepEndBy` requiredWhitespace
+
+portspec :: (?esc :: Char) => Parser PortSpec
+portspec =
+  ( try parsePortRangeSpec <?> "A range of ports optionally followed by the protocol" )
+    <|> ( parsePortSpec <?> "A port optionally followed by the protocol" )
+
+parsePortRangeSpec :: (?esc :: Char) => Parser PortSpec
+parsePortRangeSpec = PortRangeSpec <$> portRange
+
+parsePortSpec :: (?esc :: Char) => Parser PortSpec
+parsePortSpec = PortSpec <$> port
+
 port :: (?esc :: Char) => Parser Port
 port = (try portVariable <?> "a variable")
-    <|> (try portRange <?> "a port range optionally followed by the protocol (udp/tcp)") -- There a many valid representations of ports
     <|> (try portWithProtocol <?> "a port with its protocol (udp/tcp)")
     <|> (portInt <?> "a valid port number")
 
-ports :: (?esc :: Char) => Parser Ports
-ports = Ports <$> port `sepEndBy` requiredWhitespace
+portRangeLimit :: (?esc :: Char) => Parser Port
+portRangeLimit = number <|> variable
+  where
+    number = do
+      num <- natural
+      return $ Port (fromIntegral num) TCP
 
-portRange :: Parser Port
+    variable = do
+      void (char '$')
+      var <- someUnless "the variable name" (\c -> c == '-' || c == '/')
+      return $ PortStr (T.append "$" var)
+
+portRange :: (?esc :: Char) => Parser PortRange
 portRange = do
-  start <- natural
+  start <- portRangeLimit
   void $ char '-'
-  finish <- try natural
+  finish <- try portRangeLimit
   proto <- try protocol <|> return TCP
-  return $ PortRange (fromIntegral start) (fromIntegral finish) proto
+  return $ PortRange (setProto start proto) (setProto finish proto)
+  where
+    setProto :: Port -> Protocol -> Port
+    setProto (Port p _) prot = Port p prot
+    setProto (PortStr s) _ = PortStr s
 
 protocol :: Parser Protocol
 protocol = do

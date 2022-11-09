@@ -4,7 +4,13 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 
-module Language.Docker.Syntax where
+module Language.Docker.Syntax
+  ( module Language.Docker.Syntax,
+    module Language.Docker.Syntax.Port,
+    module Language.Docker.Syntax.PortRange,
+    module Language.Docker.Syntax.Protocol
+  )
+where
 
 import Data.Default.Class (Default (..))
 import Data.List (intercalate, isInfixOf)
@@ -17,6 +23,12 @@ import qualified Data.Text as Text
 import Data.Time.Clock (DiffTime)
 import GHC.Exts (IsList (..))
 import Text.Printf
+
+
+import Language.Docker.Syntax.Port
+import Language.Docker.Syntax.PortRange
+import Language.Docker.Syntax.Protocol
+
 
 data Image
   = Image
@@ -56,30 +68,19 @@ newtype Digest
       }
   deriving (Show, Eq, Ord, IsString)
 
-data Protocol
-  = TCP
-  | UDP
-  deriving (Show, Eq, Ord)
-
-data Port
-  = Port
-      !Int
-      !Protocol
-  | PortStr !Text
-  | PortRange
-      !Int
-      !Int
-      !Protocol
+data PortSpec
+  = PortSpec !Port
+  | PortRangeSpec !PortRange
   deriving (Show, Eq, Ord)
 
 newtype Ports
   = Ports
-      { unPorts :: [Port]
+      { unPorts :: [PortSpec]
       }
   deriving (Show, Eq, Ord)
 
 instance IsList Ports where
-  type Item Ports = Port
+  type Item Ports = PortSpec
   fromList = Ports
   toList (Ports ps) = ps
 
