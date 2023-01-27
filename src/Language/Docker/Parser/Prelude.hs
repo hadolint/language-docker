@@ -14,6 +14,7 @@ module Language.Docker.Parser.Prelude
     doubleQuotedString,
     doubleQuotedStringEscaped,
     eol,
+    escapedLineBreaks',
     heredoc,
     heredocContent,
     heredocMarker,
@@ -170,7 +171,7 @@ untilWS = do
   s <- manyTill anySingle spaceChar
   return $ T.pack s
 
-heredocMarker :: Parser Text
+heredocMarker :: (?esc :: Char) => Parser Text
 heredocMarker = do
   void $ string "<<"
   void $ takeWhileP (Just "dash") (== '-')
@@ -178,11 +179,14 @@ heredocMarker = do
   optional heredocRedirect
   pure m
 
-heredocRedirect :: Parser Text
+heredocRedirect :: (?esc :: Char) => Parser Text
 heredocRedirect = do
-  void $ char '>'
-  takeWhileP (Just "heredoc path") (/= '\n')
+  void $ ( string "|" <|> string ">" <|> string ">>" ) *> onlySpaces
+  untilEol "heredoc path"
 
+-- | This tries to parse everything until there is the just the heredoc marker
+-- on its own on a line. Making provisions for the case that the marker is
+-- followed by the end of the file rather than another newline.
 heredocContent :: Text -> Parser Text
 heredocContent marker = do
   emptyHeredoc <- observing delimiter
@@ -215,17 +219,24 @@ heredocContent marker = do
       hidden eof
       pure t
 
-heredoc :: Parser Text
+heredoc :: (?esc :: Char) => Parser Text
 heredoc = do
   m <- heredocMarker
   heredocContent m
 
 -- | Parses text until a heredoc or newline is found. Will also consume the
--- heredoc.
-untilHeredoc :: Parser Text
+-- heredoc. It will however respect escaped newlines.
+untilHeredoc :: (?esc :: Char) => Parser Text
 untilHeredoc = do
-  txt <- manyTill (anySingleBut '\n') heredoc
-  return $ T.strip $ T.pack txt
+  txt <- manyTill chars heredoc
+  return $ T.strip $ mconcat txt
+  where
+    chars =
+      choice
+        [ castToSpace <$> escapedLineBreaks,
+          charToTxt <$> anySingleBut '\n'
+        ]
+    charToTxt c = T.pack [c]
 
 onlySpaces :: Parser Text
 onlySpaces = takeWhileP (Just "spaces") (\c -> c == ' ' || c == '\t')
@@ -248,6 +259,17 @@ escapedLineBreaks = mconcat <$> breaks
         -- Spaces before the next '\' have a special significance
         -- so we remembeer the fact that we found some
         FoundWhitespace <$ onlySpaces1 <|> pure MissingWhitespace
+    newlines = takeWhile1P Nothing isNl
+
+-- | This converts escaped line breaks, but keeps _all_ spaces before and after
+escapedLineBreaks' :: (?esc :: Char) => Parser Text
+escapedLineBreaks' = mconcat <$> breaks
+  where
+    breaks =
+      some $ do
+        try ( char ?esc *> onlySpaces *> newlines )
+        skipMany . try $ onlySpaces *> comment *> newlines
+        onlySpaces1
     newlines = takeWhile1P Nothing isNl
 
 foundWhitespace :: (?esc :: Char) => Parser FoundWhitespace
