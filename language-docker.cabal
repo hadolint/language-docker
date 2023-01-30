@@ -1,10 +1,10 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.7.
+-- This file has been generated from package.yaml by hpack version 0.35.0.
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: f800aba94b9f6bbf2894ac78e2f4a135d3e9e89e04d9a7b0549bdd0941e97cbd
+-- hash: 6dd65f0e037c77c03ca426e9eb406447cd875dec192604e5975a8ad0056e3345
 
 name:           language-docker
 version:        12.0.0
@@ -94,6 +94,7 @@ test-suite hspec
       Language.Docker.ParseCmdSpec
       Language.Docker.ParseCopySpec
       Language.Docker.ParseExposeSpec
+      Language.Docker.ParseHealthcheckSpec
       Language.Docker.ParsePragmaSpec
       Language.Docker.ParserSpec
       Language.Docker.ParseRunSpec

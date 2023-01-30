@@ -161,7 +161,7 @@ newtype Duration
   = Duration
       { durationTime :: DiffTime
       }
-  deriving (Show, Eq, Ord, Num)
+  deriving (Show, Eq, Ord, Num, Fractional)
 
 newtype Retries
   = Retries
