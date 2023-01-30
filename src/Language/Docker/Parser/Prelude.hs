@@ -15,6 +15,7 @@ module Language.Docker.Parser.Prelude
     doubleQuotedStringEscaped,
     eol,
     escapedLineBreaks',
+    fractional,
     heredoc,
     heredocContent,
     heredocMarker,
@@ -133,6 +134,9 @@ reserved name = void (lexeme (string' name) <?> T.unpack name)
 
 natural :: Parser Integer
 natural = L.decimal <?> "positive number"
+
+fractional :: Parser Float
+fractional = L.float <?> "fractional number"
 
 commaSep :: (?esc :: Char) => Parser a -> Parser [a]
 commaSep p = sepBy (p <* whitespace) (symbol ",")
