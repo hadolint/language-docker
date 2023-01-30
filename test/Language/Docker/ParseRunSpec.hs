@@ -14,6 +14,9 @@ spec = do
     it "escaped with space before" $
       let dockerfile = Text.unlines ["RUN yum install -y \\", "imagemagick \\", "mysql"]
        in assertAst dockerfile [Run "yum install -y imagemagick mysql"]
+    it "escaped linebreak, indented" $
+      let file = Text.unlines [ "RUN foo ; \\", "    bar" ]
+       in assertAst file [ Run "foo ;  bar" ]
     it "does not choke on unmatched brackets" $
       let dockerfile = Text.unlines ["RUN [foo"]
        in assertAst dockerfile [Run "[foo"]
@@ -501,17 +504,25 @@ spec = do
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo\nbar EOF") flags ]
     it "heredoc with redirection to file" $
       let file = Text.unlines [ "RUN <<EOF > /file", "foo", "EOF" ]
-          flags = def {security = Nothing }
+          flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
     it "heredoc to program stdin" $
       let file = Text.unlines [ "RUN python <<EOF", "print(\"foo\")", "EOF" ]
-          flags = def {security = Nothing }
+          flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "python") flags ]
-    it "heredoc to program stdin with redirect to file" $
+    it "heredoc to program stdin with redirect to file with '>'" $
       let file = Text.unlines [ "RUN python <<EOF > /file", "print(\"foo\")", "EOF" ]
-          flags = def {security = Nothing }
+          flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "python") flags ]
-    it "heredoc with line continuation" $
+    it "heredoc to program stdin with redirect to file with '>>'" $
+      let file = Text.unlines [ "RUN python <<EOF >> /file", "print(\"foo\")", "EOF" ]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "python") flags ]
+    it "heredoc pipe to program" $
+      let file = Text.unlines [ "RUN cat <<EOF | sh", "echo foo", "EOF" ]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs ( ArgumentsText "cat" ) flags ]
+    it "heredoc with line continuation in the heredoc" $
       let file = Text.unlines [ "RUN <<EOF", "apt-get update", "apt-get install foo bar \\", "  buzz bar", "EOF" ]
           flags = def {security = Nothing }
        in assertAst
@@ -571,4 +582,58 @@ spec = do
                     (TargetPath "/foobar.sh")
                 )
                 ( def :: CopyFlags )
+            ]
+
+    -- See https://github.com/hadolint/hadolint/issues/923 for the following
+    -- tests
+    it "heredoc in command chain with escaped newlines after redirect" $
+      let file =
+            Text.unlines
+              [ "RUN ls && cat <<EOF >> go.mod && \\",
+                "    tac go.mod",
+                "replace (",
+                "    github.com/user/repo => ../dir",
+                ")",
+                "EOF"
+              ]
+          flags = def
+
+       in assertAst
+            file
+            [ Run $ RunArgs ( ArgumentsText "ls && cat" ) flags
+            ]
+
+    it "heredoc in command chain with escaped newlines before heredoc" $
+      let file =
+            Text.unlines
+              [ "RUN ls && \\",
+                "    cat <<EOF >> go.mod && tac go.mod",
+                "replace (",
+                "    github.com/user/repo => ../dir",
+                ")",
+                "EOF"
+              ]
+          flags = def
+
+       in assertAst
+            file
+            [ Run $ RunArgs ( ArgumentsText "ls &&  cat" ) flags
+            ]
+
+    it "heredoc in command chain with escaped newlines before and after heredoc" $
+      let file =
+            Text.unlines
+              [ "RUN ls && \\",
+                "    cat <<EOF >> go.mod && \\",
+                "    tac go.mod",
+                "replace (",
+                "    github.com/user/repo => ../dir",
+                ")",
+                "EOF"
+              ]
+          flags = def
+
+       in assertAst
+            file
+            [ Run $ RunArgs ( ArgumentsText "ls &&  cat" ) flags
             ]

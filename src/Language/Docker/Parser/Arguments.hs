@@ -22,7 +22,7 @@ argumentsShell =
     toEnd = untilEol "the shell arguments"
 
 -- Parse arguments of a command in the heredoc format
-argumentsHeredoc :: Parser (Arguments Text)
+argumentsHeredoc :: (?esc :: Char) => Parser (Arguments Text)
 argumentsHeredoc = ArgumentsText <$> heredoc
 
 arguments :: (?esc :: Char) => Parser (Arguments Text)
