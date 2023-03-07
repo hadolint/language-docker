@@ -15,6 +15,6 @@ data PortRange
 
 
 instance Pretty PortRange where
+  pretty (PortRange (Port start UDP) (Port end UDP)) = pretty start <> "-" <> pretty end <> "/udp"
   pretty (PortRange (Port start UDP) end) = pretty start <> "-" <> pretty end <> "/udp"
-  pretty (PortRange (PortStr start) (Port end UDP)) = pretty start <> "-" <> pretty end <> "/udp"
   pretty (PortRange start end) = pretty start <> "-" <> pretty end
