@@ -42,12 +42,12 @@ spec = do
                 def
             ]
     it "with checksum flag" $
-       let file = Text.unlines ["ADD --checksum=sha256:24454f830cdd http://www.example.com/foo foo"]
+       let file = Text.unlines ["ADD --checksum=sha256:24454f830cdd http://www.example.com/foo bar"]
        in assertAst
             file
             [ Add
-                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags (Chown "root:root") NoChmod NoLink )
+                ( AddArgs (fmap SourcePath ["http://www.example.com/foo"]) (TargetPath "bar") )
+                ( AddFlags (Checksum "sha256:24454f830cdd") NoChown NoChmod NoLink )
             ]
     it "with chown flag" $
       let file = Text.unlines ["ADD --chown=root:root foo bar"]
@@ -55,7 +55,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags (Chown "root:root") NoChmod NoLink )
+                ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink )
             ]
     it "with chmod flag" $
       let file = Text.unlines ["ADD --chmod=640 foo bar"]
@@ -63,7 +63,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChown (Chmod "640") NoLink )
+                ( AddFlags NoChecksum NoChown (Chmod "640") NoLink )
             ]
     it "with link flag" $
       let file = Text.unlines ["ADD --link foo bar"]
@@ -71,7 +71,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChown NoChmod Link )
+                ( AddFlags NoChecksum NoChown NoChmod Link )
             ]
     it "with chown and chmod flag" $
       let file = Text.unlines ["ADD --chown=root:root --chmod=640 foo bar"]
@@ -79,7 +79,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags (Chown "root:root") (Chmod "640") NoLink )
+                ( AddFlags NoChecksum (Chown "root:root") (Chmod "640") NoLink )
             ]
     it "with chown and chmod flag other order" $
       let file = Text.unlines ["ADD --chmod=640 --chown=root:root foo bar"]
@@ -87,7 +87,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags (Chown "root:root") (Chmod "640") NoLink )
+                ( AddFlags NoChecksum (Chown "root:root") (Chmod "640") NoLink )
             ]
     it "with all flags" $
       let file =
@@ -96,7 +96,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags (Chown "root:root") (Chmod "640") Link )
+                ( AddFlags (Checksum "sha256:24454f830cdd") (Chown "root:root") (Chmod "640") Link )
             ]
     it "list of quoted files and chown" $
       let file =
@@ -109,5 +109,5 @@ spec = do
                     (fmap SourcePath ["foo", "bar", "baz"])
                     (TargetPath "/app")
                 )
-                ( AddFlags (Chown "user:group") NoChmod NoLink )
+                ( AddFlags NoChecksum (Chown "user:group") NoChmod NoLink )
             ]
