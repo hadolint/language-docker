@@ -21,25 +21,30 @@ spec = do
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
                   ( def :: AddFlags )
        in assertPretty "ADD foo bar" add
+    it "with just checksum" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "http://www.example.com/foo"] (TargetPath "bar") )
+                  ( AddFlags ( Checksum "sha256:24454f830cdd" ) NoChown NoChmod NoLink )
+       in assertPretty "ADD --checksum=sha256:24454f830cdd http://www.example.com/foo bar" add
     it "with just chown" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags ( Chown "root:root" ) NoChmod NoLink )
+                  ( AddFlags NoChecksum ( Chown "root:root" ) NoChmod NoLink )
        in assertPretty "ADD --chown=root:root foo bar" add
     it "with just chmod" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChown ( Chmod "751" ) NoLink )
+                  ( AddFlags NoChecksum NoChown ( Chmod "751" ) NoLink )
        in assertPretty "ADD --chmod=751 foo bar" add
     it "with just link" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChown NoChmod Link )
+                  ( AddFlags NoChecksum NoChown NoChmod Link )
        in assertPretty "ADD --link foo bar" add
     it "with chown, chmod and link" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags ( Chown "root:root" ) ( Chmod "751" ) Link )
+                  ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) Link )
        in assertPretty "ADD --chown=root:root --chmod=751 --link foo bar" add
 
   describe "pretty print COPY" $ do
