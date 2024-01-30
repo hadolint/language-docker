@@ -41,6 +41,14 @@ spec = do
                 )
                 def
             ]
+    it "with checksum flag" $
+       let file = Text.unlines ["ADD --checksum=sha256:24454f830cdd http://www.example.com/foo foo"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags (Chown "root:root") NoChmod NoLink )
+            ]
     it "with chown flag" $
       let file = Text.unlines ["ADD --chown=root:root foo bar"]
        in assertAst
@@ -83,7 +91,7 @@ spec = do
             ]
     it "with all flags" $
       let file =
-            Text.unlines ["ADD --chmod=640 --chown=root:root --link foo bar"]
+            Text.unlines ["ADD --chmod=640 --chown=root:root --checksum=sha256:24454f830cdd --link foo bar"]
        in assertAst
             file
             [ Add
