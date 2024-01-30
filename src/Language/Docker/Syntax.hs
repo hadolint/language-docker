@@ -119,6 +119,17 @@ newtype TargetPath
       }
   deriving (Show, Eq, Ord, IsString)
 
+data Checksum
+  = Checksum !Text
+  | NoChecksum
+  deriving (Show, Eq, Ord)
+
+instance IsString Checksum where
+  fromString ch =
+    case ch of
+      "" -> NoChecksum
+      _ -> Checksum (Text.pack ch)
+
 data Chown
   = Chown !Text
   | NoChown
@@ -197,14 +208,15 @@ data AddArgs
 
 data AddFlags
   = AddFlags
-      { chownFlag :: !Chown,
+      { checksumFlag :: !Checksum,
+        chownFlag :: !Chown,
         chmodFlag :: !Chmod,
         linkFlag :: !Link
       }
   deriving (Show, Eq, Ord)
 
 instance Default AddFlags where
-  def = AddFlags NoChown NoChmod NoLink
+  def = AddFlags NoChecksum NoChown NoChmod NoLink
 
 data Check args
   = Check !(CheckArgs args)

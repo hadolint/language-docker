@@ -10,7 +10,8 @@ import Language.Docker.Parser.Prelude
 import Language.Docker.Syntax
 
 data Flag
-  = FlagChown Chown
+  = FlagChecksum Checksum
+  | FlagChown Chown
   | FlagChmod Chmod
   | FlagLink Link
   | FlagSource CopySource
@@ -56,18 +57,23 @@ parseAdd :: (?esc :: Char) => Parser (Instruction Text)
 parseAdd = do
   reserved "ADD"
   flags <- addFlag `sepEndBy` requiredWhitespace
+  let checksumFlags = [c | FlagChecksum c <- flags]
   let chownFlags = [c | FlagChown c <- flags]
   let chmodFlags = [c | FlagChmod c <- flags]
   let linkFlags = [l | FlagLink l <- flags]
   let invalidFlags = [i | FlagInvalid i <- flags]
   notFollowedBy (string "--") <?>
-    "only the --chown flag, the --chmod flag or the src and dest paths"
-  case (invalidFlags, chownFlags, linkFlags, chmodFlags) of
-    ((k, v) : _, _, _, _) -> unexpectedFlag k v
-    (_, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--chown"
-    (_, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--chmod"
-    (_, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--link"
+    "only the --checksum, --chown, --chmod, --link flags or the src and dest paths"
+  case (invalidFlags, checksumFlags, chownFlags, linkFlags, chmodFlags) of
+    ((k, v) : _, _, _, _, _) -> unexpectedFlag k v
+    (_, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--checksum"
+    (_, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--chown"
+    (_, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--chmod"
+    (_, _, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--link"
     _ -> do
+      let chk = case checksumFlags of
+                  [] -> NoChecksum
+                  c : _ -> c
       let cho = case chownFlags of
                   [] -> NoChown
                   c : _ -> c
@@ -78,7 +84,7 @@ parseAdd = do
             case linkFlags of
               [] -> NoLink
               l : _ -> l
-      fileList "ADD" (\src dest -> Add (AddArgs src dest) (AddFlags cho chm lnk))
+      fileList "ADD" (\src dest -> Add (AddArgs src dest) (AddFlags chk cho chm lnk))
 
 heredocList :: (?esc :: Char) =>
                (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->
@@ -114,10 +120,17 @@ copyFlag :: (?esc :: Char) => Parser Flag
 copyFlag = (FlagSource <$> try copySource <?> "only one --from") <|> addFlag
 
 addFlag :: (?esc :: Char) => Parser Flag
-addFlag = (FlagChown <$> try chown <?> "--chown")
+addFlag = (FlagChecksum <$> try checksum <?> "--checksum")
+  <|> (FlagChown <$> try chown <?> "--chown")
   <|> (FlagChmod <$> try chmod <?> "--chmod")
   <|> (FlagLink <$> try link <?> "--link")
   <|> (FlagInvalid <$> try anyFlag <?> "other flag")
+
+checksum :: (?esc :: Char) => Parser Checksum
+checksum = do
+  void $ string "--checksum="
+  chk <- someUnless "the remote file checksum" (== ' ')
+  return $ Checksum chk
 
 chown :: (?esc :: Char) => Parser Chown
 chown = do
