@@ -77,6 +77,7 @@ function clone_repos() {
     git_clone https://github.com/ArchiveTeam/warrior-dockerfile.git &
     git_clone https://github.com/wckr/wocker-dockerfile.git &
     git_clone https://github.com/kartoza/docker-postgis.git &
+    git_clone https://github.com/andrericardo/docker-subtitleedit &
 
     # colliding names
     git_named_clone https://github.com/yaronr/dockerfile.git yaronr-dockerfile &
