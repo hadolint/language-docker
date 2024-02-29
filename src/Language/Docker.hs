@@ -1,3 +1,5 @@
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module Language.Docker
   ( Language.Docker.Syntax.Dockerfile,
 
