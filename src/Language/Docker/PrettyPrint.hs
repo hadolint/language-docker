@@ -136,6 +136,12 @@ prettyPrintFileList sources (TargetPath dest) =
           _ -> ""
    in hsep $ [pretty s | SourcePath s <- toList sources] ++ [pretty dest <> ending]
 
+prettyPrintChecksum :: Checksum -> Doc ann
+prettyPrintChecksum checksum =
+  case checksum of
+    Checksum c -> "--checksum=" <> pretty c
+    NoChecksum -> mempty
+
 prettyPrintChown :: Chown -> Doc ann
 prettyPrintChown chown =
   case chown of
@@ -315,8 +321,9 @@ prettyPrintInstruction i =
       prettyPrintBaseImage b
     Add
       AddArgs {sourcePaths, targetPath}
-      AddFlags {chownFlag, chmodFlag, linkFlag} -> do
+      AddFlags {checksumFlag, chownFlag, chmodFlag, linkFlag} -> do
         "ADD"
+        prettyPrintChecksum checksumFlag
         prettyPrintChown chownFlag
         prettyPrintChmod chmodFlag
         prettyPrintLink linkFlag
