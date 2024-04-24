@@ -23,26 +23,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - os: macos-latest
         - os: ubuntu-latest
-        - os: windows-latest
 
     steps:
 
     # setup:
 
     - name: Check out
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
 
     - name: Setup Haskell
       id: setup-haskell-cabal
-      uses: haskell/actions/setup@v1
+      uses: haskell-actions/setup@v2
       with:
-          ghc-version: '8.10'
-          enable-stack: true
+          ghc-version: '9.8'
 
     # actions
 
     - name: Test
-      run: stack test
+      run: cabal test --test-show-details=always

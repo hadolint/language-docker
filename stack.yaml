@@ -1,7 +1,0 @@
-resolver: lts-18.28
-packages:
-- '.'
-flags: {}
-extra-package-dbs: []
-ghc-options:
-  "$everything": -haddock
