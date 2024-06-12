@@ -16,6 +16,7 @@ data CheckFlag
   = FlagInterval Duration
   | FlagTimeout Duration
   | FlagStartPeriod Duration
+  | FlagStartInterval Duration
   | FlagRetries Retries
   | CFlagInvalid (Text, Text)
 
@@ -42,20 +43,23 @@ parseHealthcheck = do
       let intervals = [x | FlagInterval x <- flags]
       let timeouts = [x | FlagTimeout x <- flags]
       let startPeriods = [x | FlagStartPeriod x <- flags]
+      let startIntervals = [x | FlagStartInterval x <- flags]
       let retriesD = [x | FlagRetries x <- flags]
       let invalid = [x | CFlagInvalid x <- flags]
       -- Let's do some validation on the flags
-      case (invalid, intervals, timeouts, startPeriods, retriesD) of
-        ((k, v) : _, _, _, _, _) -> unexpectedFlag k v
-        (_, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--interval"
-        (_, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--timeout"
-        (_, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--start-period"
-        (_, _, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--retries"
+      case (invalid, intervals, timeouts, startPeriods, startIntervals, retriesD) of
+        ((k, v) : _, _, _, _, _, _) -> unexpectedFlag k v
+        (_, _ : _ : _, _, _, _, _) -> customError $ DuplicateFlagError "--interval"
+        (_, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--timeout"
+        (_, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--start-period"
+        (_, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--start-interval"
+        (_, _, _, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--retries"
         _ -> do
           Cmd checkCommand <- parseCmd
           let interval = listToMaybe intervals
           let timeout = listToMaybe timeouts
           let startPeriod = listToMaybe startPeriods
+          let startInterval = listToMaybe startIntervals
           let retries = listToMaybe retriesD
           return $ Check CheckArgs {..}
 
@@ -64,6 +68,7 @@ checkFlag =
   (FlagInterval <$> durationFlag "--interval=" <?> "--interval")
     <|> (FlagTimeout <$> durationFlag "--timeout=" <?> "--timeout")
     <|> (FlagStartPeriod <$> durationFlag "--start-period=" <?> "--start-period")
+    <|> (FlagStartInterval <$> durationFlag "--start-interval=" <?> "--start-interval")
     <|> (FlagRetries <$> retriesFlag <?> "--retries")
     <|> (CFlagInvalid <$> anyFlag <?> "no flags")
 
