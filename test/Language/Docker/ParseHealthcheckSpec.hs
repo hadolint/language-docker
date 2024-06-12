@@ -39,9 +39,16 @@ spec = do
             Check $
               CheckArgs "curl -f http://localhost/" Nothing Nothing (Just 120) Nothing
         ]
+    it "parse healthcheck with start-interval" $
+      assertAst
+        "HEALTHCHECK --start-interval=5m CMD curl -f http://localhost/"
+        [ Healthcheck $
+            Check $
+              CheckArgs "curl -f http://localhost/" Nothing Nothing (Just 120) Nothing
+        ]
     it "parse healthcheck with all flags" $
       assertAst
-        "HEALTHCHECK --start-period=2s --timeout=1m --retries=3 --interval=5s    CMD curl -f http://localhost/"
+        "HEALTHCHECK --start-period=2s --start-interval=10s --timeout=1m --retries=3 --interval=5s    CMD curl -f http://localhost/"
         [ Healthcheck $
             Check $
               CheckArgs
@@ -66,6 +73,7 @@ spec = do
                 "  --interval=0.5s \\",
                 "  --timeout=0.1s \\",
                 "  --start-period=0.2s \\",
+                "  --start-interval=0.5s \\",
                 "  CMD curl -f http://localhost"
               ]
        in assertAst
