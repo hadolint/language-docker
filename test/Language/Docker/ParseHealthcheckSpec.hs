@@ -54,9 +54,9 @@ spec = do
               CheckArgs
                 "curl -f http://localhost/"
                 (Just 5)
-                (Just 10)
                 (Just 60)
                 (Just 2)
+                (Just 10)
                 (Just $ Retries 3)
         ]
     it "parse healthcheck with no flags" $
