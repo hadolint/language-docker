@@ -251,6 +251,7 @@ data CheckArgs args
         interval :: !(Maybe Duration),
         timeout :: !(Maybe Duration),
         startPeriod :: !(Maybe Duration),
+        startInterval :: !(Maybe Duration),
         retries :: !(Maybe Retries)
       }
   deriving (Show, Eq, Ord, Functor)

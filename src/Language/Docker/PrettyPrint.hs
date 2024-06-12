@@ -339,6 +339,7 @@ prettyPrintInstruction i =
       prettyPrintDuration "--interval=" interval
       prettyPrintDuration "--timeout=" timeout
       prettyPrintDuration "--start-period=" startPeriod
+      prettyPrintDuration "--start-interval" startInterval
       prettyPrintRetries retries
       "CMD"
       prettyPrintArguments checkCommand
