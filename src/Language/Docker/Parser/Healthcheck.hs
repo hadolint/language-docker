@@ -68,7 +68,7 @@ checkFlag =
   (FlagInterval <$> durationFlag "--interval=" <?> "--interval")
     <|> (FlagTimeout <$> durationFlag "--timeout=" <?> "--timeout")
     <|> (FlagStartPeriod <$> durationFlag "--start-period=" <?> "--start-period")
-    <|> (FlagStartInteval <$> durationFlag "--start-interval=" <?> "--start-interval")
+    <|> (FlagStartInterval <$> durationFlag "--start-interval=" <?> "--start-interval")
     <|> (FlagRetries <$> retriesFlag <?> "--retries")
     <|> (CFlagInvalid <$> anyFlag <?> "no flags")
 
