@@ -48,12 +48,12 @@ parseHealthcheck = do
       let invalid = [x | CFlagInvalid x <- flags]
       -- Let's do some validation on the flags
       case (invalid, intervals, timeouts, startPeriods, startIntervals, retriesD) of
-        ((k, v) : _, _, _, _, _) -> unexpectedFlag k v
-        (_, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--interval"
-        (_, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--timeout"
-        (_, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--start-period"
-        (_, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--start-interval"
-        (_, _, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--retries"
+        ((k, v) : _, _, _, _, _, _) -> unexpectedFlag k v
+        (_, _ : _ : _, _, _, _, _) -> customError $ DuplicateFlagError "--interval"
+        (_, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--timeout"
+        (_, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--start-period"
+        (_, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--start-interval"
+        (_, _, _, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--retries"
         _ -> do
           Cmd checkCommand <- parseCmd
           let interval = listToMaybe intervals
