@@ -186,7 +186,7 @@ spec = do
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount=type=secret all modifiers" $
-      let file = Text.unlines ["RUN --mount=type=secret,target=/foo,id=a,required,source=/bar,mode=0700,uid=0,gid=0 echo foo"]
+      let file = Text.unlines ["RUN --mount=type=secret,target=/foo,env=baz,id=a,required,source=/bar,mode=0700,uid=0,gid=0 echo foo"]
           flags =
             def
               { mount =
@@ -194,6 +194,7 @@ spec = do
                     SecretMount
                       ( def
                           { sTarget = Just "/foo",
+                            sEnv = Just "baz",
                             sCacheId = Just "a",
                             sIsRequired = Just True,
                             sSource = Just "/bar",
@@ -208,7 +209,7 @@ spec = do
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
     it "--mount=type=secret all modifiers, required explicit" $
-      let file = Text.unlines ["RUN --mount=type=secret,target=/foo,id=a,required=true,source=/bar,mode=0700,uid=0,gid=0 echo foo"]
+      let file = Text.unlines ["RUN --mount=type=secret,target=/foo,env=baz,id=a,required=true,source=/bar,mode=0700,uid=0,gid=0 echo foo"]
           flags =
             def
               { mount =
@@ -216,6 +217,7 @@ spec = do
                     SecretMount
                       ( def
                           { sTarget = Just "/foo",
+                            sEnv = Just "baz",
                             sCacheId = Just "a",
                             sIsRequired = Just True,
                             sSource = Just "/bar",
