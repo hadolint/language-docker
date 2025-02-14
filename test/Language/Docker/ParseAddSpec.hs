@@ -111,3 +111,27 @@ spec = do
                 )
                 ( AddFlags NoChecksum (Chown "user:group") NoChmod NoLink )
             ]
+    it "with exclude flag" $
+      let file = Text.unlines ["ADD --exclude=*.tmp foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink (Exclude "*.tmp") )
+            ]
+    it "with multiple exclude flags" $
+      let file = Text.unlines ["ADD --exclude=*.tmp --exclude=*.log foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink (Exclude "*.tmp") (Exclude "*.log") )
+            ]
+    it "with exclude and other flags" $
+      let file = Text.unlines ["ADD --chown=root:root --exclude=*.tmp foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink (Exclude "*.tmp") )
+            ]

@@ -288,12 +288,13 @@ prettyPrintInstruction i =
       prettyPrintArguments c
     Copy
       CopyArgs {sourcePaths, targetPath}
-      CopyFlags {chmodFlag, chownFlag, linkFlag, sourceFlag} -> do
+      CopyFlags {chmodFlag, chownFlag, linkFlag, sourceFlag, excludeFlags} -> do
         "COPY"
         prettyPrintChown chownFlag
         prettyPrintChmod chmodFlag
         prettyPrintLink linkFlag
         prettyPrintCopySource sourceFlag
+        prettyPrintExcludes excludeFlags
         prettyPrintFileList sourcePaths targetPath
     Cmd c -> do
       "CMD"
@@ -321,12 +322,13 @@ prettyPrintInstruction i =
       prettyPrintBaseImage b
     Add
       AddArgs {sourcePaths, targetPath}
-      AddFlags {checksumFlag, chownFlag, chmodFlag, linkFlag} -> do
+      AddFlags {checksumFlag, chownFlag, chmodFlag, linkFlag, excludeFlags} -> do
         "ADD"
         prettyPrintChecksum checksumFlag
         prettyPrintChown chownFlag
         prettyPrintChmod chmodFlag
         prettyPrintLink linkFlag
+        prettyPrintExcludes excludeFlags
         prettyPrintFileList sourcePaths targetPath
     Shell args -> do
       "SHELL"
@@ -342,6 +344,12 @@ prettyPrintInstruction i =
       prettyPrintArguments checkCommand
   where
     (>>) = spaceCat
+
+prettyPrintExcludes :: [Exclude] -> Doc ann
+prettyPrintExcludes excludes = hsep (fmap prettyPrintExclude excludes)
+
+prettyPrintExclude :: Exclude -> Doc ann
+prettyPrintExclude (Exclude e) = "--exclude=" <> pretty e
 
 spaceCat :: Doc ann -> Doc ann -> Doc ann
 spaceCat a Empty = a

@@ -124,6 +124,30 @@ spec = do
                     (CopySource "node")
                 )
             ]
+    it "with exclude flag" $
+      let file = Text.unlines ["COPY --exclude=*.tmp foo bar"]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
+                ( CopyFlags NoChown NoChmod NoLink NoSource [Exclude "*.tmp"] )
+            ]
+    it "with multiple exclude flags" $
+      let file = Text.unlines ["COPY --exclude=*.tmp --exclude=*.log foo bar"]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
+                ( CopyFlags NoChown NoChmod NoLink NoSource [Exclude "*.tmp", Exclude "*.log"] )
+            ]
+    it "with exclude and other flags" $
+      let file = Text.unlines ["COPY --chown=root:root --exclude=*.tmp foo bar"]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
+                ( CopyFlags (Chown "root:root") NoChmod NoLink NoSource [Exclude "*.tmp"] )
+            ]
 
   describe "Copy with Heredocs" $ do
     it "empty heredoc" $

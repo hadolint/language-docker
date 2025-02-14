@@ -46,6 +46,21 @@ spec = do
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
                   ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) Link )
        in assertPretty "ADD --chown=root:root --chmod=751 --link foo bar" add
+    it "with just exclude" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink [Exclude "*.tmp"] )
+       in assertPretty "ADD --exclude=*.tmp foo bar" add
+    it "with multiple exclude flags" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink [Exclude "*.tmp", Exclude "*.log"] )
+       in assertPretty "ADD --exclude=*.tmp --exclude=*.log foo bar" add
+    it "with exclude and other flags" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink [Exclude "*.tmp"] )
+       in assertPretty "ADD --chown=root:root --exclude=*.tmp foo bar" add
 
   describe "pretty print COPY" $ do
     it "with just copy" $ do
@@ -95,6 +110,21 @@ spec = do
        in assertPretty
             "COPY --chown=root:root --chmod=751 --link --from=baseimage foo bar"
             copy
+    it "with just exclude" $ do
+      let copy = Copy
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags NoChown NoChmod NoLink NoSource [Exclude "*.tmp"] )
+       in assertPretty "COPY --exclude=*.tmp foo bar" copy
+    it "with multiple exclude flags" $ do
+      let copy = Copy
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags NoChown NoChmod NoLink NoSource [Exclude "*.tmp", Exclude "*.log"] )
+       in assertPretty "COPY --exclude=*.tmp --exclude=*.log foo bar" copy
+    it "with exclude and other flags" $ do
+      let copy = Copy
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags (Chown "root:root") NoChmod NoLink NoSource [Exclude "*.tmp"] )
+       in assertPretty "COPY --chown=root:root --exclude=*.tmp foo bar" copy
 
   describe "pretty print # escape" $ do
     it "# escape = \\" $ do
