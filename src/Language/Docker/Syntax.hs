@@ -192,12 +192,13 @@ data CopyFlags
       { chownFlag :: !Chown,
         chmodFlag :: !Chmod,
         linkFlag :: !Link,
-        sourceFlag :: !CopySource
+        sourceFlag :: !CopySource,
+        excludeFlags :: ![Exclude]
       }
   deriving (Show, Eq, Ord)
 
 instance Default CopyFlags where
-  def = CopyFlags NoChown NoChmod NoLink NoSource
+  def = CopyFlags NoChown NoChmod NoLink NoSource []
 
 data AddArgs
   = AddArgs
@@ -211,12 +212,19 @@ data AddFlags
       { checksumFlag :: !Checksum,
         chownFlag :: !Chown,
         chmodFlag :: !Chmod,
-        linkFlag :: !Link
+        linkFlag :: !Link,
+        excludeFlags :: ![Exclude]
       }
   deriving (Show, Eq, Ord)
 
 instance Default AddFlags where
-  def = AddFlags NoChecksum NoChown NoChmod NoLink
+  def = AddFlags NoChecksum NoChown NoChmod NoLink []
+
+newtype Exclude
+  = Exclude
+      { unExclude :: Text
+      }
+  deriving (Show, Eq, Ord, IsString)
 
 data Check args
   = Check !(CheckArgs args)

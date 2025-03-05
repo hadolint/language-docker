@@ -24,28 +24,43 @@ spec = do
     it "with just checksum" $ do
       let add = Add
                   ( AddArgs [SourcePath "http://www.example.com/foo"] (TargetPath "bar") )
-                  ( AddFlags ( Checksum "sha256:24454f830cdd" ) NoChown NoChmod NoLink )
+                  ( AddFlags ( Checksum "sha256:24454f830cdd" ) NoChown NoChmod NoLink [])
        in assertPretty "ADD --checksum=sha256:24454f830cdd http://www.example.com/foo bar" add
     it "with just chown" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum ( Chown "root:root" ) NoChmod NoLink )
+                  ( AddFlags NoChecksum ( Chown "root:root" ) NoChmod NoLink [] )
        in assertPretty "ADD --chown=root:root foo bar" add
     it "with just chmod" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum NoChown ( Chmod "751" ) NoLink )
+                  ( AddFlags NoChecksum NoChown ( Chmod "751" ) NoLink [] )
        in assertPretty "ADD --chmod=751 foo bar" add
     it "with just link" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum NoChown NoChmod Link )
+                  ( AddFlags NoChecksum NoChown NoChmod Link [] )
        in assertPretty "ADD --link foo bar" add
     it "with chown, chmod and link" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) Link )
+                  ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) Link [] )
        in assertPretty "ADD --chown=root:root --chmod=751 --link foo bar" add
+    it "with just exclude" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink [Exclude "*.tmp"] )
+       in assertPretty "ADD --exclude=*.tmp foo bar" add
+    it "with multiple exclude flags" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink [Exclude "*.tmp", Exclude "*.log"] )
+       in assertPretty "ADD --exclude=*.tmp --exclude=*.log foo bar" add
+    it "with exclude and other flags" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink [Exclude "*.tmp"] )
+       in assertPretty "ADD --chown=root:root --exclude=*.tmp foo bar" add
 
   describe "pretty print COPY" $ do
     it "with just copy" $ do
@@ -56,30 +71,30 @@ spec = do
     it "with just chown" $ do
       let copy = Copy
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( CopyFlags ( Chown "root:root" ) NoChmod NoLink NoSource )
+                  ( CopyFlags ( Chown "root:root" ) NoChmod NoLink NoSource [] )
        in assertPretty "COPY --chown=root:root foo bar" copy
     it "with just chmod" $ do
       let copy = Copy
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( CopyFlags NoChown ( Chmod "751" ) NoLink NoSource )
+                  ( CopyFlags NoChown ( Chmod "751" ) NoLink NoSource [] )
        in assertPretty "COPY --chmod=751 foo bar" copy
     it "with just link" $ do
       let copy = Copy
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( CopyFlags NoChown NoChmod Link NoSource )
+                  ( CopyFlags NoChown NoChmod Link NoSource [] )
        in assertPretty "COPY --link foo bar" copy
     it "with source baseimage" $ do
       let copy =
             Copy
               ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
-              ( CopyFlags NoChown NoChmod NoLink ( CopySource "baseimage" ) )
+              ( CopyFlags NoChown NoChmod NoLink ( CopySource "baseimage" ) [])
        in assertPretty "COPY --from=baseimage foo bar" copy
     it "with both chown and chmod" $ do
       let copy =
             Copy
               ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
               ( CopyFlags
-                  ( Chown "root:root" ) ( Chmod "751" ) NoLink NoSource
+                  ( Chown "root:root" ) ( Chmod "751" ) NoLink NoSource []
               )
        in assertPretty "COPY --chown=root:root --chmod=751 foo bar" copy
     it "with all flags" $ do
@@ -91,10 +106,26 @@ spec = do
                   ( Chmod "751")
                   Link
                   ( CopySource "baseimage" )
+                  []
               )
        in assertPretty
             "COPY --chown=root:root --chmod=751 --link --from=baseimage foo bar"
             copy
+    it "with just exclude" $ do
+      let copy = Copy
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags NoChown NoChmod NoLink NoSource [Exclude "*.tmp"] )
+       in assertPretty "COPY --exclude=*.tmp foo bar" copy
+    it "with multiple exclude flags" $ do
+      let copy = Copy
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags NoChown NoChmod NoLink NoSource [Exclude "*.tmp", Exclude "*.log"] )
+       in assertPretty "COPY --exclude=*.tmp --exclude=*.log foo bar" copy
+    it "with exclude and other flags" $ do
+      let copy = Copy
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags (Chown "root:root") NoChmod NoLink NoSource [Exclude "*.tmp"] )
+       in assertPretty "COPY --chown=root:root --exclude=*.tmp foo bar" copy
 
   describe "pretty print # escape" $ do
     it "# escape = \\" $ do
