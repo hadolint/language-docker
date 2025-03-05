@@ -104,8 +104,11 @@
     git commit -m "Bump version"
     git tag -a "v$(grep '^version:' language-docker.cabal | awk '{print $2}')" -m "v$(grep '^version:' language-docker.cabal | awk '{print $2}')"
     git push origin master --tags
+
+    rm -f dist-newstyle/sdist/*.tar.gz
     cabal sdist
-    cabal upload --publish dist/*.tar.gz
+    cabal upload --publish dist-newstyle/sdist/*.tar.gz
+    rm -f dist-newstyle/sdist/*.tar.gz
   '';
 
   scripts.do-release.exec = ''
