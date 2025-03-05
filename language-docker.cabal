@@ -1,123 +1,132 @@
-cabal-version: 2.0
+cabal-version:      3.4
+name:               language-docker
+version:            13.0.0
+synopsis:           Dockerfile parser, pretty-printer and embedded DSL
+description:
+  All functions for parsing and pretty-printing Dockerfiles are exported through @Language.Docker@. For more fine-grained operations look for specific modules that implement a certain functionality.
+  See the <https://github.com/hadolint/language-docker GitHub project> for the source-code and examples.
 
-name:           language-docker
-version:        13.0.0
-synopsis:       Dockerfile parser, pretty-printer and embedded DSL
-description:    All functions for parsing and pretty-printing Dockerfiles are exported through @Language.Docker@. For more fine-grained operations look for specific modules that implement a certain functionality.
-                See the <https://github.com/hadolint/language-docker GitHub project> for the source-code and examples.
-category:       Development
-homepage:       https://github.com/hadolint/language-docker#readme
-bug-reports:    https://github.com/hadolint/language-docker/issues
-author:         Lukas Martinelli,
-                Pedro Tacla Yamada,
-                José Lorenzo Rodríguez
-maintainer:     lorenzo@seatgeek.com
-copyright:      Lukas Martinelli, Copyright (c) 2016,
-                Pedro Tacla Yamada, Copyright (c) 2016,
-                José Lorenzo Rodríguez, Copyright (c) 2017
-license:        GPL-3
-license-file:   LICENSE
-build-type:     Simple
+category:           Development
+homepage:           https://github.com/hadolint/language-docker#readme
+bug-reports:        https://github.com/hadolint/language-docker/issues
+author:
+  Lukas Martinelli,
+  Pedro Tacla Yamada,
+  José Lorenzo Rodríguez
+
+maintainer:         lorenzo@seatgeek.com
+copyright:
+  Lukas Martinelli, Copyright (c) 2016,
+  Pedro Tacla Yamada, Copyright (c) 2016,
+  José Lorenzo Rodríguez, Copyright (c) 2017
+
+license:            GPL-3.0-or-later
+license-file:       LICENSE
+build-type:         Simple
 extra-source-files:
-    README.md
-    test/fixtures/1.Dockerfile
-    test/fixtures/2.Dockerfile
-    test/fixtures/3.Dockerfile
-    test/fixtures/4.Dockerfile
-    test/fixtures/5.Dockerfile
-    test/fixtures/6.Dockerfile
-    test/fixtures/7.Dockerfile
-    test/fixtures/8.Dockerfile
-    test/fixtures/Dockerfile.bom.utf32be
-    test/fixtures/Dockerfile.bom.utf32le
-    test/fixtures/Dockerfile.bom.utf16be
-    test/fixtures/Dockerfile.bom.utf16le
-    test/fixtures/Dockerfile.bom.utf8
+  README.md
+  test/fixtures/1.Dockerfile
+  test/fixtures/2.Dockerfile
+  test/fixtures/3.Dockerfile
+  test/fixtures/4.Dockerfile
+  test/fixtures/5.Dockerfile
+  test/fixtures/6.Dockerfile
+  test/fixtures/7.Dockerfile
+  test/fixtures/8.Dockerfile
+  test/fixtures/Dockerfile.bom.utf16be
+  test/fixtures/Dockerfile.bom.utf16le
+  test/fixtures/Dockerfile.bom.utf32be
+  test/fixtures/Dockerfile.bom.utf32le
+  test/fixtures/Dockerfile.bom.utf8
 
 source-repository head
-  type: git
+  type:     git
   location: https://github.com/hadolint/language-docker
 
-library
-  exposed-modules:
-      Language.Docker
-      Language.Docker.Parser
-      Language.Docker.PrettyPrint
-      Language.Docker.Syntax
-  other-modules:
-      Language.Docker.Parser.Arguments
-      Language.Docker.Parser.Cmd
-      Language.Docker.Parser.Copy
-      Language.Docker.Parser.Expose
-      Language.Docker.Parser.From
-      Language.Docker.Parser.Healthcheck
-      Language.Docker.Parser.Instruction
-      Language.Docker.Parser.Pairs
-      Language.Docker.Parser.Prelude
-      Language.Docker.Parser.Run
-      Language.Docker.Syntax.Port
-      Language.Docker.Syntax.PortRange
-      Language.Docker.Syntax.Protocol
-      Paths_language_docker
-  hs-source-dirs:
-      src
-  default-extensions:
-      OverloadedStrings
-      ImplicitParams
-      Rank2Types
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-unused-do-bind -fno-warn-orphans
+common deps
   build-depends:
-      base >=4.8 && <5
-    , bytestring >=0.10
-    , containers
-    , data-default
-    , data-default-class
-    , megaparsec >=9.0.0
-    , prettyprinter
-    , split >=0.2
-    , text
-    , time
-  default-language: GHC2021
+    , base                >=4.8    && <5
+    , bytestring          >=0.11.5 && <0.12
+    , containers          >=0.6.7  && <0.7
+    , data-default        >=0.8.0  && <0.9
+    , data-default-class  >=0.2.0  && <0.3
+    , megaparsec          >=9.7.0  && <9.8
+    , prettyprinter       >=1.7.1  && <1.8
+    , split               >=0.2.5  && <0.3
+    , text                >=2.0.2  && <2.1
+    , time                >=1.12.2 && <1.13
+
+library
+  import:             deps
+  exposed-modules:
+    Language.Docker
+    Language.Docker.Parser
+    Language.Docker.PrettyPrint
+    Language.Docker.Syntax
+
+  other-modules:
+    Language.Docker.Parser.Arguments
+    Language.Docker.Parser.Cmd
+    Language.Docker.Parser.Copy
+    Language.Docker.Parser.Expose
+    Language.Docker.Parser.From
+    Language.Docker.Parser.Healthcheck
+    Language.Docker.Parser.Instruction
+    Language.Docker.Parser.Pairs
+    Language.Docker.Parser.Prelude
+    Language.Docker.Parser.Run
+    Language.Docker.Syntax.Port
+    Language.Docker.Syntax.PortRange
+    Language.Docker.Syntax.Protocol
+
+  hs-source-dirs:     src
+  default-extensions:
+    ImplicitParams
+    OverloadedStrings
+    Rank2Types
+
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wredundant-constraints
+    -fno-warn-unused-do-bind -fno-warn-orphans
+
+  default-language:   GHC2021
 
 test-suite hspec
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  import:             deps
+  type:               exitcode-stdio-1.0
+  main-is:            Spec.hs
   other-modules:
-      Language.Docker.IntegrationSpec
-      Language.Docker.ParseAddSpec
-      Language.Docker.ParseCmdSpec
-      Language.Docker.ParseCopySpec
-      Language.Docker.ParseExposeSpec
-      Language.Docker.ParseHealthcheckSpec
-      Language.Docker.ParsePragmaSpec
-      Language.Docker.ParserSpec
-      Language.Docker.ParseRunSpec
-      Language.Docker.PrettyPrintSpec
-      TestHelper
-      Paths_language_docker
-  hs-source-dirs:
-      test
+    Language.Docker.IntegrationSpec
+    Language.Docker.ParseAddSpec
+    Language.Docker.ParseCmdSpec
+    Language.Docker.ParseCopySpec
+    Language.Docker.ParseExposeSpec
+    Language.Docker.ParseHealthcheckSpec
+    Language.Docker.ParsePragmaSpec
+    Language.Docker.ParserSpec
+    Language.Docker.ParseRunSpec
+    Language.Docker.PrettyPrintSpec
+    TestHelper
+
+  hs-source-dirs:     test
   default-extensions:
-      OverloadedStrings
-      ImplicitParams
-      Rank2Types
-      OverloadedLists
-  ghc-options: -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints -fno-warn-unused-do-bind -fno-warn-orphans
+    ImplicitParams
+    OverloadedLists
+    OverloadedStrings
+    Rank2Types
+
+  ghc-options:
+    -Wall -Wcompat -Wincomplete-record-updates
+    -Wincomplete-uni-patterns -Wredundant-constraints
+    -fno-warn-unused-do-bind -fno-warn-orphans
+
   build-depends:
-      HUnit >=1.2
-    , QuickCheck
-    , base >=4.8 && <5
-    , bytestring >=0.10
-    , containers
-    , data-default
-    , data-default-class
     , hspec
     , hspec-megaparsec
+    , HUnit             >=1.2
     , language-docker
-    , megaparsec >=9.0.0
-    , prettyprinter
-    , split >=0.2
-    , text
-    , time
-  default-language: GHC2021
-  build-tool-depends: hspec-discover:hspec-discover == 2.*
+    , QuickCheck
+
+  default-language:   GHC2021
+  build-tool-depends: hspec-discover:hspec-discover >=2 && <3
