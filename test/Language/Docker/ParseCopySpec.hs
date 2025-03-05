@@ -68,7 +68,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags ( Chown "user:group" ) NoChmod NoLink NoSource )
+                ( CopyFlags ( Chown "user:group" ) NoChmod NoLink NoSource [])
             ]
     it "with chmod flag" $
       let file = Text.unlines ["COPY --chmod=777 foo bar"]
@@ -76,7 +76,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags NoChown ( Chmod "777" ) NoLink NoSource )
+                ( CopyFlags NoChown ( Chmod "777" ) NoLink NoSource [])
             ]
     it "with link flag" $
       let file = Text.unlines [ "COPY --link source /target" ]
@@ -84,7 +84,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
-                ( CopyFlags NoChown NoChmod Link NoSource )
+                ( CopyFlags NoChown NoChmod Link NoSource [])
             ]
     it "with from flag" $
       let file = Text.unlines ["COPY --from=node foo bar"]
@@ -92,7 +92,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags NoChown NoChmod NoLink ( CopySource "node" ) )
+                ( CopyFlags NoChown NoChmod NoLink ( CopySource "node" ) [])
             ]
     it "with all flags" $
       let file =
@@ -107,6 +107,7 @@ spec = do
                     (Chmod "751")
                     Link
                     (CopySource "node")
+                    []
                 )
             ]
     it "with all flags in different order" $
@@ -122,6 +123,7 @@ spec = do
                     (Chmod "644")
                     Link
                     (CopySource "node")
+                    []
                 )
             ]
     it "with exclude flag" $

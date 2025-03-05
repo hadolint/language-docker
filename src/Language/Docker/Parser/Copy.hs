@@ -35,7 +35,6 @@ parseCopy = do
     (_, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--chmod"
     (_, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--link"
     (_, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--from"
-    (_, _, _, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--exclude"
     _ -> do
       let cho =
             case chownFlags of
@@ -53,12 +52,8 @@ parseCopy = do
             case sourceFlags of
               [] -> NoSource
               f : _ -> f
-      let exc =
-            case excludeFlags of
-              [] -> NoExclude
-              e : _ -> e
-      try (heredocList (\src dest -> Copy (CopyArgs src dest) (CopyFlags cho chm lnk fr exc)))
-        <|> fileList "COPY" (\src dest -> Copy (CopyArgs src dest) (CopyFlags cho chm lnk fr exc))
+      try (heredocList (\src dest -> Copy (CopyArgs src dest) (CopyFlags cho chm lnk fr excludeFlags)))
+        <|> fileList "COPY" (\src dest -> Copy (CopyArgs src dest) (CopyFlags cho chm lnk fr excludeFlags))
 
 parseAdd :: (?esc :: Char) => Parser (Instruction Text)
 parseAdd = do
@@ -78,7 +73,6 @@ parseAdd = do
     (_, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--chown"
     (_, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--chmod"
     (_, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--link"
-    (_, _, _, _, _, _ : _ : _) -> customError $ DuplicateFlagError "--exclude"
     _ -> do
       let chk = case checksumFlags of
                   [] -> NoChecksum
@@ -92,10 +86,7 @@ parseAdd = do
       let lnk = case linkFlags of
                   [] -> NoLink
                   l : _ -> l
-      let exc = case excludeFlags of
-                  [] -> NoExclude
-                  e : _ -> e
-      fileList "ADD" (\src dest -> Add (AddArgs src dest) (AddFlags chk cho chm lnk exc))
+      fileList "ADD" (\src dest -> Add (AddArgs src dest) (AddFlags chk cho chm lnk excludeFlags))
 
 heredocList :: (?esc :: Char) =>
                (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->
