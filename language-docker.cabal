@@ -46,15 +46,15 @@ source-repository head
 common deps
   build-depends:
     , base                >=4.8    && <5
-    , bytestring          >=0.11.5 && <0.12
-    , containers          >=0.6.7  && <0.7
-    , data-default        >=0.8.0  && <0.9
-    , data-default-class  >=0.2.0  && <0.3
-    , megaparsec          >=9.7.0  && <9.8
-    , prettyprinter       >=1.7.1  && <1.8
-    , split               >=0.2.5  && <0.3
-    , text                >=2.0.2  && <2.1
-    , time                >=1.12.2 && <1.13
+    , bytestring          >=0.11.5 && <0.13
+    , containers          >=0.6.7  && <0.8
+    , data-default        >=0.8.0  && <0.10
+    , data-default-class  >=0.2.0  && <0.4
+    , megaparsec          >=9.7.0  && <9.9
+    , prettyprinter       >=1.7.1  && <1.9
+    , split               >=0.2.5  && <0.4
+    , text                >=2.0.2  && <2.2
+    , time                >=1.12.2 && <1.14
 
 library
   import:             deps
