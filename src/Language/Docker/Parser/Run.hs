@@ -19,7 +19,8 @@ data RunFlag
   deriving (Show)
 
 data RunMountArg
-  = MountArgFromImage Text
+  = MountArgEnv Text
+  | MountArgFromImage Text
   | MountArgId Text
   | MountArgMode Text
   | MountArgReadOnly Bool
@@ -161,13 +162,14 @@ secretMount args =
     Left e -> customError e
     Right as -> return $ foldr secretOpts def as
   where
-    allowed = Set.fromList ["target", "id", "required", "source", "mode", "uid", "gid"]
+    allowed = Set.fromList ["target", "id", "required", "source", "mode", "uid", "gid", "env"]
     required = Set.empty
     secretOpts :: RunMountArg -> SecretOpts -> SecretOpts
     secretOpts (MountArgTarget path) co = co {sTarget = Just path}
     secretOpts (MountArgId i) co = co {sCacheId = Just i}
     secretOpts (MountArgRequired r) co = co {sIsRequired = Just r}
     secretOpts (MountArgSource path) co = co {sSource = Just path}
+    secretOpts (MountArgEnv e) co = co {sEnv = Just e}
     secretOpts (MountArgMode m) co = co {sMode = Just m}
     secretOpts (MountArgUid u) co = co {sUid = Just u}
     secretOpts (MountArgGid g) co = co {sGid = Just g}
@@ -223,7 +225,8 @@ mountChoices mountType =
           mountArgSource,
           mountArgMode,
           mountArgUid,
-          mountArgGid
+          mountArgGid,
+          mountArgEnv
         ]
 
 stringArg :: (?esc :: Char) => Parser Text
@@ -238,6 +241,9 @@ tryKeyValue' k v = try $ string' (k <> "=") *> string' v
 cacheSharing :: Parser CacheSharing
 cacheSharing =
   choice [Private <$ string "private", Shared <$ string "shared", Locked <$ string "locked"]
+
+mountArgEnv :: (?esc :: Char) => Parser RunMountArg
+mountArgEnv = MountArgEnv <$> key "env" stringArg
 
 mountArgFromImage :: (?esc :: Char) => Parser RunMountArg
 mountArgFromImage = MountArgFromImage <$> key "from" stringArg
@@ -317,6 +323,7 @@ mountArgUid :: (?esc :: Char) => Parser RunMountArg
 mountArgUid = MountArgUid <$> key "uid" stringArg
 
 toArgName :: RunMountArg -> Text
+toArgName (MountArgEnv _) = "env"
 toArgName (MountArgFromImage _) = "from"
 toArgName (MountArgGid _) = "gid"
 toArgName (MountArgId _) = "id"

@@ -297,6 +297,7 @@ data SecretOpts
         sCacheId :: !(Maybe Text),
         sIsRequired :: !(Maybe Bool),
         sSource :: !(Maybe SourcePath),
+        sEnv :: !(Maybe Text),
         sMode :: !(Maybe Text),
         sUid :: !(Maybe Text),
         sGid :: !(Maybe Text)
@@ -304,7 +305,7 @@ data SecretOpts
   deriving (Eq, Show, Ord)
 
 instance Default SecretOpts where
-  def = SecretOpts Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+  def = SecretOpts Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
 data CacheSharing
   = Shared
