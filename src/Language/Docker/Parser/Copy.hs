@@ -14,6 +14,9 @@ data Flag
   | FlagChown Chown
   | FlagChmod Chmod
   | FlagLink Link
+  | FlagKeepGitDir KeepGitDir
+  | FlagParents Parents
+  | FlagUnpack Unpack
   | FlagSource CopySource
   | FlagExclude Exclude
   | FlagInvalid (Text, Text)
@@ -25,16 +28,18 @@ parseCopy = do
   let chownFlags = [c | FlagChown c <- flags]
   let chmodFlags = [c | FlagChmod c <- flags]
   let linkFlags = [l | FlagLink l <- flags]
+  let parentsFlags = [p | FlagParents p <- flags]
   let sourceFlags = [f | FlagSource f <- flags]
   let excludeFlags = [e | FlagExclude e <- flags]
   let invalid = [i | FlagInvalid i <- flags]
   -- Let's do some validation on the flags
-  case (invalid, chownFlags, chmodFlags, linkFlags, sourceFlags, excludeFlags) of
-    ((k, v) : _, _, _, _, _, _) -> unexpectedFlag k v
-    (_, _ : _ : _, _, _, _, _) -> customError $ DuplicateFlagError "--chown"
-    (_, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--chmod"
-    (_, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--link"
-    (_, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--from"
+  case (invalid, chownFlags, chmodFlags, linkFlags, parentsFlags, sourceFlags, excludeFlags) of
+    ((k, v) : _, _, _, _, _, _, _) -> unexpectedFlag k v
+    (_, _ : _ : _, _, _, _, _, _) -> customError $ DuplicateFlagError "--chown"
+    (_, _, _ : _ : _, _, _, _, _) -> customError $ DuplicateFlagError "--chmod"
+    (_, _, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--link"
+    (_, _, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--parents"
+    (_, _, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--from"
     _ -> do
       let cho =
             case chownFlags of
@@ -48,12 +53,16 @@ parseCopy = do
             case linkFlags of
               [] -> NoLink
               l : _ -> l
+      let par =
+            case parentsFlags of
+              [] -> NoParents
+              p : _ -> p
       let fr =
             case sourceFlags of
               [] -> NoSource
               f : _ -> f
-      try (heredocList (\src dest -> Copy (CopyArgs src dest) (CopyFlags cho chm lnk fr excludeFlags)))
-        <|> fileList "COPY" (\src dest -> Copy (CopyArgs src dest) (CopyFlags cho chm lnk fr excludeFlags))
+      try (heredocList (\src dest -> Copy (CopyArgs src dest) (CopyFlags cho chm lnk par fr excludeFlags)))
+        <|> fileList "COPY" (\src dest -> Copy (CopyArgs src dest) (CopyFlags cho chm lnk par fr excludeFlags))
 
 parseAdd :: (?esc :: Char) => Parser (Instruction Text)
 parseAdd = do
@@ -63,16 +72,20 @@ parseAdd = do
   let chownFlags = [c | FlagChown c <- flags]
   let chmodFlags = [c | FlagChmod c <- flags]
   let linkFlags = [l | FlagLink l <- flags]
+  let keepGitDirFlags = [k | FlagKeepGitDir k <- flags]
+  let unpackFlags = [u | FlagUnpack u <- flags]
   let excludeFlags = [e | FlagExclude e <- flags]
   let invalidFlags = [i | FlagInvalid i <- flags]
   notFollowedBy (string "--") <?>
-    "only the --checksum, --chown, --chmod, --link, --exclude flags or the src and dest paths"
-  case (invalidFlags, checksumFlags, chownFlags, linkFlags, chmodFlags, excludeFlags) of
-    ((k, v) : _, _, _, _, _, _) -> unexpectedFlag k v
-    (_, _ : _ : _, _, _, _, _) -> customError $ DuplicateFlagError "--checksum"
-    (_, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--chown"
-    (_, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--chmod"
-    (_, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--link"
+    "only the --checksum, --chown, --chmod, --link, --exclude, --keep-git-dir, --unpack flags or the src and dest paths"
+  case (invalidFlags, checksumFlags, chownFlags, linkFlags, chmodFlags, keepGitDirFlags, unpackFlags, excludeFlags) of
+    ((k, v) : _, _, _, _, _, _, _, _) -> unexpectedFlag k v
+    (_, _ : _ : _, _, _, _, _, _, _) -> customError $ DuplicateFlagError "--checksum"
+    (_, _, _ : _ : _, _, _, _, _, _) -> customError $ DuplicateFlagError "--chown"
+    (_, _, _, _ : _ : _, _, _, _, _) -> customError $ DuplicateFlagError "--chmod"
+    (_, _, _, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--link"
+    (_, _, _, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--keep-git-dir"
+    (_, _, _, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--unpack"
     _ -> do
       let chk = case checksumFlags of
                   [] -> NoChecksum
@@ -86,7 +99,13 @@ parseAdd = do
       let lnk = case linkFlags of
                   [] -> NoLink
                   l : _ -> l
-      fileList "ADD" (\src dest -> Add (AddArgs src dest) (AddFlags chk cho chm lnk excludeFlags))
+      let kgd = case keepGitDirFlags of
+                  [] -> NoKeepGitDir
+                  k : _ -> k
+      let unp = case unpackFlags of
+                  [] -> NoUnpack
+                  u : _ -> u
+      fileList "ADD" (\src dest -> Add (AddArgs src dest) (AddFlags chk cho chm lnk kgd unp excludeFlags))
 
 heredocList :: (?esc :: Char) =>
                (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->
@@ -119,13 +138,21 @@ unexpectedFlag name "" = customFailure $ NoValueFlagError (T.unpack name)
 unexpectedFlag name _ = customFailure $ InvalidFlagError (T.unpack name)
 
 copyFlag :: (?esc :: Char) => Parser Flag
-copyFlag = (FlagSource <$> try copySource <?> "only one --from") <|> addFlag
+copyFlag = (FlagSource <$> try copySource <?> "only one --from")
+  <|> (FlagChown <$> try chown <?> "--chown")
+  <|> (FlagChmod <$> try chmod <?> "--chmod")
+  <|> (FlagLink <$> try link <?> "--link")
+  <|> (FlagParents <$> try parents <?> "--parents")
+  <|> (FlagExclude <$> try exclude <?> "--exclude")
+  <|> (FlagInvalid <$> try anyFlag <?> "other flag")
 
 addFlag :: (?esc :: Char) => Parser Flag
 addFlag = (FlagChecksum <$> try checksum <?> "--checksum")
   <|> (FlagChown <$> try chown <?> "--chown")
   <|> (FlagChmod <$> try chmod <?> "--chmod")
   <|> (FlagLink <$> try link <?> "--link")
+  <|> (FlagKeepGitDir <$> try keepGitDir <?> "--keep-git-dir")
+  <|> (FlagUnpack <$> try unpack <?> "--unpack")
   <|> (FlagExclude <$> try exclude <?> "--exclude")
   <|> (FlagInvalid <$> try anyFlag <?> "other flag")
 
@@ -151,6 +178,21 @@ link :: Parser Link
 link = do
   void $ string "--link"
   return Link
+
+parents :: Parser Parents
+parents = do
+  void $ string "--parents"
+  return Parents
+
+keepGitDir :: Parser KeepGitDir
+keepGitDir = do
+  void $ string "--keep-git-dir"
+  return KeepGitDir
+
+unpack :: Parser Unpack
+unpack = do
+  void $ string "--unpack"
+  return Unpack
 
 copySource :: (?esc :: Char) => Parser CopySource
 copySource = do

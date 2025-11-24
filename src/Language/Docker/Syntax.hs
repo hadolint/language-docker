@@ -162,6 +162,21 @@ data Link
   | NoLink
   deriving (Show, Eq, Ord)
 
+data KeepGitDir
+  = KeepGitDir
+  | NoKeepGitDir
+  deriving (Show, Eq, Ord)
+
+data Parents
+  = Parents
+  | NoParents
+  deriving (Show, Eq, Ord)
+
+data Unpack
+  = Unpack
+  | NoUnpack
+  deriving (Show, Eq, Ord)
+
 data CopySource
   = CopySource !Text
   | NoSource
@@ -197,13 +212,14 @@ data CopyFlags
       { chownFlag :: !Chown,
         chmodFlag :: !Chmod,
         linkFlag :: !Link,
+        parentsFlag :: !Parents,
         sourceFlag :: !CopySource,
         excludeFlags :: ![Exclude]
       }
   deriving (Show, Eq, Ord)
 
 instance Default CopyFlags where
-  def = CopyFlags NoChown NoChmod NoLink NoSource []
+  def = CopyFlags NoChown NoChmod NoLink NoParents NoSource []
 
 data AddArgs
   = AddArgs
@@ -218,12 +234,14 @@ data AddFlags
         chownFlag :: !Chown,
         chmodFlag :: !Chmod,
         linkFlag :: !Link,
+        keepGitDirFlag :: !KeepGitDir,
+        unpackFlag :: !Unpack,
         excludeFlags :: ![Exclude]
       }
   deriving (Show, Eq, Ord)
 
 instance Default AddFlags where
-  def = AddFlags NoChecksum NoChown NoChmod NoLink []
+  def = AddFlags NoChecksum NoChown NoChmod NoLink NoKeepGitDir NoUnpack []
 
 newtype Exclude
   = Exclude
