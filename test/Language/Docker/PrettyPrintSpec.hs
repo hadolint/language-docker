@@ -46,6 +46,11 @@ spec = do
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
                   ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) Link NoUnpack [] )
        in assertPretty "ADD --chown=root:root --chmod=751 --link foo bar" add
+    it "with all flags" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags ( Checksum "sha256:24454f830cdd" ) ( Chown "root:root" ) ( Chmod "751" ) Link (Unpack True) [] )
+       in assertPretty "ADD --checksum=sha256:24454f830cdd --chown=root:root --chmod=751 --link --unpack=true foo bar" add
     it "with unpack true" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
