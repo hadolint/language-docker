@@ -91,12 +91,12 @@ spec = do
             ]
     it "with all flags" $
       let file =
-            Text.unlines ["ADD --chmod=640 --chown=root:root --checksum=sha256:24454f830cdd --link foo bar"]
+            Text.unlines ["ADD --chmod=640 --chown=root:root --checksum=sha256:24454f830cdd --link --unpack=true foo bar"]
        in assertAst
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags (Checksum "sha256:24454f830cdd") (Chown "root:root") (Chmod "640") Link NoUnpack [] )
+                ( AddFlags (Checksum "sha256:24454f830cdd") (Chown "root:root") (Chmod "640") Link (Unpack True) [] )
             ]
     it "list of quoted files and chown" $
       let file =
