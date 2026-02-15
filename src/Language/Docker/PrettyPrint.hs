@@ -160,6 +160,13 @@ prettyPrintLink link =
     Link -> "--link"
     NoLink -> mempty
 
+prettyPrintUnpack :: Unpack -> Doc ann
+prettyPrintUnpack unpack =
+  case unpack of
+    Unpack True -> "--unpack=true"
+    Unpack False -> "--unpack=false"
+    NoUnpack -> mempty
+
 prettyPrintCopySource :: CopySource -> Doc ann
 prettyPrintCopySource source =
   case source of
@@ -327,12 +334,13 @@ prettyPrintInstruction i =
       prettyPrintBaseImage b
     Add
       AddArgs {sourcePaths, targetPath}
-      AddFlags {checksumFlag, chownFlag, chmodFlag, linkFlag, excludeFlags} -> do
+      AddFlags {checksumFlag, chownFlag, chmodFlag, linkFlag, unpackFlag, excludeFlags} -> do
         "ADD"
         prettyPrintChecksum checksumFlag
         prettyPrintChown chownFlag
         prettyPrintChmod chmodFlag
         prettyPrintLink linkFlag
+        prettyPrintUnpack unpackFlag
         prettyPrintExcludes excludeFlags
         prettyPrintFileList sourcePaths targetPath
     Shell args -> do
