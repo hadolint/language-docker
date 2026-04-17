@@ -60,6 +60,10 @@ spec = do
       assertAst
         "FROM myregistry.com:5000/imagename:5.12-dev"
         [From (taggedImage (Image (Just "myregistry.com:5000") "imagename") "5.12-dev")]
+    it "parse without '.*' on registry and port and tag" $
+      assertAst
+        "FROM myregistry:5000/imagename:5.12-dev"
+        [From (taggedImage (Image (Just "myregistry.com:5000") "imagename") "5.12-dev")]
     it "Not a registry if no TLD" $
       assertAst
         "FROM myfolder/imagename:5.12-dev"
