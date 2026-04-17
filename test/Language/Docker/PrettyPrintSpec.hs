@@ -24,42 +24,57 @@ spec = do
     it "with just checksum" $ do
       let add = Add
                   ( AddArgs [SourcePath "http://www.example.com/foo"] (TargetPath "bar") )
-                  ( AddFlags ( Checksum "sha256:24454f830cdd" ) NoChown NoChmod NoLink [])
+                  ( AddFlags ( Checksum "sha256:24454f830cdd" ) NoChown NoChmod NoLink NoUnpack [])
        in assertPretty "ADD --checksum=sha256:24454f830cdd http://www.example.com/foo bar" add
     it "with just chown" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum ( Chown "root:root" ) NoChmod NoLink [] )
+                  ( AddFlags NoChecksum ( Chown "root:root" ) NoChmod NoLink NoUnpack [] )
        in assertPretty "ADD --chown=root:root foo bar" add
     it "with just chmod" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum NoChown ( Chmod "751" ) NoLink [] )
+                  ( AddFlags NoChecksum NoChown ( Chmod "751" ) NoLink NoUnpack [] )
        in assertPretty "ADD --chmod=751 foo bar" add
     it "with just link" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum NoChown NoChmod Link [] )
+                  ( AddFlags NoChecksum NoChown NoChmod Link NoUnpack [] )
        in assertPretty "ADD --link foo bar" add
     it "with chown, chmod and link" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) Link [] )
+                  ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) Link NoUnpack [] )
        in assertPretty "ADD --chown=root:root --chmod=751 --link foo bar" add
+    it "with all flags" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags ( Checksum "sha256:24454f830cdd" ) ( Chown "root:root" ) ( Chmod "751" ) Link (Unpack True) [] )
+       in assertPretty "ADD --checksum=sha256:24454f830cdd --chown=root:root --chmod=751 --link --unpack=true foo bar" add
+    it "with unpack true" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink (Unpack True) [] )
+       in assertPretty "ADD --unpack=true foo bar" add
+    it "with unpack false" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink (Unpack False) [] )
+       in assertPretty "ADD --unpack=false foo bar" add
     it "with just exclude" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum NoChown NoChmod NoLink [Exclude "*.tmp"] )
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink NoUnpack [Exclude "*.tmp"] )
        in assertPretty "ADD --exclude=*.tmp foo bar" add
     it "with multiple exclude flags" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum NoChown NoChmod NoLink [Exclude "*.tmp", Exclude "*.log"] )
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink NoUnpack [Exclude "*.tmp", Exclude "*.log"] )
        in assertPretty "ADD --exclude=*.tmp --exclude=*.log foo bar" add
     it "with exclude and other flags" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink [Exclude "*.tmp"] )
+                  ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink NoUnpack [Exclude "*.tmp"] )
        in assertPretty "ADD --chown=root:root --exclude=*.tmp foo bar" add
 
   describe "pretty print COPY" $ do

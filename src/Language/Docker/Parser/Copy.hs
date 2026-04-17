@@ -14,6 +14,7 @@ data Flag
   | FlagChown Chown
   | FlagChmod Chmod
   | FlagLink Link
+  | FlagUnpack Unpack
   | FlagSource CopySource
   | FlagExclude Exclude
   | FlagInvalid (Text, Text)
@@ -63,16 +64,18 @@ parseAdd = do
   let chownFlags = [c | FlagChown c <- flags]
   let chmodFlags = [c | FlagChmod c <- flags]
   let linkFlags = [l | FlagLink l <- flags]
+  let unpackFlags = [u | FlagUnpack u <- flags]
   let excludeFlags = [e | FlagExclude e <- flags]
   let invalidFlags = [i | FlagInvalid i <- flags]
   notFollowedBy (string "--") <?>
-    "only the --checksum, --chown, --chmod, --link, --exclude flags or the src and dest paths"
-  case (invalidFlags, checksumFlags, chownFlags, linkFlags, chmodFlags, excludeFlags) of
-    ((k, v) : _, _, _, _, _, _) -> unexpectedFlag k v
-    (_, _ : _ : _, _, _, _, _) -> customError $ DuplicateFlagError "--checksum"
-    (_, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--chown"
-    (_, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--chmod"
-    (_, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--link"
+    "only the --checksum, --chown, --chmod, --link, --unpack, --exclude flags or the src and dest paths"
+  case (invalidFlags, checksumFlags, chownFlags, linkFlags, chmodFlags, unpackFlags, excludeFlags) of
+    ((k, v) : _, _, _, _, _, _, _) -> unexpectedFlag k v
+    (_, _ : _ : _, _, _, _, _, _) -> customError $ DuplicateFlagError "--checksum"
+    (_, _, _ : _ : _, _, _, _, _) -> customError $ DuplicateFlagError "--chown"
+    (_, _, _, _ : _ : _, _, _, _) -> customError $ DuplicateFlagError "--chmod"
+    (_, _, _, _, _ : _ : _, _, _) -> customError $ DuplicateFlagError "--link"
+    (_, _, _, _, _, _ : _ : _, _) -> customError $ DuplicateFlagError "--unpack"
     _ -> do
       let chk = case checksumFlags of
                   [] -> NoChecksum
@@ -86,7 +89,10 @@ parseAdd = do
       let lnk = case linkFlags of
                   [] -> NoLink
                   l : _ -> l
-      fileList "ADD" (\src dest -> Add (AddArgs src dest) (AddFlags chk cho chm lnk excludeFlags))
+      let unp = case unpackFlags of
+                  [] -> NoUnpack
+                  u : _ -> u
+      fileList "ADD" (\src dest -> Add (AddArgs src dest) (AddFlags chk cho chm lnk unp excludeFlags))
 
 heredocList :: (?esc :: Char) =>
                (NonEmpty SourcePath -> TargetPath -> Instruction Text) ->
@@ -126,6 +132,7 @@ addFlag = (FlagChecksum <$> try checksum <?> "--checksum")
   <|> (FlagChown <$> try chown <?> "--chown")
   <|> (FlagChmod <$> try chmod <?> "--chmod")
   <|> (FlagLink <$> try link <?> "--link")
+  <|> (FlagUnpack <$> try unpack <?> "--unpack")
   <|> (FlagExclude <$> try exclude <?> "--exclude")
   <|> (FlagInvalid <$> try anyFlag <?> "other flag")
 
@@ -151,6 +158,12 @@ link :: Parser Link
 link = do
   void $ string "--link"
   return Link
+
+unpack :: Parser Unpack
+unpack = do
+  void $ string "--unpack="
+  val <- string "true" <|> string "false"
+  return $ Unpack (val == "true")
 
 copySource :: (?esc :: Char) => Parser CopySource
 copySource = do

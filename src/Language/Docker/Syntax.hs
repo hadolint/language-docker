@@ -162,6 +162,11 @@ data Link
   | NoLink
   deriving (Show, Eq, Ord)
 
+data Unpack
+  = Unpack !Bool
+  | NoUnpack
+  deriving (Show, Eq, Ord)
+
 data CopySource
   = CopySource !Text
   | NoSource
@@ -218,12 +223,13 @@ data AddFlags
         chownFlag :: !Chown,
         chmodFlag :: !Chmod,
         linkFlag :: !Link,
+        unpackFlag :: !Unpack,
         excludeFlags :: ![Exclude]
       }
   deriving (Show, Eq, Ord)
 
 instance Default AddFlags where
-  def = AddFlags NoChecksum NoChown NoChmod NoLink []
+  def = AddFlags NoChecksum NoChown NoChmod NoLink NoUnpack []
 
 newtype Exclude
   = Exclude
