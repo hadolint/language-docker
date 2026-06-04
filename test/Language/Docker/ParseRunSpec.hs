@@ -734,3 +734,11 @@ spec = do
       let file = Text.unlines
             ["RUN --mount=type=bind,target=/bar,relabel=private echo foo"]
        in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRelabelPrivate ]
+    it "RUN with short SELinux relabel z" $
+      let file = Text.unlines
+            ["RUN --mount=type=bind,target=/bar,z echo foo"]
+       in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRelabelShared ]
+    it "RUN with short SELinux relabel Z" $
+      let file = Text.unlines
+            ["RUN --mount=type=bind,target=/bar,Z echo foo"]
+       in assertAst file [ Run $ RunArgs (ArgumentsText "echo foo") flagsRelabelPrivate ]
