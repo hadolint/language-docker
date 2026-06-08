@@ -47,7 +47,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["http://www.example.com/foo"]) (TargetPath "bar") )
-                ( AddFlags (Checksum "sha256:24454f830cdd") NoChown NoChmod NoLink NoUnpack [] )
+                ( AddFlags (Checksum "sha256:24454f830cdd") NoChown NoChmod NoLink NoKeepGitDir NoUnpack [] )
             ]
     it "with chown flag" $
       let file = Text.unlines ["ADD --chown=root:root foo bar"]
@@ -55,7 +55,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink NoUnpack [] )
+                ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink NoKeepGitDir NoUnpack [] )
             ]
     it "with chmod flag" $
       let file = Text.unlines ["ADD --chmod=640 foo bar"]
@@ -63,7 +63,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum NoChown (Chmod "640") NoLink NoUnpack [] )
+                ( AddFlags NoChecksum NoChown (Chmod "640") NoLink NoKeepGitDir NoUnpack [] )
             ]
     it "with link flag" $
       let file = Text.unlines ["ADD --link foo bar"]
@@ -71,7 +71,15 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum NoChown NoChmod Link NoUnpack [])
+                ( AddFlags NoChecksum NoChown NoChmod Link NoKeepGitDir NoUnpack [] )
+            ]
+    it "with keep-git-dir flag" $
+      let file = Text.unlines ["ADD --keep-git-dir foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink KeepGitDir NoUnpack [] )
             ]
     it "with chown and chmod flag" $
       let file = Text.unlines ["ADD --chown=root:root --chmod=640 foo bar"]
@@ -79,7 +87,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum (Chown "root:root") (Chmod "640") NoLink NoUnpack [] )
+                ( AddFlags NoChecksum (Chown "root:root") (Chmod "640") NoLink NoKeepGitDir NoUnpack [] )
             ]
     it "with chown and chmod flag other order" $
       let file = Text.unlines ["ADD --chmod=640 --chown=root:root foo bar"]
@@ -87,7 +95,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum (Chown "root:root") (Chmod "640") NoLink NoUnpack [] )
+                ( AddFlags NoChecksum (Chown "root:root") (Chmod "640") NoLink NoKeepGitDir NoUnpack [] )
             ]
     it "with all flags" $
       let file =
@@ -96,7 +104,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags (Checksum "sha256:24454f830cdd") (Chown "root:root") (Chmod "640") Link (Unpack True) [] )
+                ( AddFlags (Checksum "sha256:24454f830cdd") (Chown "root:root") (Chmod "640") Link NoKeepGitDir (Unpack True) [] )
             ]
     it "list of quoted files and chown" $
       let file =
@@ -109,7 +117,7 @@ spec = do
                     (fmap SourcePath ["foo", "bar", "baz"])
                     (TargetPath "/app")
                 )
-                ( AddFlags NoChecksum (Chown "user:group") NoChmod NoLink NoUnpack [] )
+                ( AddFlags NoChecksum (Chown "user:group") NoChmod NoLink NoKeepGitDir NoUnpack [] )
             ]
     it "with unpack flag true" $
       let file = Text.unlines ["ADD --unpack=true http://www.example.com/archive.tar.gz /download"]
@@ -117,7 +125,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["http://www.example.com/archive.tar.gz"]) (TargetPath "/download") )
-                ( AddFlags NoChecksum NoChown NoChmod NoLink (Unpack True) [] )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink NoKeepGitDir (Unpack True) [] )
             ]
     it "with unpack flag false" $
       let file = Text.unlines ["ADD --unpack=false my-archive.tar.gz ."]
@@ -125,7 +133,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["my-archive.tar.gz"]) (TargetPath ".") )
-                ( AddFlags NoChecksum NoChown NoChmod NoLink (Unpack False) [] )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink NoKeepGitDir (Unpack False) [] )
             ]
     it "with exclude flag" $
       let file = Text.unlines ["ADD --exclude=*.tmp foo bar"]
@@ -133,7 +141,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum NoChown NoChmod NoLink NoUnpack [Exclude "*.tmp"] )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink NoKeepGitDir NoUnpack [Exclude "*.tmp"] )
             ]
     it "with multiple exclude flags" $
       let file = Text.unlines ["ADD --exclude=*.tmp --exclude=*.log foo bar"]
@@ -141,7 +149,7 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum NoChown NoChmod NoLink NoUnpack [Exclude "*.tmp", Exclude "*.log"] )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink NoKeepGitDir NoUnpack [Exclude "*.tmp", Exclude "*.log"] )
             ]
     it "with exclude and other flags" $
       let file = Text.unlines ["ADD --chown=root:root --exclude=*.tmp foo bar"]
@@ -149,5 +157,5 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink NoUnpack [Exclude "*.tmp"] )
+                ( AddFlags NoChecksum (Chown "root:root") NoChmod NoLink NoKeepGitDir NoUnpack [Exclude "*.tmp"] )
             ]
