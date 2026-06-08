@@ -322,7 +322,13 @@ mountArgUid :: (?esc :: Char) => Parser RunMountArg
 mountArgUid = MountArgUid <$> key "uid" stringArg
 
 mountArgRelabel :: Parser RunMountArg
-mountArgRelabel = MountArgRelabel <$> key "relabel" relabel
+mountArgRelabel =
+  MountArgRelabel
+    <$> choice
+          [ key "relabel" relabel,
+            RelabelShared <$ string "z",
+            RelabelPrivate <$ string "Z"
+          ]
 
 relabel :: Parser Relabel
 relabel = choice [RelabelShared <$ string "shared", RelabelPrivate <$ string "private"]
