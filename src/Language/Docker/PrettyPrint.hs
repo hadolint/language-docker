@@ -154,33 +154,6 @@ prettyPrintChmod chmod =
     Chmod c -> "--chmod=" <> pretty c
     NoChmod -> mempty
 
-prettyPrintLink :: Link -> Doc ann
-prettyPrintLink link =
-  case link of
-    Link -> "--link"
-    NoLink -> mempty
-
-prettyPrintKeepGitDir :: KeepGitDir -> Doc ann
-prettyPrintKeepGitDir keepGitDir =
-  case keepGitDir of
-    KeepGitDir True -> "--keep-git-dir=true"
-    KeepGitDir False -> "--keep-git-dir=false"
-    NoKeepGitDir -> mempty
-
-prettyPrintParents :: Parents -> Doc ann
-prettyPrintParents parents =
-  case parents of
-    Parents True -> "--parents=true"
-    Parents False -> "--parents=false"
-    NoParents -> mempty
-
-prettyPrintUnpack :: Unpack -> Doc ann
-prettyPrintUnpack unpack =
-  case unpack of
-    Unpack True -> "--unpack=true"
-    Unpack False -> "--unpack=false"
-    NoUnpack -> mempty
-
 prettyPrintCopySource :: CopySource -> Doc ann
 prettyPrintCopySource source =
   case source of
@@ -318,8 +291,8 @@ prettyPrintInstruction i =
         "COPY"
         prettyPrintChown chownFlag
         prettyPrintChmod chmodFlag
-        prettyPrintLink linkFlag
-        prettyPrintParents parentsFlag
+        pretty linkFlag
+        pretty parentsFlag
         prettyPrintCopySource sourceFlag
         prettyPrintExcludes excludeFlags
         prettyPrintFileList sourcePaths targetPath
@@ -354,9 +327,9 @@ prettyPrintInstruction i =
         prettyPrintChecksum checksumFlag
         prettyPrintChown chownFlag
         prettyPrintChmod chmodFlag
-        prettyPrintLink linkFlag
-        prettyPrintKeepGitDir keepGitDirFlag
-        prettyPrintUnpack unpackFlag
+        pretty linkFlag
+        pretty keepGitDirFlag
+        pretty unpackFlag
         prettyPrintExcludes excludeFlags
         prettyPrintFileList sourcePaths targetPath
     Shell args -> do
