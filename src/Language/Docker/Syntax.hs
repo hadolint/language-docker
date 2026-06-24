@@ -163,12 +163,12 @@ data Link
   deriving (Show, Eq, Ord)
 
 data KeepGitDir
-  = KeepGitDir
+  = KeepGitDir !Bool
   | NoKeepGitDir
   deriving (Show, Eq, Ord)
 
 data Parents
-  = Parents
+  = Parents !Bool
   | NoParents
   deriving (Show, Eq, Ord)
 

@@ -79,8 +79,27 @@ spec = do
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum NoChown NoChmod NoLink KeepGitDir NoUnpack [] )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink ( KeepGitDir True ) NoUnpack [] )
             ]
+
+    it "with keep-git-dir flag explicit true" $
+      let file = Text.unlines ["ADD --keep-git-dir=true foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink ( KeepGitDir True ) NoUnpack [] )
+            ]
+
+    it "with keep-git-dir flag explicit false" $
+      let file = Text.unlines ["ADD --keep-git-dir=false foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink ( KeepGitDir False ) NoUnpack [] )
+            ]
+
     it "with chown and chmod flag" $
       let file = Text.unlines ["ADD --chown=root:root --chmod=640 foo bar"]
        in assertAst
@@ -99,7 +118,7 @@ spec = do
             ]
     it "with all flags" $
       let file =
-            Text.unlines ["ADD --chmod=640 --chown=root:root --checksum=sha256:24454f830cdd --link --unpack=true foo bar"]
+            Text.unlines ["ADD --chmod=640 --chown=root:root --checksum=sha256:24454f830cdd --link --unpack foo bar"]
        in assertAst
             file
             [ Add
@@ -119,7 +138,15 @@ spec = do
                 )
                 ( AddFlags NoChecksum (Chown "user:group") NoChmod NoLink NoKeepGitDir NoUnpack [] )
             ]
-    it "with unpack flag true" $
+    it "with unpack flag" $
+      let file = Text.unlines ["ADD --unpack http://www.example.com/archive.tar.gz /download"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["http://www.example.com/archive.tar.gz"]) (TargetPath "/download") )
+                ( AddFlags NoChecksum NoChown NoChmod NoLink NoKeepGitDir (Unpack True) [] )
+            ]
+    it "with unpack flag explicit true" $
       let file = Text.unlines ["ADD --unpack=true http://www.example.com/archive.tar.gz /download"]
        in assertAst
             file
@@ -127,7 +154,7 @@ spec = do
                 ( AddArgs (fmap SourcePath ["http://www.example.com/archive.tar.gz"]) (TargetPath "/download") )
                 ( AddFlags NoChecksum NoChown NoChmod NoLink NoKeepGitDir (Unpack True) [] )
             ]
-    it "with unpack flag false" $
+    it "with unpack flag explicit false" $
       let file = Text.unlines ["ADD --unpack=false my-archive.tar.gz ."]
        in assertAst
             file

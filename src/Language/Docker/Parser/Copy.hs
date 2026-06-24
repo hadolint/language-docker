@@ -180,20 +180,40 @@ link = do
   return Link
 
 parents :: Parser Parents
-parents = do
-  void $ string "--parents"
-  return Parents
+parents = ( try parentsExplicit <?> "explicit --parents")
+  <|> ( try parentsImplicit <?> "implicit --parents")
+  where
+    parentsExplicit = do
+      void $ string "--parents="
+      val <- string "true" <|> string "false"
+      return $ Parents (val == "true")
+    parentsImplicit = do
+      void $ string "--parents"
+      return $ Parents True
 
 keepGitDir :: Parser KeepGitDir
-keepGitDir = do
-  void $ string "--keep-git-dir"
-  return KeepGitDir
+keepGitDir = ( try keepGitDirExplicit <?> "explicit --keep-git-dir" )
+  <|> ( try keepGitDirImplicit <?> "implicit --keep-git-dir" )
+  where
+    keepGitDirExplicit = do
+      void $ string "--keep-git-dir="
+      val <- string "true" <|> string "false"
+      return $ KeepGitDir (val == "true")
+    keepGitDirImplicit = do
+      void $ string "--keep-git-dir"
+      return $ KeepGitDir True
 
 unpack :: Parser Unpack
-unpack = do
-  void $ string "--unpack="
-  val <- string "true" <|> string "false"
-  return $ Unpack (val == "true")
+unpack = ( try unpackExplicit <?> "explicit --unpack" )
+  <|> ( try unpackImplicit <?> "implicit --unpack" )
+  where
+    unpackExplicit = do
+      void $ string "--unpack="
+      val <- string "true" <|> string "false"
+      return $ Unpack (val == "true")
+    unpackImplicit = do
+      void $ string "--unpack"
+      return $ Unpack True
 
 copySource :: (?esc :: Char) => Parser CopySource
 copySource = do

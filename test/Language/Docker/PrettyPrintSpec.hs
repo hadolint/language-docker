@@ -45,8 +45,8 @@ spec = do
     it "with just keep-git-dir" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum NoChown NoChmod NoLink KeepGitDir NoUnpack [] )
-       in assertPretty "ADD --keep-git-dir foo bar" add
+                  ( AddFlags NoChecksum NoChown NoChmod NoLink ( KeepGitDir True ) NoUnpack [] )
+       in assertPretty "ADD --keep-git-dir=true foo bar" add
     it "with chown, chmod and link" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
@@ -104,11 +104,13 @@ spec = do
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
                   ( CopyFlags NoChown NoChmod Link NoParents NoSource [] )
        in assertPretty "COPY --link foo bar" copy
+
     it "with just parents" $ do
       let copy = Copy
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( CopyFlags NoChown NoChmod NoLink Parents NoSource [] )
-       in assertPretty "COPY --parents foo bar" copy
+                  ( CopyFlags NoChown NoChmod NoLink ( Parents True ) NoSource [] )
+       in assertPretty "COPY --parents=true foo bar" copy
+
     it "with source baseimage" $ do
       let copy =
             Copy
@@ -123,6 +125,7 @@ spec = do
                   ( Chown "root:root" ) ( Chmod "751" ) NoLink NoParents NoSource []
               )
        in assertPretty "COPY --chown=root:root --chmod=751 foo bar" copy
+
     it "with all flags" $ do
       let copy =
             Copy
@@ -131,13 +134,14 @@ spec = do
                   ( Chown "root:root")
                   ( Chmod "751")
                   Link
-                  Parents
+                  ( Parents True )
                   ( CopySource "baseimage" )
                   []
               )
        in assertPretty
-            "COPY --chown=root:root --chmod=751 --link --parents --from=baseimage foo bar"
+            "COPY --chown=root:root --chmod=751 --link --parents=true --from=baseimage foo bar"
             copy
+
     it "with just exclude" $ do
       let copy = Copy
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )

@@ -86,14 +86,34 @@ spec = do
                 ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
                 ( CopyFlags NoChown NoChmod Link NoParents NoSource [])
             ]
+
     it "with parents flag" $
       let file = Text.unlines [ "COPY --parents source /target" ]
        in assertAst
             file
             [ Copy
                 ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
-                ( CopyFlags NoChown NoChmod NoLink Parents NoSource [])
+                ( CopyFlags NoChown NoChmod NoLink ( Parents True ) NoSource [])
             ]
+
+    it "with parents flag explicit true" $
+      let file = Text.unlines [ "COPY --parents=true source /target" ]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
+                ( CopyFlags NoChown NoChmod NoLink ( Parents True ) NoSource [])
+            ]
+
+    it "with parents flag explicit false" $
+      let file = Text.unlines [ "COPY --parents=false source /target" ]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
+                ( CopyFlags NoChown NoChmod NoLink ( Parents False ) NoSource [])
+            ]
+
     it "with from flag" $
       let file = Text.unlines ["COPY --from=node foo bar"]
        in assertAst
@@ -114,7 +134,7 @@ spec = do
                     (Chown "user:group")
                     (Chmod "751")
                     Link
-                    Parents
+                    ( Parents True )
                     (CopySource "node")
                     []
                 )
@@ -131,7 +151,7 @@ spec = do
                     (Chown "user:group")
                     (Chmod "644")
                     Link
-                    Parents
+                    ( Parents True )
                     (CopySource "node")
                     []
                 )

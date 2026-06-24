@@ -163,13 +163,15 @@ prettyPrintLink link =
 prettyPrintKeepGitDir :: KeepGitDir -> Doc ann
 prettyPrintKeepGitDir keepGitDir =
   case keepGitDir of
-    KeepGitDir -> "--keep-git-dir"
+    KeepGitDir True -> "--keep-git-dir=true"
+    KeepGitDir False -> "--keep-git-dir=false"
     NoKeepGitDir -> mempty
 
 prettyPrintParents :: Parents -> Doc ann
 prettyPrintParents parents =
   case parents of
-    Parents -> "--parents"
+    Parents True -> "--parents=true"
+    Parents False -> "--parents=false"
     NoParents -> mempty
 
 prettyPrintUnpack :: Unpack -> Doc ann
