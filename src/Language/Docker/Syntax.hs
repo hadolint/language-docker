@@ -22,8 +22,8 @@ import Data.Set (Set)
 import qualified Data.Text as Text
 import Data.Time.Clock (DiffTime)
 import GHC.Exts (IsList (..))
+import Prettyprinter
 import Text.Printf
-
 
 import Language.Docker.Syntax.Port
 import Language.Docker.Syntax.PortRange
@@ -162,20 +162,40 @@ data Link
   | NoLink
   deriving (Show, Eq, Ord)
 
+instance Pretty Link where
+  pretty ( Link True ) = "--link"
+  pretty ( Link False ) = "--link=false"
+  pretty NoLink = ""
+
 data KeepGitDir
   = KeepGitDir !Bool
   | NoKeepGitDir
   deriving (Show, Eq, Ord)
+
+instance Pretty KeepGitDir where
+  pretty ( KeepGitDir True ) = "--keep-git-dir"
+  pretty ( KeepGitDir False ) = "--keep-git-dir=false"
+  pretty NoKeepGitDir = ""
 
 data Parents
   = Parents !Bool
   | NoParents
   deriving (Show, Eq, Ord)
 
+instance Pretty Parents where
+  pretty ( Parents True ) = "--parents"
+  pretty ( Parents False ) = "--parents=false"
+  pretty NoParents = ""
+
 data Unpack
   = Unpack !Bool
   | NoUnpack
   deriving (Show, Eq, Ord)
+
+instance Pretty Unpack where
+  pretty ( Unpack True ) = "--unpack"
+  pretty ( Unpack False ) = "--unpack=false"
+  pretty NoUnpack = ""
 
 data CopySource
   = CopySource !Text
