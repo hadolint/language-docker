@@ -160,6 +160,20 @@ prettyPrintLink link =
     Link -> "--link"
     NoLink -> mempty
 
+prettyPrintKeepGitDir :: KeepGitDir -> Doc ann
+prettyPrintKeepGitDir keepGitDir =
+  case keepGitDir of
+    KeepGitDir True -> "--keep-git-dir=true"
+    KeepGitDir False -> "--keep-git-dir=false"
+    NoKeepGitDir -> mempty
+
+prettyPrintParents :: Parents -> Doc ann
+prettyPrintParents parents =
+  case parents of
+    Parents True -> "--parents=true"
+    Parents False -> "--parents=false"
+    NoParents -> mempty
+
 prettyPrintUnpack :: Unpack -> Doc ann
 prettyPrintUnpack unpack =
   case unpack of
@@ -300,11 +314,12 @@ prettyPrintInstruction i =
       prettyPrintArguments c
     Copy
       CopyArgs {sourcePaths, targetPath}
-      CopyFlags {chmodFlag, chownFlag, linkFlag, sourceFlag, excludeFlags} -> do
+      CopyFlags {chmodFlag, chownFlag, linkFlag, parentsFlag, sourceFlag, excludeFlags} -> do
         "COPY"
         prettyPrintChown chownFlag
         prettyPrintChmod chmodFlag
         prettyPrintLink linkFlag
+        prettyPrintParents parentsFlag
         prettyPrintCopySource sourceFlag
         prettyPrintExcludes excludeFlags
         prettyPrintFileList sourcePaths targetPath
@@ -334,12 +349,13 @@ prettyPrintInstruction i =
       prettyPrintBaseImage b
     Add
       AddArgs {sourcePaths, targetPath}
-      AddFlags {checksumFlag, chownFlag, chmodFlag, linkFlag, unpackFlag, excludeFlags} -> do
+      AddFlags {checksumFlag, chownFlag, chmodFlag, linkFlag, keepGitDirFlag, unpackFlag, excludeFlags} -> do
         "ADD"
         prettyPrintChecksum checksumFlag
         prettyPrintChown chownFlag
         prettyPrintChmod chmodFlag
         prettyPrintLink linkFlag
+        prettyPrintKeepGitDir keepGitDirFlag
         prettyPrintUnpack unpackFlag
         prettyPrintExcludes excludeFlags
         prettyPrintFileList sourcePaths targetPath

@@ -68,7 +68,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags ( Chown "user:group" ) NoChmod NoLink NoSource [])
+                ( CopyFlags ( Chown "user:group" ) NoChmod NoLink NoParents NoSource [])
             ]
     it "with chmod flag" $
       let file = Text.unlines ["COPY --chmod=777 foo bar"]
@@ -76,7 +76,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags NoChown ( Chmod "777" ) NoLink NoSource [])
+                ( CopyFlags NoChown ( Chmod "777" ) NoLink NoParents NoSource [])
             ]
     it "with link flag" $
       let file = Text.unlines [ "COPY --link source /target" ]
@@ -84,20 +84,48 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
-                ( CopyFlags NoChown NoChmod Link NoSource [])
+                ( CopyFlags NoChown NoChmod Link NoParents NoSource [])
             ]
+
+    it "with parents flag" $
+      let file = Text.unlines [ "COPY --parents source /target" ]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
+                ( CopyFlags NoChown NoChmod NoLink ( Parents True ) NoSource [])
+            ]
+
+    it "with parents flag explicit true" $
+      let file = Text.unlines [ "COPY --parents=true source /target" ]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
+                ( CopyFlags NoChown NoChmod NoLink ( Parents True ) NoSource [])
+            ]
+
+    it "with parents flag explicit false" $
+      let file = Text.unlines [ "COPY --parents=false source /target" ]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "source" ] ( TargetPath "/target" ) )
+                ( CopyFlags NoChown NoChmod NoLink ( Parents False ) NoSource [])
+            ]
+
     it "with from flag" $
       let file = Text.unlines ["COPY --from=node foo bar"]
        in assertAst
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags NoChown NoChmod NoLink ( CopySource "node" ) [])
+                ( CopyFlags NoChown NoChmod NoLink NoParents ( CopySource "node" ) [])
             ]
     it "with all flags" $
       let file =
             Text.unlines
-              [ "COPY --from=node --chmod=751 --link --chown=user:group foo bar" ]
+              [ "COPY --from=node --chmod=751 --link --chown=user:group --parents foo bar" ]
        in assertAst
             file
             [ Copy
@@ -106,6 +134,7 @@ spec = do
                     (Chown "user:group")
                     (Chmod "751")
                     Link
+                    ( Parents True )
                     (CopySource "node")
                     []
                 )
@@ -113,7 +142,7 @@ spec = do
     it "with all flags in different order" $
       let file =
             Text.unlines
-              [ "COPY --link --chown=user:group --from=node --chmod=644 foo bar" ]
+              [ "COPY --link --parents --chown=user:group --from=node --chmod=644 foo bar" ]
        in assertAst
             file
             [ Copy
@@ -122,6 +151,7 @@ spec = do
                     (Chown "user:group")
                     (Chmod "644")
                     Link
+                    ( Parents True )
                     (CopySource "node")
                     []
                 )
@@ -132,7 +162,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags NoChown NoChmod NoLink NoSource [Exclude "*.tmp"] )
+                ( CopyFlags NoChown NoChmod NoLink NoParents NoSource [Exclude "*.tmp"] )
             ]
     it "with multiple exclude flags" $
       let file = Text.unlines ["COPY --exclude=*.tmp --exclude=*.log foo bar"]
@@ -140,7 +170,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags NoChown NoChmod NoLink NoSource [Exclude "*.tmp", Exclude "*.log"] )
+                ( CopyFlags NoChown NoChmod NoLink NoParents NoSource [Exclude "*.tmp", Exclude "*.log"] )
             ]
     it "with exclude and other flags" $
       let file = Text.unlines ["COPY --chown=root:root --exclude=*.tmp foo bar"]
@@ -148,7 +178,7 @@ spec = do
             file
             [ Copy
                 ( CopyArgs [ SourcePath "foo" ] (TargetPath "bar") )
-                ( CopyFlags (Chown "root:root") NoChmod NoLink NoSource [Exclude "*.tmp"] )
+                ( CopyFlags (Chown "root:root") NoChmod NoLink NoParents NoSource [Exclude "*.tmp"] )
             ]
 
   describe "Copy with Heredocs" $ do
