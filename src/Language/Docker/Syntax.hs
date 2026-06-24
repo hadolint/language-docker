@@ -158,7 +158,7 @@ instance IsString Chmod where
       _ -> Chmod (Text.pack ch)
 
 data Link
-  = Link
+  = Link !Bool
   | NoLink
   deriving (Show, Eq, Ord)
 

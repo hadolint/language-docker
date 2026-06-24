@@ -36,11 +36,17 @@ spec = do
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
                   ( AddFlags NoChecksum NoChown ( Chmod "751" ) NoLink NoKeepGitDir NoUnpack [] )
        in assertPretty "ADD --chmod=751 foo bar" add
-    it "with just link" $ do
+    it "with just link (true)" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum NoChown NoChmod Link NoKeepGitDir NoUnpack [] )
-       in assertPretty "ADD --link foo bar" add
+                  ( AddFlags NoChecksum NoChown NoChmod ( Link True ) NoKeepGitDir NoUnpack [] )
+       in assertPretty "ADD --link=true foo bar" add
+
+    it "with just link (false)" $ do
+      let add = Add
+                  ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( AddFlags NoChecksum NoChown NoChmod ( Link False ) NoKeepGitDir NoUnpack [] )
+       in assertPretty "ADD --link=false foo bar" add
 
     it "with just keep-git-dir" $ do
       let add = Add
@@ -50,13 +56,21 @@ spec = do
     it "with chown, chmod and link" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) Link NoKeepGitDir NoUnpack [] )
-       in assertPretty "ADD --chown=root:root --chmod=751 --link foo bar" add
+                  ( AddFlags NoChecksum ( Chown "root:root" ) ( Chmod "751" ) ( Link True ) NoKeepGitDir NoUnpack [] )
+       in assertPretty "ADD --chown=root:root --chmod=751 --link=true foo bar" add
     it "with all flags" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( AddFlags ( Checksum "sha256:24454f830cdd" ) ( Chown "root:root" ) ( Chmod "751" ) Link NoKeepGitDir (Unpack True) [] )
-       in assertPretty "ADD --checksum=sha256:24454f830cdd --chown=root:root --chmod=751 --link --unpack=true foo bar" add
+                  ( AddFlags
+                      ( Checksum "sha256:24454f830cdd" )
+                      ( Chown "root:root" )
+                      ( Chmod "751" )
+                      ( Link True )
+                      ( KeepGitDir True )
+                      ( Unpack True )
+                      []
+                  )
+       in assertPretty "ADD --checksum=sha256:24454f830cdd --chown=root:root --chmod=751 --link=true --keep-git-dir=true --unpack=true foo bar" add
     it "with unpack true" $ do
       let add = Add
                   ( AddArgs [SourcePath "foo"] (TargetPath "bar") )
@@ -99,11 +113,17 @@ spec = do
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
                   ( CopyFlags NoChown ( Chmod "751" ) NoLink NoParents NoSource [] )
        in assertPretty "COPY --chmod=751 foo bar" copy
-    it "with just link" $ do
+    it "with just link (true)" $ do
       let copy = Copy
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
-                  ( CopyFlags NoChown NoChmod Link NoParents NoSource [] )
-       in assertPretty "COPY --link foo bar" copy
+                  ( CopyFlags NoChown NoChmod ( Link True ) NoParents NoSource [] )
+       in assertPretty "COPY --link=true foo bar" copy
+
+    it "with just link (false)" $ do
+      let copy = Copy
+                  ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
+                  ( CopyFlags NoChown NoChmod ( Link False ) NoParents NoSource [] )
+       in assertPretty "COPY --link=false foo bar" copy
 
     it "with just parents" $ do
       let copy = Copy
@@ -133,13 +153,13 @@ spec = do
               ( CopyFlags
                   ( Chown "root:root")
                   ( Chmod "751")
-                  Link
+                  ( Link True )
                   ( Parents True )
                   ( CopySource "baseimage" )
                   []
               )
        in assertPretty
-            "COPY --chown=root:root --chmod=751 --link --parents=true --from=baseimage foo bar"
+            "COPY --chown=root:root --chmod=751 --link=true --parents=true --from=baseimage foo bar"
             copy
 
     it "with just exclude" $ do

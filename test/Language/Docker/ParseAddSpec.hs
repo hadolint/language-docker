@@ -65,14 +65,34 @@ spec = do
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
                 ( AddFlags NoChecksum NoChown (Chmod "640") NoLink NoKeepGitDir NoUnpack [] )
             ]
+
     it "with link flag" $
       let file = Text.unlines ["ADD --link foo bar"]
        in assertAst
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags NoChecksum NoChown NoChmod Link NoKeepGitDir NoUnpack [] )
+                ( AddFlags NoChecksum NoChown NoChmod ( Link True ) NoKeepGitDir NoUnpack [] )
             ]
+
+    it "with link flag explicit true" $
+      let file = Text.unlines ["ADD --link=true foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChecksum NoChown NoChmod ( Link True ) NoKeepGitDir NoUnpack [] )
+            ]
+
+    it "with link flag explicit false" $
+      let file = Text.unlines ["ADD --link=false foo bar"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
+                ( AddFlags NoChecksum NoChown NoChmod ( Link False ) NoKeepGitDir NoUnpack [] )
+            ]
+
     it "with keep-git-dir flag" $
       let file = Text.unlines ["ADD --keep-git-dir foo bar"]
        in assertAst
@@ -118,12 +138,20 @@ spec = do
             ]
     it "with all flags" $
       let file =
-            Text.unlines ["ADD --chmod=640 --chown=root:root --checksum=sha256:24454f830cdd --link --unpack foo bar"]
+            Text.unlines ["ADD --chmod=640 --chown=root:root --checksum=sha256:24454f830cdd --link --keep-git-dir --unpack foo bar"]
        in assertAst
             file
             [ Add
                 ( AddArgs (fmap SourcePath ["foo"]) (TargetPath "bar") )
-                ( AddFlags (Checksum "sha256:24454f830cdd") (Chown "root:root") (Chmod "640") Link NoKeepGitDir (Unpack True) [] )
+                ( AddFlags
+                    ( Checksum "sha256:24454f830cdd" )
+                    ( Chown "root:root" )
+                    ( Chmod "640" )
+                    ( Link True )
+                    ( KeepGitDir True )
+                    ( Unpack True )
+                    []
+                )
             ]
     it "list of quoted files and chown" $
       let file =

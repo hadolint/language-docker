@@ -157,7 +157,8 @@ prettyPrintChmod chmod =
 prettyPrintLink :: Link -> Doc ann
 prettyPrintLink link =
   case link of
-    Link -> "--link"
+    Link True -> "--link=true"
+    Link False -> "--link=false"
     NoLink -> mempty
 
 prettyPrintKeepGitDir :: KeepGitDir -> Doc ann

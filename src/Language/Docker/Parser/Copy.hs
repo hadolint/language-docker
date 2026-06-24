@@ -175,9 +175,16 @@ chmod = do
   return $ Chmod chm
 
 link :: Parser Link
-link = do
-  void $ string "--link"
-  return Link
+link = ( try linkExplicit <?> "explicit --link" )
+  <|> ( try linkImplicit <?> "implicit --link" )
+  where
+    linkExplicit = do
+      void $ string "--link="
+      val <- string "true" <|> string "false"
+      return $ Link ( val == "true" )
+    linkImplicit =  do
+      void $ string "--link"
+      return $ Link True
 
 parents :: Parser Parents
 parents = ( try parentsExplicit <?> "explicit --parents")
