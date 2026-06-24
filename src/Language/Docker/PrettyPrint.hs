@@ -94,10 +94,7 @@ prettyPrintPair (k, v) = pretty k <> pretty '=' <> doubleQoute v
 
 prettyPrintArguments :: (?esc :: Char) => Arguments Text -> Doc ann
 prettyPrintArguments (ArgumentsList as) = prettyPrintJSON (Text.words as)
-prettyPrintArguments (ArgumentsText as) = hsep (fmap helper (Text.words as))
-  where
-    helper "&&" = pretty ?esc <> "\n &&"
-    helper a = pretty a
+prettyPrintArguments (ArgumentsText as) = vsep (fmap pretty (Text.lines as))
 
 prettyPrintJSON :: (?esc :: Char) => [Text] -> Doc ann
 prettyPrintJSON args = list (fmap doubleQoute args)

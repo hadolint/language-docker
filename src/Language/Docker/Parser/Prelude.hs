@@ -35,6 +35,7 @@ module Language.Docker.Parser.Prelude
     stringWithEscaped,
     symbol,
     untilEol,
+    untilEol',
     untilHeredoc,
     whitespace,
     module Megaparsec,
@@ -118,6 +119,13 @@ castToSpace :: FoundWhitespace -> Text
 castToSpace FoundWhitespace = " "
 castToSpace MissingWhitespace = ""
 
+castToNl :: (?esc :: Char) => FoundWhitespace -> Text
+castToNl FoundWhitespace = T.pack [' ', ?esc, '\n']
+castToNl MissingWhitespace = T.pack [?esc, '\n']
+
+castToEmpty :: FoundWhitespace -> Text
+castToEmpty _ = ""
+
 eol :: (?esc :: Char) => Parser ()
 eol = void ws <?> "end of line"
   where
@@ -127,6 +135,17 @@ eol = void ws <?> "end of line"
           [ void onlySpaces1,
             void $ takeWhile1P Nothing (== '\n'),
             void escapedLineBreaks
+          ]
+
+eol' :: (?esc :: Char) => Parser Text
+eol' = mconcat <$> ws <?> "end of line"
+  where
+    ws =
+      some $
+        choice
+          [ onlySpaces1,
+            takeWhile1P Nothing isNl,
+            escapedLineBreaks'
           ]
 
 reserved :: (?esc :: Char) => Text -> Parser ()
@@ -309,6 +328,62 @@ untilEol name = do
             takeWhile1P (Just name) (\c -> c /= '\n' && c /= ?esc),
             takeWhile1P Nothing (== ?esc) <* notFollowedBy (char '\n')
           ]
+
+-- Parse value until end of line is reached into list of lines separated at escaped newlines
+-- Notably, empty lines (or comments) after an escaped newline also continue the line. This is
+-- called an empty continuation line.
+-- In case of an empty continuation line, we artificially insert escaped newlines to make the
+-- escaped line breaks explicit. There are two reasons:
+-- 1) this makes the text have the same meaning as interpreted by Docker if parsed by other tools
+--    (e.g. Shellcheck) by escaping line breaks
+-- 2) this keeps the line numbers correct by keeping the line breaks
+-- E.g.:
+-- ```
+-- RUN echo \
+--
+-- # comment
+--
+-- RUN hello
+-- is interpreted by Docker the same as
+-- ```
+-- RUN echo RUN hello
+-- ```
+-- but the shell commands would need to be passed to Shellcheck as
+-- ```
+-- echo \
+-- \
+-- \
+-- \
+-- RUN hello
+-- ```
+-- to keep the line numbers correct.
+untilEol' :: (?esc :: Char) => String -> Parser Text
+untilEol' name = do
+  res <- predicate
+  when (null res) $ fail ("expecting " ++ name)
+  pure $ combine res
+  where
+    predicate =
+      many $
+        choice
+          [ emptyContinuationLines,
+            escapedLineBreaks',
+            takeWhile1P (Just name) (\c -> c /= '\n' && c /= ?esc),
+            takeWhile1P (Just name) (== ?esc) <* notFollowedBy (char '\n')
+          ]
+
+    combine :: [Text] -> Text
+    combine [] = ""
+    combine [x] = x
+    combine (x:x':xs)
+      | x' == T.pack [ ?esc, '\n' ] = x <> x' <> combine xs
+      | otherwise = x <> combine (x':xs)
+
+    emptyContinuationLines :: (?esc :: Char) => Parser Text
+    emptyContinuationLines = do
+      s <- string $ T.pack [ ?esc, '\n' ]
+      l <- many $ choice [ char '\n', char '#' *> takeWhileP Nothing (/= '\n') *> char '\n' ]
+      return $ s <> foldl (<>) "" ( fmap (\c -> T.pack [?esc, c]) l )
 
 symbol :: (?esc :: Char) => Text -> Parser Text
 symbol name = do

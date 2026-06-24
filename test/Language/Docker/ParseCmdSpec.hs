@@ -9,9 +9,13 @@ import qualified Data.Text as Text
 spec :: Spec
 spec = do
   describe "parse CMD instructions" $ do
-    it "one line cmd" $ assertAst "CMD true" [Cmd "true"]
+    it "one line cmd" $ assertAst "CMD true" [Cmd (ArgumentsText "true")]
     it "cmd over several lines" $
-      assertAst "CMD true \\\n && true" [Cmd "true  && true"]
+      assertAst "CMD true \\\n && true" [Cmd (ArgumentsText "true \\\n && true")]
+
+    it "cmd over several lines with comments" $
+      assertAst "CMD true \\\n# foobar comment\n && true" [Cmd (ArgumentsText "true \\\n\\\n && true")]
+
     it "quoted command params" $ assertAst "CMD [\"echo\",  \"1\"]" [Cmd ["echo", "1"]]
     it "Parses commas correctly" $ assertAst "CMD [ \"echo\" ,\"-e\" , \"1\"]" [Cmd ["echo", "-e", "1"]]
 
