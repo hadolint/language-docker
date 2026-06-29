@@ -4,6 +4,7 @@
 module Language.Docker.PrettyPrintSpec where
 
 import Data.Default
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import Prettyprinter
 import Prettyprinter.Render.Text
@@ -177,6 +178,29 @@ spec = do
                   ( CopyArgs [SourcePath "foo"] (TargetPath "bar") )
                   ( CopyFlags (Chown "root:root") NoChmod NoLink NoParents NoSource [Exclude "*.tmp"] )
        in assertPretty "COPY --chown=root:root --exclude=*.tmp foo bar" copy
+
+  describe "pretty print RUN" $ do
+    it "just a simple RUN" $ do
+      let run = Run ( RunArgs ( ArgumentsText "foobar" ) def )
+       in assertPretty "RUN foobar" run
+
+    it "RUN in JSON format" $ do
+      let run = Run ( RunArgs ( ArgumentsList "foobar barfoo" ) def )
+       in assertPretty "RUN [\"foobar\", \"barfoo\"]" run
+
+    it "RUN with --mount=type=tmpfs" $ do
+      let run =
+            Run
+              ( RunArgs
+                  ( ArgumentsText "foobar" )
+                  ( RunFlags
+                      { mount = Set.singleton ( TmpfsMount ( TmpOpts "/tgt" (Just "4G") ) ),
+                        security = Nothing,
+                        network = Nothing
+                      }
+                  )
+              )
+       in assertPretty "RUN --mount=type=tmpfs,target=/tgt,size=4G foobar" run
 
   describe "pretty print # escape" $ do
     it "# escape = \\" $ do

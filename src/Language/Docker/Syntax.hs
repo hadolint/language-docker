@@ -339,10 +339,15 @@ data CacheOpts
 instance Default CacheOpts where
   def = CacheOpts "" Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 
-newtype TmpOpts = TmpOpts {tTarget :: TargetPath} deriving (Eq, Show, Ord)
+data TmpOpts
+  = TmpOpts
+      { tTarget :: TargetPath,
+        tSize :: !(Maybe Text)
+      }
+  deriving (Eq, Show, Ord)
 
 instance Default TmpOpts where
-  def = TmpOpts ""
+  def = TmpOpts "" Nothing
 
 data SecretOpts
   = SecretOpts

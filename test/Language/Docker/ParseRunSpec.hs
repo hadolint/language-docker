@@ -168,6 +168,11 @@ spec = do
             file
             [ Run $ RunArgs (ArgumentsText "echo foo") flags
             ]
+    it "--mount=type=tmpfs,size=12G" $
+      let file = Text.unlines ["RUN --mount=type=tmpfs,target=/foo,size=12G foo bar"]
+          flags = def { mount = Set.singleton $ TmpfsMount (def {tTarget = "/foo", tSize = Just "12G"}) }
+       in assertAst file [ Run $ RunArgs ( ArgumentsText "foo bar" ) flags ]
+
     it "--mount=type=ssh" $
       let file = Text.unlines ["RUN --mount=type=ssh echo foo"]
           flags = def {mount = Set.singleton $ SshMount def}
