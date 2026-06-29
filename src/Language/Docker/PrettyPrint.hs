@@ -212,7 +212,10 @@ prettyPrintRunMount set =
             <> maybe mempty printUid sUid
             <> maybe mempty printGid sGid
             <> maybe mempty printRequired sIsRequired
-        TmpfsMount TmpOpts {..} -> "type=tmpfs" <> printTarget tTarget
+        TmpfsMount TmpOpts {..} ->
+          "type=tmpfs"
+          <> printTarget tTarget
+          <> maybe mempty printSize tSize
     printQuotable str
       | Text.any (== '"') str = doubleQoute str
       | otherwise = pretty str
@@ -236,6 +239,7 @@ prettyPrintRunMount set =
       <> case r of
         RelabelShared -> printQuotable "shared"
         RelabelPrivate -> printQuotable "private"
+    printSize s = ",size=" <> pretty s
 
 prettyPrintRunNetwork :: Maybe RunNetwork -> Doc ann
 prettyPrintRunNetwork Nothing = mempty

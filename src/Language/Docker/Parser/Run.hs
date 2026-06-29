@@ -26,6 +26,7 @@ data RunMountArg
   | MountArgReadOnly Bool
   | MountArgRequired Bool
   | MountArgSharing CacheSharing
+  | MountArgSize Text
   | MountArgSource SourcePath
   | MountArgTarget TargetPath
   | MountArgType MountType
@@ -147,13 +148,15 @@ cacheMount args =
 
 tmpfsMount :: [RunMountArg] -> Parser TmpOpts
 tmpfsMount args =
-  case validArgs "tmpfs" required required args of
+  case validArgs "tmpfs" allowed required args of
     Left e -> customError e
     Right as -> return $ foldr tmpOpts def as
   where
+    allowed = Set.fromList [ "target", "size" ]
     required = Set.singleton "target"
     tmpOpts :: RunMountArg -> TmpOpts -> TmpOpts
     tmpOpts (MountArgTarget path) t = t {tTarget = path}
+    tmpOpts (MountArgSize size) t = t {tSize = Just size}
     tmpOpts invalid _ = error $ "unhandled " <> show invalid <> " please report this bug"
 
 secretMount :: [RunMountArg] -> Parser SecretOpts
@@ -209,6 +212,7 @@ mountArgs =
       mountArgRelabel,
       mountArgRequired,
       mountArgSharing,
+      mountArgSize,
       mountArgSource,
       mountArgTarget,
       mountArgType,
@@ -295,6 +299,9 @@ mountArgRequired = MountArgRequired <$> choice
 mountArgSharing :: Parser RunMountArg
 mountArgSharing = MountArgSharing <$> key "sharing" cacheSharing
 
+mountArgSize :: (?esc :: Char) => Parser RunMountArg
+mountArgSize = MountArgSize <$> key "size" stringArg
+
 mountArgSource :: (?esc :: Char) => Parser RunMountArg
 mountArgSource = do
   label "source=" $ choice [string "source=", string "src="]
@@ -342,6 +349,7 @@ toArgName (MountArgMode _) = "mode"
 toArgName (MountArgReadOnly _) = "ro"
 toArgName (MountArgRequired _) = "required"
 toArgName (MountArgSharing _) = "sharing"
+toArgName (MountArgSize _) = "size"
 toArgName (MountArgSource _) = "source"
 toArgName (MountArgTarget _) = "target"
 toArgName (MountArgType _) = "type"
