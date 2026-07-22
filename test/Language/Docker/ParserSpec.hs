@@ -87,6 +87,9 @@ spec = do
       assertAst
         "FROM ${BASE AS build"
         [From (untaggedImage "${BASE" `withAlias` "build")]
+    it "nested expansion with unterminated ${" $
+      assertAst "FROM ${BASE:-${DEFAULT}" [From (untaggedImage "${BASE:-${DEFAULT}")]
+
   describe "parse LABEL" $ do
     it "parse label" $ assertAst "LABEL foo=bar" [Label [("foo", "bar")]]
     it "parse space separated label" $ assertAst "LABEL foo bar baz" [Label [("foo", "bar baz")]]
