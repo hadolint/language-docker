@@ -64,6 +64,32 @@ spec = do
       assertAst
         "FROM myfolder/imagename:5.12-dev"
         [From (taggedImage (Image Nothing "myfolder/imagename") "5.12-dev")]
+  describe "parse FROM with variable expansion" $ do
+    it "keeps ':' inside an expansion out of the tag" $
+      assertAst
+        "FROM ${IMAGE_PREFIX:?}${DISTRO:?}:${VERSION_DISTRO:?}"
+        [From (taggedImage "${IMAGE_PREFIX:?}${DISTRO:?}" "${VERSION_DISTRO:?}")]
+    it "handles :- and :+ operators" $
+      assertAst
+        "FROM ${BASE:-alpine}:${TAG:+edge}"
+        [From (taggedImage "${BASE:-alpine}" "${TAG:+edge}")]
+    it "handles a nested expansion" $
+      assertAst "FROM ${BASE:-${DEFAULT}}" [From (untaggedImage "${BASE:-${DEFAULT}}")]
+    it "keeps expansion with a slash in the registry" $
+      assertAst
+        "FROM ${REGISTRY:-docker.io/library}/myimage:tag"
+        [From (taggedImage (Image Nothing "${REGISTRY:-docker.io/library}/myimage") "tag")]
+    it "an unterminated ${ stays on its line" $
+      assertAst
+        "FROM ${BASE:x\nRUN y"
+        [From (untaggedImage "${BASE:x"), Run "y"]
+    it "an unterminated ${ keeps a following alias" $
+      assertAst
+        "FROM ${BASE AS build"
+        [From (untaggedImage "${BASE" `withAlias` "build")]
+    it "nested expansion with unterminated ${" $
+      assertAst "FROM ${BASE:-${DEFAULT}" [From (untaggedImage "${BASE:-${DEFAULT}")]
+
   describe "parse LABEL" $ do
     it "parse label" $ assertAst "LABEL foo=bar" [Label [("foo", "bar")]]
     it "parse space separated label" $ assertAst "LABEL foo bar baz" [Label [("foo", "bar baz")]]
