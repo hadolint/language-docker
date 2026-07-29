@@ -24,6 +24,12 @@ jobs:
         uses: sol/haskell-autotag@v1
         id: autotag
 
+      - name: Setup Haskell
+        if: steps.autotag.outputs.created
+        uses: haskell-actions/setup@v2
+        with:
+          ghc-version: 9.10.3
+
       - name: Build documentation and source archive
         if: steps.autotag.outputs.created
         run: |
