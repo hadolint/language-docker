@@ -33,7 +33,7 @@ jobs:
       - name: Build documentation and source archive
         if: steps.autotag.outputs.created
         run: |
-          cabal haddock
+          cabal haddock --haddock-for-hackage
           cabal sdist
 
       - name: Upload Candidate to Hackage
@@ -41,8 +41,8 @@ jobs:
         uses: haskell-actions/hackage-publish@v1.1
         with:
           hackageToken: ${{ secrets.HACKAGE_AUTH_TOKEN }}
-          packagesPath: ${{ runner.temp }}/packages
-          docsPath: ${{ runner.temp }}/docs
+          packagesPath: ${{ github.workspace }}/dist-newstyle/sdist
+          docsPath: ${{ github.workspace }}/dist-newstyle
           publish: false
 
       - name: Create GitHub Draft Release
@@ -53,5 +53,5 @@ jobs:
           fail_on_unmatched_files: true
           draft: true
           files: |
-            ${{ runner.temp }}/packages
-            ${{ runner.temp }}/docs
+            ${{ github.workspace }}/dist-newstyle/sdist/*.tar.gz
+            ${{ github.workspace }}/dist-newstyle/*-docs.tar.gz
