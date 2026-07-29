@@ -1,0 +1,51 @@
+# This workflow is triggered by updates to the version number in the .cabal file.
+# It will automatically create a corresponding git tag - though it's probably a good idea to bump
+# the version number in its own commit anyways.
+
+name: Release
+
+permissions:
+  contents: write
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  hackage-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Out
+        uses: actions/checkout@v7
+
+      - name: Create git tag from Cabal file
+        uses: sol/haskell-autotag@v1
+        id: autotag
+
+      - name: Build documentation and source archive
+        if: steps.autotag.outputs.created
+        run: |
+          cabal haddock
+          cabal sdist
+
+      - name: Upload Candidate to Hackage
+        if: steps.autotag.outputs.created
+        uses: haskell-actions/hackage-publish@v1.1
+        with:
+          hackageToken: ${{ secrets.HACKAGE_AUTH_TOKEN }}
+          packagesPath: ${{ runner.temp }}/packages
+          docsPath: ${{ runner.temp }}/docs
+          publish: false
+
+      - name: Create GitHub Draft Release
+        if: steps.autotag.outputs.created
+        uses: softprops/action-gh-release@v3
+        with:
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          draft: true
+          files: |
+            ${{ runner.temp }}/packages
+            ${{ runner.temp }}/docs
