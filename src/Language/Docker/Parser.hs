@@ -16,6 +16,21 @@ import Language.Docker.Parser.Instruction (parseInstruction, parseComment)
 import Language.Docker.Parser.Prelude
 import Language.Docker.Syntax
 
+bomUtf32LE :: B.ByteString
+bomUtf32LE = "\255\254\NUL\NUL"
+
+bomUtf32BE :: B.ByteString
+bomUtf32BE = "\NUL\NUL\254\255"
+
+bomUtf16LE :: B.ByteString
+bomUtf16LE = "\255\254"
+
+bomUtf16BE :: B.ByteString
+bomUtf16BE = "\254\255"
+
+bomUtf8 :: B.ByteString
+bomUtf8 = "\239\187\191"
+
 contents :: Parser a -> Parser a
 contents p = do
   void onlyWhitespaces
@@ -63,23 +78,17 @@ doParse path txt = do
   let ?esc = findEscapePragma (T.lines src)
    in parse (contents dockerfile) path src
   where
-    src =
-      case B.take 4 txt of
-        "\255\254\NUL\NUL" ->
-          dos2unix (E.decodeUtf32LEWith E.lenientDecode $ B.drop 4 txt)
-        "\NUL\NUL\254\255" ->
-          dos2unix (E.decodeUtf32BEWith E.lenientDecode $ B.drop 4 txt)
-        _ ->
-          case B.take 2 txt of
-            "\255\254" ->
-              dos2unix (E.decodeUtf16LEWith E.lenientDecode $ B.drop 2 txt)
-            "\254\255" ->
-              dos2unix (E.decodeUtf16BEWith E.lenientDecode $ B.drop 2 txt)
-            _ ->
-              case B.take 3 txt of
-                "\239\187\191" ->
-                  dos2unix (E.decodeUtf8With E.lenientDecode $ B.drop 3 txt)
-                _ -> dos2unix (E.decodeUtf8With E.lenientDecode txt)
+    src = dos2unix $ decode txt
+
+-- | Determine encoding from byte order mark and decode
+decode :: B.ByteString -> T.Text
+decode txt
+  | bomUtf32LE `B.isPrefixOf` txt = E.decodeUtf32LEWith E.lenientDecode $ B.drop 4 txt
+  | bomUtf32BE `B.isPrefixOf` txt = E.decodeUtf32BEWith E.lenientDecode $ B.drop 4 txt
+  | bomUtf16LE `B.isPrefixOf` txt = E.decodeUtf16LEWith E.lenientDecode $ B.drop 2 txt
+  | bomUtf16BE `B.isPrefixOf` txt = E.decodeUtf16BEWith E.lenientDecode $ B.drop 2 txt
+  | bomUtf8    `B.isPrefixOf` txt = E.decodeUtf8With    E.lenientDecode $ B.drop 3 txt
+  | otherwise                     = E.decodeUtf8With    E.lenientDecode txt
 
 -- | Changes crlf line endings to simple line endings
 dos2unix :: T.Text -> T.Text
