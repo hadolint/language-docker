@@ -33,6 +33,7 @@ jobs:
       - name: Build documentation and source archive
         if: steps.autotag.outputs.created
         run: |
+          cabal check
           cabal haddock --haddock-for-hackage
           cabal sdist
 
@@ -51,6 +52,7 @@ jobs:
         with:
           generate_release_notes: true
           fail_on_unmatched_files: true
+          tag_name: ${{ steps.autotag.outputs.name }}
           draft: true
           files: |
             ${{ github.workspace }}/dist-newstyle/sdist/*.tar.gz
