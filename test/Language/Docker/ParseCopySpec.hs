@@ -33,6 +33,29 @@ spec = do
                 )
                 def
             ]
+    it "COPY with a line continuation and no space before the backslash" $
+      let file = Text.unlines ["COPY foo.json\\", "  /root/foo.json"]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs [ SourcePath "foo.json" ] ( TargetPath "/root/foo.json" ) )
+                def
+            ]
+    it "multifiles COPY with a line continuation and no space before the backslash" $
+      let file = Text.unlines ["COPY foo bar\\", "  baz /app"]
+       in assertAst
+            file
+            [ Copy
+                ( CopyArgs
+                    (fmap SourcePath ["foo", "bar", "baz"])
+                    (TargetPath "/app")
+                )
+                def
+            ]
+    it "COPY with a line continuation that is not followed by whitespace" $
+      -- Docker joins these two lines without inserting a space, which leaves
+      -- COPY with a single argument.
+      expectFail (Text.unlines ["COPY foo.json\\", "/root/foo.json"])
     it "list of quoted files" $
       let file = Text.unlines ["COPY [\"foo\", \"bar\", \"baz\", \"/app\"]"]
        in assertAst

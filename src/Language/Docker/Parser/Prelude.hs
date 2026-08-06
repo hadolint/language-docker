@@ -368,11 +368,22 @@ someUnless name predicate = do
     applyPredicate =
       many $
         choice
-          [ castToSpace <$> escapedLineBreaks,
+          [ castToSpace <$> try insignificantLineBreak,
             takeWhile1P (Just name) (\c -> not (isSpaceNl c || predicate c)),
-            takeWhile1P Nothing (\c -> c == ?esc && not (predicate c))
-              <* notFollowedBy (char '\n')
+            try $
+              takeWhile1P Nothing (\c -> c == ?esc && not (predicate c))
+                <* notFollowedBy (char '\n')
           ]
+
+    -- An escaped line break followed by whitespace stands for a space (see
+    -- 'escapedLineBreaks'). Wherever a space ends the token being parsed, such
+    -- a line break ends it as well instead of being pulled into it. It is left
+    -- unconsumed, so that it can be parsed as the separator it is.
+    insignificantLineBreak = do
+      ws <- escapedLineBreaks
+      when (ws == FoundWhitespace && predicate ' ') $
+        fail "escaped line break separating two tokens"
+      pure ws
 
 comment :: Parser Text
 comment = do
