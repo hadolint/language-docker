@@ -202,8 +202,11 @@ heredocContent marker = do
     termination :: Parser Text
     termination = try terEOL <|> terEOF
 
+    -- The line break that follows the terminating marker is not part of the
+    -- heredoc: it is the line break that separates this instruction from
+    -- whatever comes next, so it is left for the caller to consume.
     terEOL :: Parser Text
-    terEOL = string $ "\n" <> marker <> "\n"
+    terEOL = string ("\n" <> marker) <* lookAhead (char '\n')
 
     terEOF :: Parser Text
     terEOF = do
@@ -215,7 +218,7 @@ heredocContent marker = do
     delimiter = try delEOL <|> delEOF
 
     delEOL :: Parser Text
-    delEOL = string $ marker <> "\n"
+    delEOL = string marker <* lookAhead (char '\n')
 
     delEOF :: Parser Text
     delEOF = do
