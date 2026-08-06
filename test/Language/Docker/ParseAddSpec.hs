@@ -30,6 +30,14 @@ spec = do
                 )
                 def
             ]
+    it "ADD with a line continuation and no space before the backslash" $
+      let file = Text.unlines ["ADD foo.json\\", "  /root/foo.json"]
+       in assertAst
+            file
+            [ Add
+                ( AddArgs [ SourcePath "foo.json" ] ( TargetPath "/root/foo.json" ) )
+                def
+            ]
     it "list of quoted files" $
       let file = Text.unlines ["ADD [\"foo\", \"bar\", \"baz\", \"/app\"]"]
        in assertAst
