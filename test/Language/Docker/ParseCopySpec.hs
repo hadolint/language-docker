@@ -314,3 +314,23 @@ spec = do
                   ( CopyArgs [ SourcePath "FOO" ] ( TargetPath "/target" ) )
                   def
               ]
+    it "heredoc followed by another instruction" $
+      let file = Text.unlines ["COPY <<EOF /target", "content", "EOF", "COPY a b"]
+       in assertAst
+            file
+              [ Copy
+                  ( CopyArgs [ SourcePath "EOF" ] ( TargetPath "/target" ) )
+                  def,
+                Copy
+                  ( CopyArgs [ SourcePath "a" ] ( TargetPath "b" ) )
+                  def
+              ]
+    it "empty heredoc followed by a comment" $
+      let file = Text.unlines ["COPY <<EOF /target", "EOF", "# comment"]
+       in assertAst
+            file
+              [ Copy
+                  ( CopyArgs [ SourcePath "EOF" ] ( TargetPath "/target" ) )
+                  def,
+                Comment " comment"
+              ]
