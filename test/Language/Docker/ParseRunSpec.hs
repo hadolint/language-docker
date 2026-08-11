@@ -567,6 +567,30 @@ spec = do
       let file = "RUN <<EOF\nEOF"
           flags = def { security = Nothing }
        in assertAst file [ Run $ RunArgs (ArgumentsText "") flags ]
+    it "heredoc followed by a comment" $
+      let file = Text.unlines [ "RUN <<EOF", "echo foo", "EOF", "# comment" ]
+          flags = def { security = Nothing }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags,
+              Comment " comment"
+            ]
+    it "heredoc followed by another instruction" $
+      let file = Text.unlines [ "RUN <<EOF", "echo foo", "EOF", "RUN echo bar" ]
+          flags = def { security = Nothing }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "echo foo") flags,
+              Run $ RunArgs (ArgumentsText "echo bar") flags
+            ]
+    it "empty heredoc followed by a comment" $
+      let file = Text.unlines [ "RUN <<EOF", "EOF", "# comment" ]
+          flags = def { security = Nothing }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "") flags,
+              Comment " comment"
+            ]
     it "evil heredoc" $
       let file = Text.unlines [ "RUN <<EOF foo", "bar EOF", "EOF"]
           flags = def { security = Nothing }
