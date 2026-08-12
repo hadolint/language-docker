@@ -236,6 +236,25 @@ spec = do
             dockerfile
             [ Env [("A", "a.sh"), ("B", "b.sh"), ("c", "true")]
             ]
+
+    it "comment in escaped lines" $
+      let dockerfile =
+            Text.unlines
+              [ "RUN foo \\",
+                "# comment",
+                "  bar"
+              ]
+       in assertAst dockerfile [ Run "foo \\\n\\\n  bar" ]
+
+    it "comment in the same line with comment continuation" $
+      let dockerfile =
+            Text.unlines
+              [ "RUN echo foo # comment \\",
+                "continued comment",
+                "RUN echo bar"
+              ]
+       in assertAst dockerfile [ Run "echo foo # comment \\\ncontinued comment", Run "echo bar" ]
+
     it "accepts backslash inside string" $
       let dockerfile = "RUN grep 'foo \\.'"
        in assertAst dockerfile [Run $ RunArgs (ArgumentsText "grep 'foo \\.'") def]
@@ -271,3 +290,28 @@ spec = do
     it "should handle lowercase instructions (#7 - https://github.com/beijaflor-io/haskell-language-dockerfile/issues/7)" $
       let content = "from ubuntu"
        in assertAst content [From (untaggedImage "ubuntu")]
+
+  describe "empty line continuations" $ do
+    it "should handle empty line continuations" $
+      let content = Text.unlines [ "RUN one \\", "", "RUN two" ]
+       in assertAst content [ Run "one \\\n\\\nRUN two" ]
+
+    it "line continuations - multiple empty lines" $
+      let content = Text.unlines [ "RUN one \\", "", "", "", "RUN two" ]
+       in assertAst content [ Run "one \\\n\\\n\\\n\\\nRUN two" ]
+
+    it "line continuations - comments" $
+      let content = Text.unlines [ "RUN one \\", "", "# comment", "", "RUN two" ]
+       in assertAst content [ Run "one \\\n\\\n\\\n\\\nRUN two" ]
+
+    it "line continuations - comment on same line" $
+      let content = Text.unlines [ "RUN one \\  # comment", "", "# comment", "", "RUN two" ]
+       in assertAst content [ Run "one \\  # comment", Comment " comment", Run "two" ]
+
+    it "should correctly separate instructions 1 - empty line" $
+      let content = Text.unlines [ "RUN one", "", "RUN two" ]
+       in assertAst content [ Run "one", Run "two" ]
+
+    it "should correctly separate instructions 2 - no line between" $
+      let content = Text.unlines [ "RUN one", "RUN two" ]
+       in assertAst content [ Run "one", Run "two" ]

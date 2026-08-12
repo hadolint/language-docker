@@ -1,5 +1,8 @@
 *.hi
 *.o
+# leftovers from code coverage
+*.tix
+
 .stack-work
 dist-newstyle
 

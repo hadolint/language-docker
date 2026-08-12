@@ -399,7 +399,7 @@ data RunArgs args = RunArgs (Arguments args) RunFlags
 instance IsString (RunArgs Text) where
   fromString s =
     RunArgs
-      (ArgumentsText . Text.pack $ s)
+      (ArgumentsText $ Text.pack s)
       RunFlags
         { mount = mempty,
           security = Nothing,

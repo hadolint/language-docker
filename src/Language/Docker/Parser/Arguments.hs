@@ -17,9 +17,7 @@ argumentsExec = do
 argumentsShell :: (?esc :: Char) => Parser (Arguments Text)
 argumentsShell =
   try (ArgumentsText <$> untilHeredoc)
-    <|> (ArgumentsText <$> toEnd)
-  where
-    toEnd = untilEol "the shell arguments"
+    <|> (ArgumentsText <$> untilEol' "the shell arguments")
 
 -- Parse arguments of a command in the heredoc format
 argumentsHeredoc :: (?esc :: Char) => Parser (Arguments Text)

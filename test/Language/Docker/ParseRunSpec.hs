@@ -13,10 +13,10 @@ spec = do
   describe "parse RUN instructions" $ do
     it "escaped with space before" $
       let dockerfile = Text.unlines ["RUN yum install -y \\", "imagemagick \\", "mysql"]
-       in assertAst dockerfile [Run "yum install -y imagemagick mysql"]
+       in assertAst dockerfile [Run "yum install -y \\\nimagemagick \\\nmysql"]
     it "escaped linebreak, indented" $
       let file = Text.unlines [ "RUN foo ; \\", "    bar" ]
-       in assertAst file [ Run "foo ;  bar" ]
+       in assertAst file [ Run "foo ; \\\n    bar" ]
     it "does not choke on unmatched brackets" $
       let dockerfile = Text.unlines ["RUN [foo"]
        in assertAst dockerfile [Run "[foo"]
