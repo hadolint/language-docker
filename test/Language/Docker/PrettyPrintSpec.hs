@@ -184,6 +184,18 @@ spec = do
       let run = Run ( RunArgs ( ArgumentsText "foobar" ) def )
        in assertPretty "RUN foobar" run
 
+    it "keeps && inside a quoted string" $ do
+      let run = Run ( RunArgs ( ArgumentsText "grep -F 'cd dir && ./run.sh ' /opt/Makefile" ) def )
+       in assertPretty "RUN grep -F 'cd dir && ./run.sh ' /opt/Makefile" run
+
+    it "keeps repeated spaces inside a quoted string" $ do
+      let run = Run ( RunArgs ( ArgumentsText "echo 'a    b'" ) def )
+       in assertPretty "RUN echo 'a    b'" run
+
+    it "still breaks the line on an unquoted &&" $ do
+      let run = Run ( RunArgs ( ArgumentsText "apt-get update && apt-get install -y curl" ) def )
+       in assertPretty "RUN apt-get update \\\n && apt-get install -y curl" run
+
     it "RUN in JSON format" $ do
       let run = Run ( RunArgs ( ArgumentsList "foobar barfoo" ) def )
        in assertPretty "RUN [\"foobar\", \"barfoo\"]" run
