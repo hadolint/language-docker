@@ -8,6 +8,7 @@
 
 module Language.Docker.PrettyPrint where
 
+import Data.Char (isSpace)
 import Data.List.NonEmpty as NonEmpty (NonEmpty (..), toList)
 import Data.Set (Set)
 import Data.String (fromString)
@@ -94,10 +95,41 @@ prettyPrintPair (k, v) = pretty k <> pretty '=' <> doubleQoute v
 
 prettyPrintArguments :: (?esc :: Char) => Arguments Text -> Doc ann
 prettyPrintArguments (ArgumentsList as) = prettyPrintJSON (Text.words as)
-prettyPrintArguments (ArgumentsText as) = hsep (fmap helper (Text.words as))
+prettyPrintArguments (ArgumentsText as) = hsep (fmap helper (quotedWords as))
   where
     helper "&&" = pretty ?esc <> "\n &&"
     helper a = pretty a
+
+data Quoting
+  = Unquoted
+  | InSingle
+  | InDouble
+  deriving (Eq)
+
+-- | Like 'Text.words', except that a quoted section stays part of the word it
+-- belongs to. Cutting a quoted section into words would let its spacing be
+-- rewritten, and would let an operator written inside it, such as @&&@, pass
+-- for one that separates commands.
+quotedWords :: Text -> [Text]
+quotedWords = go Unquoted [] []
+  where
+    go quoting word acc text =
+      case Text.uncons text of
+        Nothing -> reverse (emit word acc)
+        Just (c, rest)
+          | quoting == Unquoted, isSpace c -> go Unquoted [] (emit word acc) rest
+          | c == '\\',
+            quoting /= InSingle,
+            Just (c', rest') <- Text.uncons rest ->
+              go quoting (c' : c : word) acc rest'
+          | c == '\'', quoting == Unquoted -> go InSingle (c : word) acc rest
+          | c == '\'', quoting == InSingle -> go Unquoted (c : word) acc rest
+          | c == '"', quoting == Unquoted -> go InDouble (c : word) acc rest
+          | c == '"', quoting == InDouble -> go Unquoted (c : word) acc rest
+          | otherwise -> go quoting (c : word) acc rest
+
+    emit [] acc = acc
+    emit word acc = Text.pack (reverse word) : acc
 
 prettyPrintJSON :: (?esc :: Char) => [Text] -> Doc ann
 prettyPrintJSON args = list (fmap doubleQoute args)
