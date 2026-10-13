@@ -594,7 +594,19 @@ spec = do
     it "evil heredoc" $
       let file = Text.unlines [ "RUN <<EOF foo", "bar EOF", "EOF"]
           flags = def { security = Nothing }
-       in assertAst file [ Run $ RunArgs (ArgumentsText "foo\nbar EOF") flags ]
+       in assertAst file [ Run $ RunArgs (ArgumentsText "foo") flags ]
+    it "heredoc to program stdin with program after marker" $
+      let file = Text.unlines [ "RUN <<EOF bash", "set -euxo pipefail", "echo 123 | cat", "EOF" ]
+          flags = def { security = Nothing }
+       in assertAst file [ Run $ RunArgs (ArgumentsText "bash") flags ]
+    it "empty heredoc to program stdin followed by another instruction" $
+      let file = Text.unlines [ "RUN <<EOF bash", "EOF", "RUN bar" ]
+          flags = def { security = Nothing }
+       in assertAst
+            file
+            [ Run $ RunArgs (ArgumentsText "bash") flags,
+              Run $ RunArgs (ArgumentsText "bar") flags
+            ]
     it "heredoc with redirection to file" $
       let file = Text.unlines [ "RUN <<EOF > /file", "foo", "EOF" ]
           flags = def { security = Nothing }
