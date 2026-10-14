@@ -21,9 +21,26 @@ argumentsShell =
   where
     toEnd = untilEol "the shell arguments"
 
--- Parse arguments of a command in the heredoc format
+-- Parse arguments of a command in the heredoc format. When the heredoc marker
+-- is followed by a command (e.g. @RUN <<EOF bash@), the heredoc is that
+-- command's stdin, so the command is the argument, just like @RUN bash <<EOF@.
+-- Otherwise the heredoc content itself is the script.
 argumentsHeredoc :: (?esc :: Char) => Parser (Arguments Text)
-argumentsHeredoc = ArgumentsText <$> heredoc
+argumentsHeredoc = do
+  void $ string "<<"
+  void $ takeWhileP (Just "dash") (== '-')
+  marker <- try doubleQuotedString <|> try singleQuotedString <|> markerWord
+  void onlySpaces
+  rest <- option "" (untilEol "a command")
+  void (char '\n') <|> eof
+  body <- heredocContent marker
+  let command = T.strip rest
+  pure $
+    ArgumentsText $
+      if T.null command || isRedirect command then body else command
+  where
+    markerWord = takeWhile1P (Just "heredoc marker") (\c -> c /= ' ' && c /= '\t' && c /= '\n')
+    isRedirect cmd = any (`T.isPrefixOf` cmd) [">", "|"]
 
 arguments :: (?esc :: Char) => Parser (Arguments Text)
 arguments = try argumentsHeredoc
