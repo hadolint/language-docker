@@ -65,6 +65,17 @@ spec = do
               CheckArgs "curl -f http://localhost/" Nothing Nothing Nothing Nothing Nothing
         ]
 
+    it "parse healthcheck with compound durations" $
+      assertAst
+        "HEALTHCHECK --interval=1m30s --timeout=1m0.5s --start-period=1h2m --start-interval=1s2s CMD true"
+        [ Healthcheck $
+            Check $
+              CheckArgs "true" (Just 90) (Just 60.5) (Just 3720) (Just 3) Nothing
+        ]
+
+    it "reject healthcheck duration with an incomplete component" $
+      expectFail "HEALTHCHECK --interval=1m30 CMD true"
+
     it "fractional arguments to flags" $
       let file =
             Text.unlines
