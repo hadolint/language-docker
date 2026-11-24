@@ -75,15 +75,15 @@ checkFlag =
 durationFlag :: Text -> Parser Duration
 durationFlag flagName = do
   void $ try (string flagName)
-  value <- try ( fromRational . realToFrac <$> fractional )
-              <|> ( secondsToDiffTime . fromInteger <$> natural )
-              <?> "a natural or fractional number"
-  unit <- char 's' <|> char 'm' <|> char 'h' <?> "either 's', 'm' or 'h' as the unit"
-  case unit of
-    's' -> return $ Duration value
-    'm' -> return $ Duration (value * 60)
-    'h' -> return $ Duration (value * 60 * 60)
-    _ -> fail "only 's', 'm' or 'h' are allowed as the duration"
+  Duration . sum <$> some durationPart
+  where
+    durationPart = do
+      value <- try (fromRational . realToFrac <$> fractional)
+                  <|> (secondsToDiffTime . fromInteger <$> natural)
+                  <?> "a natural or fractional number"
+      seconds <- 1 <$ char 's' <|> 60 <$ char 'm' <|> 3600 <$ char 'h'
+                 <?> "either 's', 'm' or 'h' as the unit"
+      return (value * seconds)
 
 retriesFlag :: Parser Retries
 retriesFlag = do
